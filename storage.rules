@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && firestore.get(
+          /databases/(default)/documents/parents/$(request.auth.uid)
+        ).data.role == 'admin';
+    }
+
+    match /mediaAssets/{assetType}/{assetId}/{fileName} {
+      allow read: if signedIn();
+      allow write, delete: if isAdmin();
+    }
+  }
+}

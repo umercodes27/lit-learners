@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnParent(parentId) {
+      return signedIn() && request.auth.uid == parentId;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/parents/$(request.auth.uid))
+          .data.role == 'admin';
+    }
+
+    function keepsRoleUnchanged() {
+      return !request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasAny(['role']);
+    }
+
+    function ownsChildProfile(childId) {
+      return signedIn()
+        && exists(
+          /databases/$(database)/documents/parents/$(request.auth.uid)/childProfiles/$(childId)
+        );
+    }
+
+    match /parents/{parentId} {
+      allow create: if isOwnParent(parentId)
+        && request.resource.data.role == 'parent';
+      allow read: if isOwnParent(parentId);
+      allow update: if isOwnParent(parentId) && keepsRoleUnchanged();
+      allow delete: if false;
+
+      match /childProfiles/{childId} {
+        allow read, write: if isOwnParent(parentId);
+      }
+
+      match /learningReminders/{reminderId} {
+        allow read, write: if isOwnParent(parentId);
+      }
+
+      match /notificationDeliveries/{deliveryId} {
+        allow read, write: if isOwnParent(parentId);
+      }
+    }
+
+    match /childProgress/{childId}/levelProgress/{levelId} {
+      allow read, write: if ownsChildProfile(childId);
+    }
+
+    match /learningModules/{moduleId} {
+      allow read: if signedIn()
+        && (resource.data.isPublished == true || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /learningLevels/{levelId} {
+      allow read: if signedIn()
+        && (resource.data.isPublished == true || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /mediaAssets/{assetId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /leaderboards/{stageId}/entries/{childId} {
+      allow read: if signedIn();
+      allow create, update: if ownsChildProfile(childId)
+        && request.resource.data.parentId == request.auth.uid;
+      allow delete: if ownsChildProfile(childId)
+        && resource.data.parentId == request.auth.uid;
+    }
+  }
+}
