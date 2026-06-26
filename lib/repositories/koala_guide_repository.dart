@@ -6,15 +6,24 @@ abstract class KoalaGuideRepository {
 }
 
 class SeededKoalaGuideRepository implements KoalaGuideRepository {
-  const SeededKoalaGuideRepository({
-    this.messages = seedKoalaGuideMessages,
-  });
+  SeededKoalaGuideRepository({
+    List<KoalaGuideMessage> seedMessages = seedKoalaGuideMessages,
+  }) : _seedMessages = List.unmodifiable(seedMessages);
 
-  final List<KoalaGuideMessage> messages;
+  final List<KoalaGuideMessage> _seedMessages;
+  List<KoalaGuideMessage> _syncedMessages = const [];
+
+  List<KoalaGuideMessage> get seedMessages => _seedMessages;
+  List<KoalaGuideMessage> get syncedMessages =>
+      List.unmodifiable(_syncedMessages);
+
+  void replaceSyncedMessages(List<KoalaGuideMessage> messages) {
+    _syncedMessages = List.unmodifiable(messages);
+  }
 
   @override
   Future<KoalaGuideMessage> getMessage(KoalaGuideRequest request) async {
-    final matches = messages.where((message) {
+    final matches = [..._syncedMessages, ..._seedMessages].where((message) {
       return message.matches(request);
     }).toList()
       ..sort((left, right) {

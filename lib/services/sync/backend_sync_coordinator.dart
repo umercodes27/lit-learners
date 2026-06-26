@@ -1,4 +1,5 @@
 import 'content_sync_service.dart';
+import 'koala_guide_sync_service.dart';
 import 'leaderboard_sync_service.dart';
 import 'progress_sync_service.dart';
 import 'sync_orchestrator.dart';
@@ -10,17 +11,20 @@ class BackendSyncCoordinator {
     required SyncService profileSyncService,
     required ProgressSyncService progressSyncService,
     required ContentSyncService contentSyncService,
+    KoalaGuideSyncService? koalaGuideSyncService,
     LeaderboardSyncService? leaderboardSyncService,
   })  : _orchestrator = orchestrator,
         _profileSyncService = profileSyncService,
         _progressSyncService = progressSyncService,
         _contentSyncService = contentSyncService,
+        _koalaGuideSyncService = koalaGuideSyncService,
         _leaderboardSyncService = leaderboardSyncService;
 
   final SyncOrchestrator _orchestrator;
   final SyncService _profileSyncService;
   final ProgressSyncService _progressSyncService;
   final ContentSyncService _contentSyncService;
+  final KoalaGuideSyncService? _koalaGuideSyncService;
   final LeaderboardSyncService? _leaderboardSyncService;
 
   Future<SyncOrchestrationReport> syncNow({
@@ -54,6 +58,14 @@ class BackendSyncCoordinator {
           name: 'content-sync',
           run: () async {
             final report = await _contentSyncService.syncNow();
+            return !report.hasFailures;
+          },
+        ),
+      if (includeContent && _koalaGuideSyncService != null)
+        SyncTask(
+          name: 'koala-guide-sync',
+          run: () async {
+            final report = await _koalaGuideSyncService.syncNow();
             return !report.hasFailures;
           },
         ),

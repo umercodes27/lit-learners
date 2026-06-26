@@ -1,4 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:little_learners/models/koala_guide_message.dart';
+import 'package:little_learners/repositories/koala_guide_repository.dart';
+import 'package:little_learners/services/remote/koala_guide_remote_data_source.dart';
+import 'package:little_learners/services/sync/koala_guide_sync_service.dart';
 import 'package:little_learners/services/sync/sync_orchestrator.dart';
 
 void main() {
@@ -56,6 +60,41 @@ void main() {
       expect(second.results.single.status, SyncTaskStatus.skippedBackoff);
       expect(third.results.single.status, SyncTaskStatus.succeeded);
       expect(third.results.single.attemptCount, 0);
+    });
+
+    test('runs Koala guide sync as an orchestrated task', () async {
+      final repository = SeededKoalaGuideRepository(seedMessages: const []);
+      final guideSyncService = KoalaGuideSyncService(
+        repository: repository,
+        remoteDataSource: InMemoryKoalaGuideRemoteDataSource(
+          messages: const [
+            KoalaGuideMessage(
+              id: 'remote-guide',
+              trigger: KoalaGuideTrigger.dashboardWelcome,
+              audience: KoalaGuideAudience.child,
+              message: 'Remote guide.',
+            ),
+          ],
+        ),
+      );
+      final orchestrator = SyncOrchestrator(
+        connectivityStatusProvider: const _FakeConnectivityStatusProvider(
+          isOnline: true,
+        ),
+      );
+
+      final report = await orchestrator.run([
+        SyncTask(
+          name: 'koala-guide-sync',
+          run: () async {
+            final guideReport = await guideSyncService.syncNow();
+            return !guideReport.hasFailures;
+          },
+        ),
+      ]);
+
+      expect(report.results.single.status, SyncTaskStatus.succeeded);
+      expect(repository.syncedMessages.single.id, 'remote-guide');
     });
   });
 }

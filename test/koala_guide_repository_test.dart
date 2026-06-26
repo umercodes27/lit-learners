@@ -6,8 +6,8 @@ void main() {
   group('SeededKoalaGuideRepository', () {
     test('selects module-specific child guidance before generic guidance',
         () async {
-      const repository = SeededKoalaGuideRepository(
-        messages: [
+      final repository = SeededKoalaGuideRepository(
+        seedMessages: const [
           KoalaGuideMessage(
             id: 'generic',
             trigger: KoalaGuideTrigger.activityStart,
@@ -38,8 +38,8 @@ void main() {
     });
 
     test('selects level-specific guidance before module guidance', () async {
-      const repository = SeededKoalaGuideRepository(
-        messages: [
+      final repository = SeededKoalaGuideRepository(
+        seedMessages: const [
           KoalaGuideMessage(
             id: 'module',
             trigger: KoalaGuideTrigger.activityStart,
@@ -73,7 +73,7 @@ void main() {
     });
 
     test('returns fallback message when no seeded message matches', () async {
-      const repository = SeededKoalaGuideRepository(messages: []);
+      final repository = SeededKoalaGuideRepository(seedMessages: const []);
 
       final message = await repository.getMessage(
         const KoalaGuideRequest(
@@ -89,7 +89,7 @@ void main() {
     });
 
     test('loads seeded parent admin guidance with a parent tip', () async {
-      const repository = SeededKoalaGuideRepository();
+      final repository = SeededKoalaGuideRepository();
 
       final message = await repository.getMessage(
         const KoalaGuideRequest(
@@ -101,6 +101,42 @@ void main() {
       expect(message.id, 'admin-content');
       expect(message.parentTip, isNotNull);
       expect(message.mood, KoalaGuideMood.parent);
+    });
+
+    test('synced guide messages override seeded guide messages', () async {
+      final repository = SeededKoalaGuideRepository(
+        seedMessages: const [
+          KoalaGuideMessage(
+            id: 'seed',
+            trigger: KoalaGuideTrigger.moduleIntro,
+            audience: KoalaGuideAudience.child,
+            moduleId: 'math',
+            message: 'Seed math.',
+          ),
+        ],
+      );
+
+      repository.replaceSyncedMessages(const [
+        KoalaGuideMessage(
+          id: 'remote',
+          trigger: KoalaGuideTrigger.moduleIntro,
+          audience: KoalaGuideAudience.child,
+          moduleId: 'math',
+          message: 'Remote math.',
+          priority: 1,
+        ),
+      ]);
+
+      final message = await repository.getMessage(
+        const KoalaGuideRequest(
+          trigger: KoalaGuideTrigger.moduleIntro,
+          audience: KoalaGuideAudience.child,
+          moduleId: 'math',
+        ),
+      );
+
+      expect(message.id, 'remote');
+      expect(message.message, 'Remote math.');
     });
   });
 }

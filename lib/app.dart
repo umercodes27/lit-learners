@@ -7,10 +7,12 @@ import 'core/routing/route_names.dart';
 import 'core/theme/app_theme.dart';
 import 'repositories/admin_authorization_repository.dart';
 import 'repositories/admin_content_repository.dart';
+import 'repositories/admin_koala_guide_repository.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/child_profile_repository.dart';
 import 'repositories/content_repository.dart';
 import 'repositories/firestore_admin_content_repository.dart';
+import 'repositories/firestore_admin_koala_guide_repository.dart';
 import 'repositories/firestore_media_asset_repository.dart';
 import 'repositories/firebase_auth_repository.dart';
 import 'repositories/koala_guide_repository.dart';
@@ -27,6 +29,7 @@ import 'repositories/progress_repository.dart';
 import 'services/firebase/firebase_auth_service.dart';
 import 'services/firebase/firestore_child_profile_remote_data_source.dart';
 import 'services/firebase/firestore_content_remote_data_source.dart';
+import 'services/firebase/firestore_koala_guide_remote_data_source.dart';
 import 'services/firebase/firestore_leaderboard_remote_data_source.dart';
 import 'services/firebase/firestore_notification_delivery_remote_data_source.dart';
 import 'services/firebase/firestore_progress_remote_data_source.dart';
@@ -36,13 +39,16 @@ import 'services/local/content_dao.dart';
 import 'services/local/db_helper.dart';
 import 'services/local/progress_dao.dart';
 import 'services/local/sync_outbox_dao.dart';
+import 'services/audio/koala_audio_player.dart';
 import 'services/remote/child_profile_remote_data_source.dart';
 import 'services/remote/content_remote_data_source.dart';
+import 'services/remote/koala_guide_remote_data_source.dart';
 import 'services/remote/leaderboard_remote_data_source.dart';
 import 'services/remote/notification_delivery_remote_data_source.dart';
 import 'services/remote/progress_remote_data_source.dart';
 import 'services/sync/backend_sync_coordinator.dart';
 import 'services/sync/content_sync_service.dart';
+import 'services/sync/koala_guide_sync_service.dart';
 import 'services/sync/leaderboard_sync_service.dart';
 import 'services/sync/progress_sync_service.dart';
 import 'services/sync/sync_service.dart';
@@ -87,6 +93,12 @@ final _inMemoryContentRemoteDataSource = InMemoryContentRemoteDataSource();
 final ContentRemoteDataSource _contentRemoteDataSource = AppConfig.useFirebase
     ? FirestoreContentRemoteDataSource()
     : _inMemoryContentRemoteDataSource;
+final _inMemoryKoalaGuideRemoteDataSource =
+    InMemoryKoalaGuideRemoteDataSource();
+final KoalaGuideRemoteDataSource _koalaGuideRemoteDataSource =
+    AppConfig.useFirebase
+        ? FirestoreKoalaGuideRemoteDataSource()
+        : _inMemoryKoalaGuideRemoteDataSource;
 final _progressRemoteDataSource = AppConfig.useFirebase
     ? FirestoreProgressRemoteDataSource()
     : InMemoryProgressRemoteDataSource();
@@ -97,12 +109,23 @@ final AdminContentRepository _baseAdminContentRepository = AppConfig.useFirebase
     : InMemoryAdminContentRepository(
         contentRemoteDataSource: _inMemoryContentRemoteDataSource,
       );
+final AdminKoalaGuideRepository _baseAdminKoalaGuideRepository =
+    AppConfig.useFirebase
+        ? FirestoreAdminKoalaGuideRepository()
+        : InMemoryAdminKoalaGuideRepository(
+            remoteDataSource: _inMemoryKoalaGuideRemoteDataSource,
+          );
 final _adminAuthorizationRepository = AuthAdminAuthorizationRepository(
   _authRepository,
 );
 final AdminContentRepository _adminContentRepository =
     AuthorizedAdminContentRepository(
   delegate: _baseAdminContentRepository,
+  authorizationRepository: _adminAuthorizationRepository,
+);
+final AdminKoalaGuideRepository _adminKoalaGuideRepository =
+    AuthorizedAdminKoalaGuideRepository(
+  delegate: _baseAdminKoalaGuideRepository,
   authorizationRepository: _adminAuthorizationRepository,
 );
 final MediaAssetRepository _baseMediaAssetRepository = AppConfig.useFirebase
@@ -149,6 +172,11 @@ final _contentSyncService = ContentSyncService(
   contentDao: _contentDao,
   contentRemoteDataSource: _contentRemoteDataSource,
 );
+final _koalaGuideRepository = SeededKoalaGuideRepository();
+final _koalaGuideSyncService = KoalaGuideSyncService(
+  repository: _koalaGuideRepository,
+  remoteDataSource: _koalaGuideRemoteDataSource,
+);
 final _leaderboardSyncService = LeaderboardSyncService(
   childProfileRepository: _profileRepository,
   progressRepository: _progressRepository,
@@ -164,6 +192,7 @@ final _backendSyncCoordinator = BackendSyncCoordinator(
   profileSyncService: _syncService,
   progressSyncService: _progressSyncService,
   contentSyncService: _contentSyncService,
+  koalaGuideSyncService: _koalaGuideSyncService,
   leaderboardSyncService: _leaderboardSyncService,
 );
 final _parentalLockRepository = InMemoryParentalLockRepository();
@@ -179,7 +208,7 @@ final _parentReportRepository = CachedParentReportRepository(
   profileSyncService: _syncService,
   progressSyncService: _progressSyncService,
 );
-const _koalaGuideRepository = SeededKoalaGuideRepository();
+final _koalaAudioPlayer = AudioplayersKoalaAudioPlayer();
 
 class LittleLearnersApp extends StatelessWidget {
   const LittleLearnersApp({super.key});
@@ -193,6 +222,9 @@ class LittleLearnersApp extends StatelessWidget {
           value: _adminAuthorizationRepository,
         ),
         Provider<AdminContentRepository>.value(value: _adminContentRepository),
+        Provider<AdminKoalaGuideRepository>.value(
+          value: _adminKoalaGuideRepository,
+        ),
         Provider<MediaAssetRepository>.value(value: _mediaAssetRepository),
         Provider<LeaderboardRepository>.value(value: _leaderboardRepository),
         Provider<NotificationDeliveryRepository>.value(
@@ -208,9 +240,11 @@ class LittleLearnersApp extends StatelessWidget {
         Provider<ContentRepository>.value(value: _contentRepository),
         Provider<ProgressRepository>.value(value: _progressRepository),
         Provider<KoalaGuideRepository>.value(value: _koalaGuideRepository),
+        Provider<KoalaAudioPlayer>.value(value: _koalaAudioPlayer),
         Provider<SyncService>.value(value: _syncService),
         Provider<ProgressSyncService>.value(value: _progressSyncService),
         Provider<ContentSyncService>.value(value: _contentSyncService),
+        Provider<KoalaGuideSyncService>.value(value: _koalaGuideSyncService),
         Provider<BackendSyncCoordinator>.value(
           value: _backendSyncCoordinator,
         ),

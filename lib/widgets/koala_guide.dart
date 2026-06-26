@@ -5,6 +5,7 @@ import '../core/constants/app_colors.dart';
 import '../core/utils/learning_text_direction.dart';
 import '../models/koala_guide_message.dart';
 import '../repositories/koala_guide_repository.dart';
+import '../services/audio/koala_audio_player.dart';
 
 class KoalaGuide extends StatelessWidget {
   const KoalaGuide({
@@ -96,13 +97,23 @@ class KoalaGuide extends StatelessWidget {
                           ? MainAxisAlignment.end
                           : MainAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.volume_up,
-                          size: 16,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.72),
+                        IconButton(
+                          tooltip: 'Play Koala guide audio',
+                          onPressed: () => _playAudioCue(context),
+                          iconSize: 18,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          icon: Icon(
+                            Icons.volume_up,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.72),
+                          ),
                         ),
                       ],
                     ),
@@ -114,6 +125,21 @@ class KoalaGuide extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _playAudioCue(BuildContext context) async {
+    final player = _maybeAudioPlayer(context);
+    if (player == null) return;
+
+    await player.playCue(audioCueKey);
+  }
+
+  KoalaAudioPlayer? _maybeAudioPlayer(BuildContext context) {
+    try {
+      return context.read<KoalaAudioPlayer>();
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 }
 

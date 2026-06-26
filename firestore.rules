@@ -65,6 +65,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /koalaGuideMessages/{messageId} {
+      allow read: if signedIn()
+        && (resource.data.isPublished == true || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
     match /mediaAssets/{assetId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();

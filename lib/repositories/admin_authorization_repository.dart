@@ -1,6 +1,7 @@
 import '../models/admin_content.dart';
 import '../models/parent_account.dart';
 import 'admin_content_repository.dart';
+import 'admin_koala_guide_repository.dart';
 import 'auth_repository.dart';
 
 abstract class AdminAuthorizationRepository {
@@ -91,6 +92,39 @@ class AuthorizedAdminContentRepository implements AdminContentRepository {
   @override
   Future<AdminContentModule> upsertModule(AdminContentModule module) {
     return _authorized(() => _delegate.upsertModule(module));
+  }
+
+  Future<T> _authorized<T>(Future<T> Function() action) async {
+    await _authorizationRepository.requireContentAdmin();
+    return action();
+  }
+}
+
+class AuthorizedAdminKoalaGuideRepository implements AdminKoalaGuideRepository {
+  const AuthorizedAdminKoalaGuideRepository({
+    required AdminKoalaGuideRepository delegate,
+    required AdminAuthorizationRepository authorizationRepository,
+  })  : _delegate = delegate,
+        _authorizationRepository = authorizationRepository;
+
+  final AdminKoalaGuideRepository _delegate;
+  final AdminAuthorizationRepository _authorizationRepository;
+
+  @override
+  Future<void> deleteMessage(String messageId) {
+    return _authorized(() => _delegate.deleteMessage(messageId));
+  }
+
+  @override
+  Future<List<AdminKoalaGuideMessage>> getMessages() {
+    return _authorized(_delegate.getMessages);
+  }
+
+  @override
+  Future<AdminKoalaGuideMessage> upsertMessage(
+    AdminKoalaGuideMessage message,
+  ) {
+    return _authorized(() => _delegate.upsertMessage(message));
   }
 
   Future<T> _authorized<T>(Future<T> Function() action) async {
