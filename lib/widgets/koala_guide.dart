@@ -33,24 +33,72 @@ class KoalaGuide extends StatelessWidget {
       KoalaGuideMood.parent => Icons.supervisor_account,
       KoalaGuideMood.neutral => Icons.child_care,
     };
+    final accent = switch (mood) {
+      KoalaGuideMood.celebrating => AppColors.honey,
+      KoalaGuideMood.encouraging => AppColors.rose,
+      KoalaGuideMood.thinking => AppColors.plum,
+      KoalaGuideMood.parent => AppColors.sky,
+      KoalaGuideMood.neutral => AppColors.leaf,
+    };
 
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
-        color: AppColors.mint,
+        color: Color.alphaBlend(
+          accent.withValues(alpha: 0.1),
+          AppColors.panel,
+        ),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: accent.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.1),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: Colors.white,
-              child: Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.lemon,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/images/koala/koala_guide_portrait.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.child_care,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 32,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: -5,
+                  bottom: -5,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Icon(icon, color: AppColors.ink, size: 14),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(

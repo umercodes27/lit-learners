@@ -32,6 +32,7 @@ flutter:
     - assets/audio/learning/
     - assets/audio/koala/
     - assets/images/koala/
+    - assets/images/splash/
     - assets/seed/
     - assets/videos/
 
