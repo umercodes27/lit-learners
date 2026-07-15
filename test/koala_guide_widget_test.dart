@@ -34,7 +34,10 @@ class _FakeKoalaAudioPlayer implements KoalaAudioPlayer {
   final playedCueKeys = <String?>[];
 
   @override
-  Future<KoalaAudioPlaybackResult> playCue(String? cueKey) async {
+  Future<KoalaAudioPlaybackResult> playCue(
+    String? cueKey, {
+    String? assetBasePath,
+  }) async {
     playedCueKeys.add(cueKey);
     return KoalaAudioPlaybackResult(cueKey: cueKey, didPlay: true);
   }

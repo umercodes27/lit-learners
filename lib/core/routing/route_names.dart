@@ -7,11 +7,13 @@ class RouteNames {
   static const forgotPassword = '/forgot-password';
   static const onboardingManual = '/onboarding/manual';
   static const onboardingTest = '/onboarding/test';
+  static const adminDashboard = '/admin';
   static const adminContent = '/admin/content';
   static const profiles = '/profiles';
   static const profileEdit = '/profiles/edit';
   static const parentReports = '/parent/reports';
   static const parentReminders = '/parent/reminders';
+  static const leaderboard = '/parent/leaderboard';
   static const parentalLock = '/parental-lock';
   static const childHome = '/child/home';
   static const moduleLevels = '/child/module/levels';

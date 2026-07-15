@@ -57,6 +57,7 @@ import 'services/storage/media_storage_data_source.dart';
 import 'viewmodels/active_child_session.dart';
 import 'viewmodels/admin_content_viewmodel.dart';
 import 'viewmodels/auth_viewmodel.dart';
+import 'viewmodels/leaderboard_viewmodel.dart';
 import 'viewmodels/learning_viewmodel.dart';
 import 'viewmodels/learning_reminder_viewmodel.dart';
 import 'viewmodels/onboarding_viewmodel.dart';
@@ -277,6 +278,12 @@ class LittleLearnersApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ParentReportViewModel(_parentReportRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => LeaderboardViewModel(
+            leaderboardRepository: _leaderboardRepository,
+            leaderboardSyncService: _leaderboardSyncService,
+          ),
         ),
         ChangeNotifierProvider(create: (_) => ActiveChildSession()),
         ChangeNotifierProvider(

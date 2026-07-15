@@ -25,7 +25,10 @@ class KoalaAudioPlaybackResult {
 }
 
 abstract class KoalaAudioPlayer {
-  Future<KoalaAudioPlaybackResult> playCue(String? cueKey);
+  Future<KoalaAudioPlaybackResult> playCue(
+    String? cueKey, {
+    String? assetBasePath,
+  });
 }
 
 class KoalaAudioCueSource {
@@ -89,7 +92,10 @@ class SystemKoalaAudioPlayer implements KoalaAudioPlayer {
   const SystemKoalaAudioPlayer();
 
   @override
-  Future<KoalaAudioPlaybackResult> playCue(String? cueKey) async {
+  Future<KoalaAudioPlaybackResult> playCue(
+    String? cueKey, {
+    String? assetBasePath,
+  }) async {
     final trimmedCueKey = cueKey?.trim();
     if (trimmedCueKey == null || trimmedCueKey.isEmpty) {
       return const KoalaAudioPlaybackResult(
@@ -112,20 +118,29 @@ class SystemKoalaAudioPlayer implements KoalaAudioPlayer {
 class AudioplayersKoalaAudioPlayer implements KoalaAudioPlayer {
   AudioplayersKoalaAudioPlayer({
     KoalaAudioPlayer fallbackPlayer = const SystemKoalaAudioPlayer(),
+    String defaultAssetBasePath = 'audio/koala',
     Future<void> Function(String assetPath)? playAsset,
     Future<void> Function(String url)? playRemoteUrl,
   })  : _fallbackPlayer = fallbackPlayer,
+        _defaultAssetBasePath = defaultAssetBasePath,
         _playAsset = playAsset,
         _playRemoteUrl = playRemoteUrl;
 
   final KoalaAudioPlayer _fallbackPlayer;
+  final String _defaultAssetBasePath;
   final Future<void> Function(String assetPath)? _playAsset;
   final Future<void> Function(String url)? _playRemoteUrl;
   audio.AudioPlayer? _player;
 
   @override
-  Future<KoalaAudioPlaybackResult> playCue(String? cueKey) async {
-    final cueSource = KoalaAudioCueSource.resolve(cueKey);
+  Future<KoalaAudioPlaybackResult> playCue(
+    String? cueKey, {
+    String? assetBasePath,
+  }) async {
+    final cueSource = KoalaAudioCueSource.resolve(
+      cueKey,
+      assetBasePath: assetBasePath ?? _defaultAssetBasePath,
+    );
     if (cueSource == null) {
       return const KoalaAudioPlaybackResult(
         cueKey: null,
@@ -142,7 +157,10 @@ class AudioplayersKoalaAudioPlayer implements KoalaAudioPlayer {
           await _playRemoteUrlSource(cueSource.path);
         case KoalaAudioPlaybackSource.none:
         case KoalaAudioPlaybackSource.systemCue:
-          return _fallbackPlayer.playCue(cueKey);
+          return _fallbackPlayer.playCue(
+            cueKey,
+            assetBasePath: assetBasePath,
+          );
       }
 
       return KoalaAudioPlaybackResult(
@@ -153,7 +171,10 @@ class AudioplayersKoalaAudioPlayer implements KoalaAudioPlayer {
         message: 'Played guide audio.',
       );
     } on Object {
-      final fallbackResult = await _fallbackPlayer.playCue(cueKey);
+      final fallbackResult = await _fallbackPlayer.playCue(
+        cueKey,
+        assetBasePath: assetBasePath,
+      );
       return KoalaAudioPlaybackResult(
         cueKey: fallbackResult.cueKey,
         didPlay: fallbackResult.didPlay,

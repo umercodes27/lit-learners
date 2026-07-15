@@ -19,6 +19,16 @@ void main() {
       expect(source?.path, 'audio/koala/custom_cue.m4a');
     });
 
+    test('resolves learning cues with the requested asset base path', () {
+      final source = KoalaAudioCueSource.resolve(
+        'english_letter_a',
+        assetBasePath: 'audio/learning',
+      );
+
+      expect(source?.source, KoalaAudioPlaybackSource.asset);
+      expect(source?.path, 'audio/learning/english_letter_a.mp3');
+    });
+
     test('resolves remote urls for backend-hosted audio', () {
       final source = KoalaAudioCueSource.resolve(
         'https://cdn.example.com/audio/koala_math_intro.mp3',
@@ -86,7 +96,10 @@ class _FakeFallbackKoalaAudioPlayer implements KoalaAudioPlayer {
   final playedCueKeys = <String?>[];
 
   @override
-  Future<KoalaAudioPlaybackResult> playCue(String? cueKey) async {
+  Future<KoalaAudioPlaybackResult> playCue(
+    String? cueKey, {
+    String? assetBasePath,
+  }) async {
     playedCueKeys.add(cueKey);
     return KoalaAudioPlaybackResult(
       cueKey: cueKey,

@@ -25,6 +25,8 @@ Little Learners is a Flutter e-learning app for toddlers ages 1 to 4. This repos
 - Storytelling module with staged picture talk, sequencing, story creation, quizzes, and downloadable practice.
 - Drawing/coloring module with staged mark-making, shape drawing, color prompts, quizzes, downloadable practice, and color-swatch interaction.
 - Koala Guide guidance system with seeded and admin-synced child/parent messages, context-aware selection, real asset/URL audio playback, parent tips, and app-wide prompt integration.
+- Learning content card audio playback for English, Urdu, logic, storytelling, and drawing `audioCueKey` prompts.
+- Adapted parent leaderboard, admin dashboard, and keypad-style parental lock screens from the supplied Flutter screen packs while keeping app data wired to repositories/viewmodels.
 - Firebase-ready parent auth and onboarding persistence adapters.
 - Firebase-ready child profile sync with offline cache, push, pull, and remote delete cleanup.
 - Firebase-ready learning progress sync for completed levels, quiz scores, rewards, and watched video lessons.
@@ -83,11 +85,13 @@ Local demo mode treats `admin@littlelearners.local` as an admin email after sign
 
 Draft security rules are included in `firestore.rules` and `storage.rules`. The media repository already uses a storage adapter interface; local/demo builds use in-memory storage so the app remains dependency-light until the Firebase Storage package can be fetched and configured.
 
-## Koala Guide Audio
+## Audio Cues
 
-Koala audio cues are powered by `audioplayers` and can come from either bundled app assets or backend-hosted files:
+Audio cues are powered by `audioplayers` and can come from either bundled app assets or backend-hosted files:
 
-- Bundled files go in `assets/audio/koala/`.
-- A cue key like `koala_math_intro` resolves to `assets/audio/koala/koala_math_intro.mp3`.
+- Koala Guide files go in `assets/audio/koala/`.
+- Learning card files go in `assets/audio/learning/`.
+- A Koala cue key like `koala_math_intro` resolves to `assets/audio/koala/koala_math_intro.mp3`.
+- A learning cue key like `english_letter_a` resolves to `assets/audio/learning/english_letter_a.mp3`.
 - A cue key that is already a full `https://...` URL plays from that remote source, which is the path to use for Firebase Storage/CDN-backed admin content.
-- If the file or URL cannot be played, the app falls back to the safe platform sound cue so the Koala button never breaks the flow.
+- If the file or URL cannot be played, the app falls back to the safe platform sound cue so the audio button never breaks the flow.

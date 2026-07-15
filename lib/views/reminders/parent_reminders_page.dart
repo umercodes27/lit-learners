@@ -16,6 +16,52 @@ class ParentRemindersPage extends StatefulWidget {
 }
 
 class _ParentRemindersPageState extends State<ParentRemindersPage> {
+  @override
+  Widget build(BuildContext context) {
+    final parent = context.watch<AuthViewModel>().parent;
+    final reminders = context.watch<LearningReminderViewModel>();
+
+    if (parent == null) {
+      return const Scaffold(body: Center(child: Text('Parent not signed in.')));
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Learning Reminders'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh reminders',
+            onPressed: reminders.isLoading
+                ? null
+                : () => context
+                    .read<LearningReminderViewModel>()
+                    .loadReminders(parent.id),
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: const SafeArea(
+        child: LearningRemindersPanel(),
+      ),
+    );
+  }
+}
+
+class LearningRemindersPanel extends StatefulWidget {
+  const LearningRemindersPanel({
+    this.showGuide = true,
+    this.padding = const EdgeInsets.all(16),
+    super.key,
+  });
+
+  final bool showGuide;
+  final EdgeInsets padding;
+
+  @override
+  State<LearningRemindersPanel> createState() => _LearningRemindersPanelState();
+}
+
+class _LearningRemindersPanelState extends State<LearningRemindersPanel> {
   final _titleController = TextEditingController(text: 'Learning time');
   final Set<int> _selectedWeekdays = {1, 2, 3, 4, 5};
   TimeOfDay _selectedTime = const TimeOfDay(hour: 18, minute: 0);
@@ -45,69 +91,53 @@ class _ParentRemindersPageState extends State<ParentRemindersPage> {
     final reminders = context.watch<LearningReminderViewModel>();
 
     if (parent == null) {
-      return const Scaffold(body: Center(child: Text('Parent not signed in.')));
+      return const Center(child: Text('Parent not signed in.'));
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Learning Reminders'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh reminders',
-            onPressed: reminders.isLoading
-                ? null
-                : () => context
-                    .read<LearningReminderViewModel>()
-                    .loadReminders(parent.id),
-            icon: const Icon(Icons.refresh),
+    return ListView(
+      padding: widget.padding,
+      children: [
+        if (widget.showGuide) ...[
+          const ContextualKoalaGuide(
+            trigger: KoalaGuideTrigger.reminderSetup,
+            audience: KoalaGuideAudience.parent,
+            fallbackMessage: 'Set gentle learning reminders. These '
+                'preferences sync to the backend and can later drive push '
+                'notifications.',
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (reminders.isLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (reminders.reminders.isEmpty)
+          const _EmptyReminderCard()
+        else
+          for (final reminder in reminders.reminders)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _ReminderCard(reminder: reminder),
+            ),
+        if (reminders.errorMessage != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            reminders.errorMessage!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const ContextualKoalaGuide(
-              trigger: KoalaGuideTrigger.reminderSetup,
-              audience: KoalaGuideAudience.parent,
-              fallbackMessage: 'Set gentle learning reminders. These '
-                  'preferences sync to the backend and can later drive push '
-                  'notifications.',
-            ),
-            const SizedBox(height: 16),
-            if (reminders.isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (reminders.reminders.isEmpty)
-              const _EmptyReminderCard()
-            else
-              for (final reminder in reminders.reminders)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _ReminderCard(reminder: reminder),
-                ),
-            if (reminders.errorMessage != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                reminders.errorMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            if (reminders.infoMessage != null) ...[
-              const SizedBox(height: 8),
-              Text(reminders.infoMessage!),
-            ],
-            const SizedBox(height: 16),
-            _CreateReminderCard(
-              titleController: _titleController,
-              selectedTime: _selectedTime,
-              selectedWeekdays: _selectedWeekdays,
-              onPickTime: () => _pickTime(context),
-              onToggleDay: _toggleDay,
-              onSubmit: () => _createReminder(context, parent.id),
-            ),
-          ],
+        if (reminders.infoMessage != null) ...[
+          const SizedBox(height: 8),
+          Text(reminders.infoMessage!),
+        ],
+        const SizedBox(height: 16),
+        _CreateReminderCard(
+          titleController: _titleController,
+          selectedTime: _selectedTime,
+          selectedWeekdays: _selectedWeekdays,
+          onPickTime: () => _pickTime(context),
+          onToggleDay: _toggleDay,
+          onSubmit: () => _createReminder(context, parent.id),
         ),
-      ),
+      ],
     );
   }
 

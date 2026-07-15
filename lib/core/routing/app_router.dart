@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../models/video_lesson.dart';
 import '../../views/admin/admin_content_page.dart';
+import '../../views/admin/admin_dashboard_page.dart';
 import '../../views/auth/forgot_password_page.dart';
 import '../../views/auth/login_page.dart';
 import '../../views/auth/signup_page.dart';
 import '../../views/child_dashboard/home_page.dart';
 import '../../views/child_dashboard/level_player_page.dart';
 import '../../views/child_dashboard/module_levels_page.dart';
+import '../../views/leaderboard/leaderboard_page.dart';
 import '../../views/onboarding/manual_page.dart';
 import '../../views/onboarding/readiness_test_page.dart';
 import '../../views/profile/parental_lock_page.dart';
@@ -75,6 +77,7 @@ class AppRouter {
         RouteNames.forgotPassword => const ForgotPasswordPage(),
         RouteNames.onboardingManual => const ManualPage(),
         RouteNames.onboardingTest => const ReadinessTestPage(),
+        RouteNames.adminDashboard => const AdminDashboardPage(),
         RouteNames.adminContent => const AdminContentPage(),
         RouteNames.profiles => const ProfileSelectionPage(),
         RouteNames.profileEdit => ProfileCreateEditPage(
@@ -82,6 +85,7 @@ class AppRouter {
           ),
         RouteNames.parentReports => const ParentReportsPage(),
         RouteNames.parentReminders => const ParentRemindersPage(),
+        RouteNames.leaderboard => const LeaderboardPage(),
         RouteNames.parentalLock => ParentalLockPage(
             args: settings.arguments! as ParentalLockArgs,
           ),

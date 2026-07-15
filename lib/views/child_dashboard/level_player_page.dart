@@ -7,6 +7,7 @@ import '../../core/utils/age_stage_helper.dart';
 import '../../core/utils/learning_text_direction.dart';
 import '../../models/koala_guide_message.dart';
 import '../../models/learning_level.dart';
+import '../../services/audio/koala_audio_player.dart';
 import '../../viewmodels/active_child_session.dart';
 import '../../viewmodels/learning_viewmodel.dart';
 import '../../viewmodels/level_activity_viewmodel.dart';
@@ -144,6 +145,7 @@ class _LevelBody extends StatelessWidget {
                         ],
                       ),
                     ),
+                    _ContentAudioButton(audioCueKey: item.audioCueKey),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -227,6 +229,63 @@ class _LevelBody extends StatelessWidget {
         starsEarned: progress.starsEarned,
       ),
     );
+  }
+}
+
+class _ContentAudioButton extends StatefulWidget {
+  const _ContentAudioButton({required this.audioCueKey});
+
+  static const learningAssetBasePath = 'audio/learning';
+
+  final String? audioCueKey;
+
+  @override
+  State<_ContentAudioButton> createState() => _ContentAudioButtonState();
+}
+
+class _ContentAudioButtonState extends State<_ContentAudioButton> {
+  bool _isPlaying = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cueKey = widget.audioCueKey?.trim();
+    final player = _maybeAudioPlayer(context);
+    if (cueKey == null || cueKey.isEmpty || player == null) {
+      return const SizedBox.shrink();
+    }
+
+    return IconButton(
+      tooltip: 'Play card audio',
+      onPressed: _isPlaying ? null : () => _playCue(player, cueKey),
+      iconSize: 20,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      icon: Icon(
+        _isPlaying ? Icons.volume_up : Icons.volume_up_outlined,
+      ),
+    );
+  }
+
+  Future<void> _playCue(KoalaAudioPlayer player, String cueKey) async {
+    setState(() => _isPlaying = true);
+    try {
+      await player.playCue(
+        cueKey,
+        assetBasePath: _ContentAudioButton.learningAssetBasePath,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isPlaying = false);
+      }
+    }
+  }
+
+  KoalaAudioPlayer? _maybeAudioPlayer(BuildContext context) {
+    try {
+      return context.read<KoalaAudioPlayer>();
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 }
 

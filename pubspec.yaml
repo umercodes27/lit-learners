@@ -29,6 +29,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/audio/learning/
     - assets/audio/koala/
     - assets/images/koala/
     - assets/seed/
