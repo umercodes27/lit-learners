@@ -32,6 +32,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('splash-continue-button')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Parent Login'), findsOneWidget);
+    expect(find.text('PARENT'), findsOneWidget);
+    expect(find.text('LOGIN'), findsOneWidget);
   });
 }

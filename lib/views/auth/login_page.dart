@@ -3,10 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/routing/auth_flow_router.dart';
 import '../../core/routing/route_names.dart';
-import '../../models/koala_guide_message.dart';
 import '../../viewmodels/auth_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
-import '../../widgets/koala_guide.dart';
+import 'widgets/auth_page_shell.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -31,80 +29,90 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthViewModel>();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Parent Login')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+    return AuthPageShell(
+      titleLeading: 'PARENT',
+      titleTrailing: 'LOGIN',
+      child: AutofillGroup(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ContextualKoalaGuide(
-              trigger: KoalaGuideTrigger.authWelcome,
-              audience: KoalaGuideAudience.parent,
-              fallbackMessage:
-                  'Welcome back. Parent access comes before child profiles.',
-            ),
-            const SizedBox(height: 18),
-            TextField(
+            AuthWoodenTextField(
               controller: _emailController,
+              label: 'Email address',
+              hint: 'parent@example.com',
+              prefixIcon: Icons.mail_outline_rounded,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.mail),
-                border: OutlineInputBorder(),
-              ),
+              autofillHints: const [AutofillHints.email],
+              autocorrect: false,
             ),
-            const SizedBox(height: 12),
-            TextField(
+            const SizedBox(height: 14),
+            AuthWoodenTextField(
               controller: _passwordController,
+              label: 'Password',
+              prefixIcon: Icons.lock_outline_rounded,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock),
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                  onPressed: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  ),
+              autofillHints: const [AutofillHints.password],
+              autocorrect: false,
+              enableSuggestions: false,
+              suffixIcon: IconButton(
+                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
                 ),
               ),
               onSubmitted: (_) => _submit(context),
             ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: auth.isLoading
+                    ? null
+                    : () {
+                        Navigator.of(context).pushNamed(
+                          RouteNames.forgotPassword,
+                        );
+                      },
+                child: const Text('Forgot password?'),
+              ),
+            ),
             if (auth.errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                auth.errorMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 4),
+              AuthMessageBanner(
+                message: auth.errorMessage!,
               ),
             ],
-            const SizedBox(height: 18),
-            AppPrimaryButton(
-              icon: Icons.login,
+            const SizedBox(height: 12),
+            AuthActionButton(
+              icon: Icons.login_rounded,
               label: auth.isLoading ? 'Signing in...' : 'Sign in',
               onPressed: auth.isLoading ? null : () => _submit(context),
             ),
             const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: auth.isLoading
-                  ? null
-                  : () => Navigator.of(context).pushNamed(RouteNames.signup),
-              icon: const Icon(Icons.person_add),
-              label: const Text('Create account'),
-            ),
-            TextButton(
-              onPressed: auth.isLoading
-                  ? null
-                  : () {
-                      Navigator.of(context).pushNamed(
-                        RouteNames.forgotPassword,
-                      );
-                    },
-              child: const Text('Forgot password?'),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text(
+                  'New here?',
+                  style: TextStyle(
+                    color: Color(0xFF6F3D20),
+                    fontFamily: 'Fredoka',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                TextButton(
+                  onPressed: auth.isLoading
+                      ? null
+                      : () =>
+                          Navigator.of(context).pushNamed(RouteNames.signup),
+                  child: const Text('Create account'),
+                ),
+              ],
             ),
           ],
         ),

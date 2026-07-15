@@ -37,6 +37,9 @@ flutter:
     - assets/videos/
 
   fonts:
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka-VariableFont_wdth_wght.ttf
     - family: NotoNastaliqUrdu
       fonts:
         - asset: assets/fonts/NotoNastaliqUrdu-VariableFont_wght.ttf
