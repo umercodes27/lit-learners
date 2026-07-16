@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -65,53 +66,54 @@ import 'viewmodels/parental_lock_viewmodel.dart';
 import 'viewmodels/parent_report_viewmodel.dart';
 import 'viewmodels/profile_viewmodel.dart';
 
+bool get _firebaseEnabled => AppConfig.useFirebase && Firebase.apps.isNotEmpty;
+
 final _parentRemoteDataSource =
-    AppConfig.useFirebase ? ParentFirestoreService() : null;
-final AuthRepository _authRepository = AppConfig.useFirebase
+    _firebaseEnabled ? ParentFirestoreService() : null;
+final AuthRepository _authRepository = _firebaseEnabled
     ? FirebaseAuthRepository(
         authService: FirebaseAuthService(),
         parentRemoteDataSource: _parentRemoteDataSource!,
       )
     : InMemoryAuthRepository();
-final OnboardingRepository _onboardingRepository = AppConfig.useFirebase
+final OnboardingRepository _onboardingRepository = _firebaseEnabled
     ? FirestoreOnboardingRepository(
         parentRemoteDataSource: _parentRemoteDataSource!,
       )
     : InMemoryOnboardingRepository();
-final LearningReminderRepository _learningReminderRepository =
-    AppConfig.useFirebase
-        ? FirestoreLearningReminderRepository()
-        : InMemoryLearningReminderRepository();
+final LearningReminderRepository _learningReminderRepository = _firebaseEnabled
+    ? FirestoreLearningReminderRepository()
+    : InMemoryLearningReminderRepository();
 final _localDbHelper = LocalDbHelper();
 final _childProfileDao = SqfliteChildProfileDao(_localDbHelper);
 final _contentDao = SqfliteContentDao(_localDbHelper);
 final _progressDao = SqfliteProgressDao(_localDbHelper);
 final _syncOutboxDao = SqfliteSyncOutboxDao(_localDbHelper);
-final _childProfileRemoteDataSource = AppConfig.useFirebase
+final _childProfileRemoteDataSource = _firebaseEnabled
     ? FirestoreChildProfileRemoteDataSource()
     : InMemoryChildProfileRemoteDataSource();
 final _inMemoryContentRemoteDataSource = InMemoryContentRemoteDataSource();
-final ContentRemoteDataSource _contentRemoteDataSource = AppConfig.useFirebase
+final ContentRemoteDataSource _contentRemoteDataSource = _firebaseEnabled
     ? FirestoreContentRemoteDataSource()
     : _inMemoryContentRemoteDataSource;
 final _inMemoryKoalaGuideRemoteDataSource =
     InMemoryKoalaGuideRemoteDataSource();
-final KoalaGuideRemoteDataSource _koalaGuideRemoteDataSource =
-    AppConfig.useFirebase
-        ? FirestoreKoalaGuideRemoteDataSource()
-        : _inMemoryKoalaGuideRemoteDataSource;
-final _progressRemoteDataSource = AppConfig.useFirebase
+final KoalaGuideRemoteDataSource _koalaGuideRemoteDataSource = _firebaseEnabled
+    ? FirestoreKoalaGuideRemoteDataSource()
+    : _inMemoryKoalaGuideRemoteDataSource;
+final _progressRemoteDataSource = _firebaseEnabled
     ? FirestoreProgressRemoteDataSource()
     : InMemoryProgressRemoteDataSource();
-final MediaStorageDataSource _mediaStorageDataSource =
-    InMemoryMediaStorageDataSource();
-final AdminContentRepository _baseAdminContentRepository = AppConfig.useFirebase
+final MediaStorageDataSource _mediaStorageDataSource = _firebaseEnabled
+    ? FirebaseMediaStorageDataSource()
+    : InMemoryMediaStorageDataSource();
+final AdminContentRepository _baseAdminContentRepository = _firebaseEnabled
     ? FirestoreAdminContentRepository()
     : InMemoryAdminContentRepository(
         contentRemoteDataSource: _inMemoryContentRemoteDataSource,
       );
 final AdminKoalaGuideRepository _baseAdminKoalaGuideRepository =
-    AppConfig.useFirebase
+    _firebaseEnabled
         ? FirestoreAdminKoalaGuideRepository()
         : InMemoryAdminKoalaGuideRepository(
             remoteDataSource: _inMemoryKoalaGuideRemoteDataSource,
@@ -129,7 +131,7 @@ final AdminKoalaGuideRepository _adminKoalaGuideRepository =
   delegate: _baseAdminKoalaGuideRepository,
   authorizationRepository: _adminAuthorizationRepository,
 );
-final MediaAssetRepository _baseMediaAssetRepository = AppConfig.useFirebase
+final MediaAssetRepository _baseMediaAssetRepository = _firebaseEnabled
     ? FirestoreMediaAssetRepository(
         storageDataSource: _mediaStorageDataSource,
       )
@@ -142,14 +144,14 @@ final MediaAssetRepository _mediaAssetRepository =
   authorizationRepository: _adminAuthorizationRepository,
 );
 final LeaderboardRemoteDataSource _leaderboardRemoteDataSource =
-    AppConfig.useFirebase
+    _firebaseEnabled
         ? FirestoreLeaderboardRemoteDataSource()
         : InMemoryLeaderboardRemoteDataSource();
 final _leaderboardRepository = RemoteLeaderboardRepository(
   remoteDataSource: _leaderboardRemoteDataSource,
 );
 final NotificationDeliveryRemoteDataSource
-    _notificationDeliveryRemoteDataSource = AppConfig.useFirebase
+    _notificationDeliveryRemoteDataSource = _firebaseEnabled
         ? FirestoreNotificationDeliveryRemoteDataSource()
         : InMemoryNotificationDeliveryRemoteDataSource();
 final _notificationDeliveryRepository = ReminderNotificationDeliveryRepository(

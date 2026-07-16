@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:firebase_storage/firebase_storage.dart';
+
 class StoredMediaFile {
   const StoredMediaFile({
     required this.storagePath,
@@ -20,6 +24,42 @@ abstract class MediaStorageDataSource {
   });
 
   Future<void> delete(String storagePath);
+}
+
+class FirebaseMediaStorageDataSource implements MediaStorageDataSource {
+  FirebaseMediaStorageDataSource({FirebaseStorage? storage})
+      : _storage = storage ?? FirebaseStorage.instance;
+
+  final FirebaseStorage _storage;
+
+  @override
+  Future<void> delete(String storagePath) async {
+    try {
+      await _storage.ref(storagePath).delete();
+    } on FirebaseException catch (error) {
+      if (error.code != 'object-not-found') rethrow;
+    }
+  }
+
+  @override
+  Future<StoredMediaFile> uploadBytes({
+    required String storagePath,
+    required List<int> bytes,
+    required String contentType,
+  }) async {
+    final snapshot = await _storage.ref(storagePath).putData(
+          Uint8List.fromList(bytes),
+          SettableMetadata(contentType: contentType),
+        );
+    final downloadUrl = await snapshot.ref.getDownloadURL();
+
+    return StoredMediaFile(
+      storagePath: snapshot.ref.fullPath,
+      downloadUrl: downloadUrl,
+      contentType: snapshot.metadata?.contentType ?? contentType,
+      sizeBytes: snapshot.totalBytes,
+    );
+  }
 }
 
 class InMemoryMediaStorageDataSource implements MediaStorageDataSource {

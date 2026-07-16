@@ -43,7 +43,7 @@ Little Learners is a Flutter e-learning app for toddlers ages 1 to 4. This repos
 
 ## Local Development
 
-The app runs in local demo mode by default. Parent auth, onboarding, parental lock, profile sync, and content sync all use local or in-memory implementations unless a backend mode is enabled.
+The app runs in Firebase mode by default. Parent auth, onboarding, child profiles, progress, content, reminders, leaderboards, notifications, and media metadata use Firebase-backed implementations. Child profiles, content, and progress also retain their local SQLite caches for offline use.
 
 ```sh
 flutter pub get
@@ -52,12 +52,18 @@ flutter run
 
 ## Backend Setup
 
-Parent authentication and parent onboarding progress now have Firebase-backed repository adapters. They are disabled by default so the app remains runnable before API credentials are available.
+The Android app is registered with Firebase through `android/app/google-services.json`. Firestore disk persistence is enabled during startup and Firebase Storage holds uploaded media bytes.
 
-When Firebase configuration is ready, run the FlutterFire setup for this project, add the generated platform config files, then launch with:
+Launch normally to use Firebase:
 
 ```sh
-flutter run --dart-define=USE_FIREBASE=true
+flutter run
+```
+
+For isolated local development, Firebase can still be disabled explicitly:
+
+```sh
+flutter run --dart-define=USE_FIREBASE=false
 ```
 
 Firebase mode currently persists:
@@ -77,13 +83,13 @@ Firebase mode currently persists:
 - Admin CRUD requires `parents/{uid}.role` to be `admin`; new Firebase parent documents default to `parent`.
 - Admin content stores `publishStatus`, `version`, `submittedAt`, and `publishedAt` workflow metadata.
 - Learning reminders in `parents/{uid}/learningReminders/{reminderId}` documents.
-- Media asset metadata in `mediaAssets/{assetId}` documents; local demo mode stores uploaded bytes in memory through the same repository contract.
+- Media asset metadata in `mediaAssets/{assetId}` documents and uploaded bytes in Firebase Storage under `mediaAssets/{type}/{assetId}/{fileName}`.
 - Age-stage leaderboard entries in `leaderboards/stage-{stage}/entries/{childId}` documents.
 - Notification deliveries in `parents/{uid}/notificationDeliveries/{deliveryId}` documents.
 
 Local demo mode treats `admin@littlelearners.local` as an admin email after signup. For Firebase mode, promote an approved account by setting `parents/{uid}.role` to `admin` from a trusted backend/admin console. A draft Firestore rules file is included at `firestore.rules` to enforce the same content-admin boundary server-side.
 
-Draft security rules are included in `firestore.rules` and `storage.rules`. The media repository already uses a storage adapter interface; local/demo builds use in-memory storage so the app remains dependency-light until the Firebase Storage package can be fetched and configured.
+Security rules are included in `firestore.rules` and `storage.rules`. Deploy them with `firebase deploy --only firestore:rules,firestore:indexes,storage` after authenticating the Firebase CLI. The supplied Android JSON does not configure iOS; add `GoogleService-Info.plist` or run `flutterfire configure` before building for Apple platforms.
 
 ## Audio Cues
 
