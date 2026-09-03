@@ -343,11 +343,15 @@ class _ReadinessOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: selected ? AppColors.lavender : AppColors.cloud,
+    // A Material rather than a DecoratedBox: RadioListTile paints its ink
+    // splash on the nearest Material ancestor, so a plain decorated box would
+    // sit on top of the splash and hide it.
+    return Material(
+      color: selected ? AppColors.lavender : AppColors.cloud,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
+        side: BorderSide(
           color: selected ? AppColors.plum : AppColors.line,
         ),
       ),

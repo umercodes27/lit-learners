@@ -575,12 +575,14 @@ class _FancyProfileField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The panel colour lives on a Material, not on the outer box: a tile child
+    // (the leaderboard switch) paints its ink splash on the nearest Material
+    // ancestor, and a plain coloured Container would cover it. The Container
+    // is kept for the drop shadow, which Material's own elevation draws
+    // differently.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.panel,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.58)),
         boxShadow: [
           BoxShadow(
             color: AppColors.grape.withValues(alpha: 0.06),
@@ -589,7 +591,18 @@ class _FancyProfileField extends StatelessWidget {
           ),
         ],
       ),
-      child: child,
+      child: Material(
+        color: AppColors.panel,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: AppColors.lilac.withValues(alpha: 0.58)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          child: child,
+        ),
+      ),
     );
   }
 }
