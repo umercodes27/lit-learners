@@ -27,6 +27,9 @@ dependencies:
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
   image_picker: ^1.2.3
+  # Speaks letters and numerals for the age-3 tracing levels, so the full
+  # A-Z and Alif-to-Yay range needs no recorded clip per glyph.
+  flutter_tts: ^4.2.3
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +40,29 @@ flutter:
   uses-material-design: true
 
   assets:
+    # Age 2 content pack ("Little Learner AGE 2"). Kept under its own folder so
+    # a future age pack drops in beside it with its own JSON and nothing else
+    # has to change.
+    - assets/age2/
+    - assets/age2/audio/en/
+    - assets/age2/audio/num/
+    - assets/age2/audio/sfx/
+    - assets/age2/audio/stories/
+    - assets/age2/audio/ur/
+    - assets/age2/img/
+    - assets/age2/img/story/
+    - assets/age2/img/ur/
+    # Age 3 content pack ("Little Learner AGE 3"), sitting beside age 2 rather
+    # than replacing it: both packs ship, and the child picks an age.
+    - assets/age3/
+    - assets/age3/audio/en/
+    - assets/age3/audio/num/
+    - assets/age3/audio/sfx/
+    - assets/age3/audio/stories/
+    - assets/age3/audio/ur/
+    - assets/age3/img/
+    - assets/age3/img/story/
+    - assets/age3/img/ur/
     - assets/audio/learning/
     - assets/audio/koala/
     - assets/images/koala/
