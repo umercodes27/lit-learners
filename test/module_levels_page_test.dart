@@ -4,6 +4,8 @@ import 'package:little_learners/core/theme/app_theme.dart';
 import 'package:little_learners/models/child_profile.dart';
 import 'package:little_learners/repositories/content_repository.dart';
 import 'package:little_learners/repositories/progress_repository.dart';
+import 'package:little_learners/services/content/activity_pack_loader.dart';
+import 'package:little_learners/services/content/activity_pack_stops.dart';
 import 'package:little_learners/services/local/content_dao.dart';
 import 'package:little_learners/viewmodels/active_child_session.dart';
 import 'package:little_learners/viewmodels/learning_viewmodel.dart';
@@ -56,11 +58,11 @@ void main() {
       (tester) async {
     await _pump(tester, moduleId: 'english');
 
-    // English is served by the age pack, so the ladder - portion chips, locks
-    // and all - stays out of the way rather than repeating the subject in a
-    // second, slower form.
+    // English is served by the age pack, so the seeded ladder - its portion
+    // chips, its downloads - stays out of the way rather than repeating the
+    // subject in a second, slower form. (Locking is not one of the
+    // differences: a pack road unlocks in sequence too, covered below.)
     expect(find.textContaining('steps'), findsNothing);
-    expect(find.byIcon(Icons.lock), findsNothing);
     expect(find.text('Download'), findsNothing);
 
     // What replaces it: the pack's own activities, walked as stops on the same
@@ -78,17 +80,45 @@ void main() {
     expect(find.bySemanticsLabel('Finish with a quiz'), findsOneWidget);
   });
 
-  testWidgets('the pack road offers no progress bar it cannot fill',
+  testWidgets('a pack road starts with only its first stop open',
       (tester) async {
     await _pump(tester, moduleId: 'english');
 
-    // Nothing records a finished pack activity, so a `0 of 3` that never moves
-    // would tell a parent their child had done nothing. See [ModuleLevelsPage].
-    expect(find.byType(MapProgressBar), findsNothing);
+    // Same sequence the seeded ladder walks: stop one is open, the two behind
+    // it wait for it. Three English activities in the age-3 pack.
+    expect(find.byType(MapProgressBar), findsOneWidget);
+    expect(find.byIcon(Icons.lock), findsNWidgets(2));
+    expect(
+      find.byTooltip(ActivityPackStops.lockReason),
+      findsNWidgets(2),
+    );
+  });
+
+  testWidgets('finishing a pack activity moves the road on', (tester) async {
+    final learning = await _pump(tester, moduleId: 'english');
+
+    // Stand in for playing the activity through: this is the level the screen
+    // records against when ActivityLevelPage pops `true`.
+    const path = ActivityPackLoader.age3Path;
+    final pack = (await ActivityPackLoader.forPath(path).load(path: path)).pack!;
+    final first = ActivityPackStops.forModule(
+      pack.moduleByKey('english')!,
+      moduleId: 'english',
+      stage: 2,
+      isCompleted: (_) => false,
+      starsFor: (_) => 0,
+    ).first;
+
+    await learning.completeLevel(_profile.id, first.level);
+    await tester.pumpAndSettle();
+
+    // The stop behind the child is done, and the one that was locked is now
+    // the open one - which is what moves the highlight and fills the road.
+    expect(find.byIcon(Icons.lock), findsNWidgets(1));
   });
 }
 
-Future<void> _pump(
+Future<LearningViewModel> _pump(
   WidgetTester tester, {
   String moduleId = 'tracing',
 }) async {
@@ -120,6 +150,7 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  return learning;
 }
 
 _LayoutErrorCapture _captureLayoutErrors() {

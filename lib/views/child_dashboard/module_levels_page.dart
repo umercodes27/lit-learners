@@ -131,6 +131,7 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
 
                     return _packMap(
                       context: context,
+                      learning: learning,
                       packModule: packModule,
                       pack: snapshot.data!.pack!,
                       module: module,
@@ -248,11 +249,12 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
 
   /// The same road, walked over age-pack activities.
   ///
-  /// There is no progress bar here. The packs record nothing when an activity
-  /// finishes, so a bar would read `0 of 5` forever — worse than absent, since
-  /// it would tell a parent their child had done nothing.
+  /// A finished activity is recorded against its drawn level's id, so the road
+  /// fills in, the highlight moves to the next stop and the bar counts up
+  /// exactly as they do for the seeded ladder.
   Widget _packMap({
     required BuildContext context,
+    required LearningViewModel learning,
     required ActivityModule packModule,
     required ActivityPack pack,
     required dynamic module,
@@ -264,7 +266,10 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
       packModule,
       moduleId: widget.moduleId,
       stage: stage,
+      isCompleted: learning.isLevelCompleted,
+      starsFor: learning.starsFor,
     );
+    final done = stops.where((stop) => stop.completed).length;
     final quiz = ModuleQuizBuilder.build(packModule);
     final accent = ModuleVisuals.colorForModuleId(widget.moduleId);
 
@@ -276,6 +281,9 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
     return _shell(
       module: module,
       textDirection: textDirection,
+      underHeader: stops.isEmpty
+          ? null
+          : MapProgressBar(done: done, total: stops.length),
       child: Column(
         children: [
           _guide(module: module, child: child, textDirection: textDirection),
@@ -287,11 +295,12 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
             textDirection: textDirection,
             onOpen: (level) => _openPackLevel(
               context,
+              level,
               ordered[level.levelNumber - 1],
               pack,
             ),
-            // Pack activities are all bundled, and none of them lock, so
-            // neither callback can fire. They are required, so they are here.
+            // Nothing in a pack is downloaded separately - the whole pack
+            // ships in the bundle - so this cannot fire. It is required.
             onDownload: (_) {},
             onLocked: (reason) => _showLocked(context, reason),
             // The quiz is the trophy at the end of the road. A module whose
@@ -312,17 +321,28 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
     );
   }
 
-  void _openPackLevel(
+  /// Opens one pack activity, and records it if the child plays it through.
+  ///
+  /// [drawn] is the level the map drew for this stop; its id is what progress
+  /// is written against, so the road behind the child fills in on the way
+  /// back. Backing out of the activity pops without a result and records
+  /// nothing.
+  Future<void> _openPackLevel(
     BuildContext context,
+    LearningLevel drawn,
     ActivityLevel level,
     ActivityPack pack,
-  ) {
+  ) async {
     if (level.data.isEmpty) {
       _showLocked(context, 'This one is coming soon.');
       return;
     }
-    Navigator.of(context).push(
-      GentlePageRoute<void>(
+
+    final childId = context.read<ActiveChildSession>().activeChild?.id;
+    final learning = context.read<LearningViewModel>();
+
+    final finished = await Navigator.of(context).push<bool>(
+      GentlePageRoute<bool>(
         builder: (_) => ActivityLevelPage(
           args: ActivityLevelArgs(
             level: level,
@@ -332,6 +352,11 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
         ),
       ),
     );
+
+    if (finished != true || childId == null) return;
+    // No score: a pack activity is played to the end rather than marked, and
+    // an unscored completion earns its three stars. See [CachedProgressRepository].
+    await learning.completeLevel(childId, drawn);
   }
 
   void _openLevel(BuildContext context, LearningLevel level) {

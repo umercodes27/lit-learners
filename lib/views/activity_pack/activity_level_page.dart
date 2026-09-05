@@ -69,7 +69,10 @@ class _ActivityLevelPageState extends State<ActivityLevelPage> {
             ActivityPlayer(
               data: level.data,
               audio: _audio,
-              onCompleted: () => Navigator.of(context).maybePop(),
+              // `true` is what marks the level finished on the map behind
+              // this screen. Backing out with the button below pops without a
+              // result, which is the difference between leaving and finishing.
+              onCompleted: () => Navigator.of(context).maybePop(true),
             ),
             SafeArea(
               child: Align(

@@ -26,34 +26,59 @@ class ActivityPackStops {
   static String levelIdFor(ActivityLevel level) =>
       '$idPrefix:${level.moduleKey}:${level.key}';
 
+  /// The copy the seeded ladder shows on a stop that is not open yet. Repeated
+  /// verbatim so a child meets one explanation, not two.
+  static const lockReason = 'Finish the previous level first.';
+
   /// One stop per pack level, in the pack's own order.
   ///
-  /// Every stop comes back open. The packs record no progress - finishing an
-  /// activity pops the screen and nothing is written - so locking them in
-  /// sequence would strand a child behind a door that never opens. Until pack
-  /// completion is stored, an open road is the honest drawing of it.
+  /// Stops unlock in sequence, exactly as the seeded ladder's do: the first is
+  /// always open, and each one after it waits for the one before to be
+  /// finished. That ordering is the pack's own - its levels are keyed
+  /// `level_1`, `level_2`, and its content is authored to be met in that order.
+  ///
+  /// [isCompleted] and [starsFor] are asked about the drawn level's id, which
+  /// is what completing a pack activity records against. See [levelIdFor].
   static List<LevelStopData> forModule(
     ActivityModule module, {
     required String moduleId,
     required int stage,
+    required bool Function(String levelId) isCompleted,
+    required int Function(String levelId) starsFor,
   }) {
     final levels = [...module.levels]
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
-    return [
-      for (final (index, level) in levels.indexed)
+    final stops = <LevelStopData>[];
+    var previousDone = true;
+
+    for (final (index, level) in levels.indexed) {
+      final drawn = _drawnLevel(
+        level,
+        moduleId: moduleId,
+        stage: stage,
+        number: index + 1,
+      );
+      final done = isCompleted(drawn.id);
+
+      stops.add(
         LevelStopData(
-          level: _drawnLevel(level, moduleId: moduleId, stage: stage, number: index + 1),
-          stars: 0,
-          completed: false,
-          canOpen: true,
+          level: drawn,
+          stars: starsFor(drawn.id),
+          completed: done,
+          canOpen: previousDone,
           canDownload: false,
           // What the child will be doing, which is the useful thing to say
           // about a pack level. See [LevelStopData.caption].
           caption: ActivityComponentVisuals.labelFor(level.data.component),
-          lockReason: '',
+          lockReason: lockReason,
         ),
-    ];
+      );
+
+      previousDone = done;
+    }
+
+    return stops;
   }
 
   static LearningLevel _drawnLevel(
