@@ -1,0 +1,737 @@
+[
+  {
+    "key": "koala_activity_complete",
+    "text": "Activity complete. Ready for the check.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_activity_complete.mp3"
+  },
+  {
+    "key": "koala_activity_start",
+    "text": "Try this activity one card at a time.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_activity_start.mp3"
+  },
+  {
+    "key": "koala_dashboard_stage1",
+    "text": "Choose one tiny lesson. We will learn slowly together.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_dashboard_stage1.mp3"
+  },
+  {
+    "key": "koala_dashboard_stage2",
+    "text": "Pick a module and try a short activity.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_dashboard_stage2.mp3"
+  },
+  {
+    "key": "koala_dashboard_stage3_4",
+    "text": "Choose a module. Short lessons and quick checks earn stars.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_dashboard_stage3_4.mp3"
+  },
+  {
+    "key": "koala_drawing_activity_start",
+    "text": "Pick a color, try the prompt, and finish when you are ready.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_drawing_activity_start.mp3"
+  },
+  {
+    "key": "koala_drawing_intro",
+    "text": "Drawing time. Pick a color and make your idea visible.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_drawing_intro.mp3"
+  },
+  {
+    "key": "koala_english_activity_start",
+    "text": "Look at the card, listen for the sound, then say it.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_english_activity_start.mp3"
+  },
+  {
+    "key": "koala_english_intro",
+    "text": "English time. Listen for letters and say the sounds aloud.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_english_intro.mp3"
+  },
+  {
+    "key": "koala_level_complete",
+    "text": "Great work. Your reward is saved.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_level_complete.mp3"
+  },
+  {
+    "key": "koala_locked_level",
+    "text": "This level will open after the step before it.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_locked_level.mp3"
+  },
+  {
+    "key": "koala_logic_intro",
+    "text": "Logic time. Look for what matches, repeats, or comes next.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_logic_intro.mp3"
+  },
+  {
+    "key": "koala_math_activity_start",
+    "text": "Tap carefully and count out loud.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_math_activity_start.mp3"
+  },
+  {
+    "key": "koala_math_intro",
+    "text": "Math time. Count, tap, and notice shapes one step at a time.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_math_intro.mp3"
+  },
+  {
+    "key": "koala_quiz_retry",
+    "text": "Good try. Practice the cards once more and try again.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_quiz_retry.mp3"
+  },
+  {
+    "key": "koala_quiz_start",
+    "text": "Quick check. Think first, then choose your answer.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_quiz_start.mp3"
+  },
+  {
+    "key": "koala_story_activity_start",
+    "text": "Tell this page. A small story is enough.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_story_activity_start.mp3"
+  },
+  {
+    "key": "koala_story_intro",
+    "text": "Story time. Tell each picture page in your own words.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_story_intro.mp3"
+  },
+  {
+    "key": "koala_urdu_activity_start",
+    "text": "حرف کو دیکھیں، آواز سنیں، پھر دہرائیں۔",
+    "bucket": "koala",
+    "lang": "ur-PK",
+    "asset": "assets/audio/koala/koala_urdu_activity_start.mp3"
+  },
+  {
+    "key": "koala_urdu_intro",
+    "text": "اردو کا وقت۔ حرف دیکھیں، آواز سنیں، اور آہستہ دہرائیں۔",
+    "bucket": "koala",
+    "lang": "ur-PK",
+    "asset": "assets/audio/koala/koala_urdu_intro.mp3"
+  },
+  {
+    "key": "koala_video_intro",
+    "text": "Watch one short lesson, then answer a tiny check.",
+    "bucket": "koala",
+    "lang": "en-US",
+    "asset": "assets/audio/koala/koala_video_intro.mp3"
+  },
+  {
+    "key": "drawing_blue_dot",
+    "text": "Pick blue and make a dot.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_blue_dot.mp3"
+  },
+  {
+    "key": "drawing_circle",
+    "text": "Color the circle with any color you like.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_circle.mp3"
+  },
+  {
+    "key": "drawing_frame",
+    "text": "Draw a color frame around your page.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_frame.mp3"
+  },
+  {
+    "key": "drawing_house",
+    "text": "Draw a house under the sky.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_house.mp3"
+  },
+  {
+    "key": "drawing_line",
+    "text": "Draw a line under your shape.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_line.mp3"
+  },
+  {
+    "key": "drawing_path",
+    "text": "Draw a path from the house to the bottom of the page.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_path.mp3"
+  },
+  {
+    "key": "drawing_pattern",
+    "text": "Draw a line, dot, line, dot pattern.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_pattern.mp3"
+  },
+  {
+    "key": "drawing_rectangle",
+    "text": "Draw a tall rectangle.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_rectangle.mp3"
+  },
+  {
+    "key": "drawing_red_blue",
+    "text": "Draw red, blue, red, blue marks.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_red_blue.mp3"
+  },
+  {
+    "key": "drawing_red_line",
+    "text": "Pick red and draw one long line.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_red_line.mp3"
+  },
+  {
+    "key": "drawing_sky",
+    "text": "Draw the sky at the top of your page.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_sky.mp3"
+  },
+  {
+    "key": "drawing_square",
+    "text": "Color the square and say square.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_square.mp3"
+  },
+  {
+    "key": "drawing_story_end",
+    "text": "Finish with one final color mark.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_story_end.mp3"
+  },
+  {
+    "key": "drawing_story_middle",
+    "text": "Add a second shape or color in the middle.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_story_middle.mp3"
+  },
+  {
+    "key": "drawing_story_start",
+    "text": "Draw one shape to start your picture story.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_story_start.mp3"
+  },
+  {
+    "key": "drawing_triangle",
+    "text": "Draw a triangle with three sides.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_triangle.mp3"
+  },
+  {
+    "key": "drawing_yellow_green",
+    "text": "Draw yellow, green, yellow, green marks.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/drawing_yellow_green.mp3"
+  },
+  {
+    "key": "logic_big",
+    "text": "Choose big for the large block.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_big.mp3"
+  },
+  {
+    "key": "logic_blue",
+    "text": "Red, blue, red. What comes next?",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_blue.mp3"
+  },
+  {
+    "key": "logic_circle",
+    "text": "Look for another round circle.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_circle.mp3"
+  },
+  {
+    "key": "logic_clap",
+    "text": "Clap, tap, clap, tap. Choose clap to start again.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_clap.mp3"
+  },
+  {
+    "key": "logic_color",
+    "text": "Sort the red toys together.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_color.mp3"
+  },
+  {
+    "key": "logic_green",
+    "text": "Yellow, green, yellow. What comes next?",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_green.mp3"
+  },
+  {
+    "key": "logic_kind",
+    "text": "Sort cars with cars and blocks with blocks.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_kind.mp3"
+  },
+  {
+    "key": "logic_left",
+    "text": "The star is on the left path. Choose left.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_left.mp3"
+  },
+  {
+    "key": "logic_middle",
+    "text": "The circle is in the middle path. Choose middle.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_middle.mp3"
+  },
+  {
+    "key": "logic_right",
+    "text": "The square is on the right path. Choose right.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_right.mp3"
+  },
+  {
+    "key": "logic_same",
+    "text": "Choose same when two blocks match.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_same.mp3"
+  },
+  {
+    "key": "logic_shape",
+    "text": "Sort the round toys together.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_shape.mp3"
+  },
+  {
+    "key": "logic_short",
+    "text": "Tall, short, tall. Choose short next.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_short.mp3"
+  },
+  {
+    "key": "logic_small",
+    "text": "Choose small for the tiny block.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_small.mp3"
+  },
+  {
+    "key": "logic_square",
+    "text": "Circle, square, circle. What comes next?",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_square.mp3"
+  },
+  {
+    "key": "logic_star",
+    "text": "Find the star that looks the same.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/logic_star.mp3"
+  },
+  {
+    "key": "story_boots",
+    "text": "Boots wait by the door. Tell the ending.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_boots.mp3"
+  },
+  {
+    "key": "story_box_end",
+    "text": "Blocks come out of the box. Tell the end.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_box_end.mp3"
+  },
+  {
+    "key": "story_box_middle",
+    "text": "The box opens. Tell the middle.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_box_middle.mp3"
+  },
+  {
+    "key": "story_box_start",
+    "text": "A box is closed. Tell the beginning.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_box_start.mp3"
+  },
+  {
+    "key": "story_clouds",
+    "text": "Clouds cover the sky. Tell what might happen next.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_clouds.mp3"
+  },
+  {
+    "key": "story_done",
+    "text": "At the end, the cup is back on the tray.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_done.mp3"
+  },
+  {
+    "key": "story_first",
+    "text": "First, the cup is empty. Say first.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_first.mp3"
+  },
+  {
+    "key": "story_hello",
+    "text": "Look at the sunny room. Say hello to the picture.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_hello.mp3"
+  },
+  {
+    "key": "story_kite_end",
+    "text": "Nina rolls up the string. Tell the ending.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_kite_end.mp3"
+  },
+  {
+    "key": "story_kite_middle",
+    "text": "The kite goes up in the wind. Tell the middle.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_kite_middle.mp3"
+  },
+  {
+    "key": "story_kite_start",
+    "text": "Nina holds a red kite. Tell the beginning.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_kite_start.mp3"
+  },
+  {
+    "key": "story_rain",
+    "text": "Rain taps the window. Tell the middle.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_rain.mp3"
+  },
+  {
+    "key": "story_snack",
+    "text": "Point to the snack. Tell what you see.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_snack.mp3"
+  },
+  {
+    "key": "story_then",
+    "text": "Then, the cup is full. Say then.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_then.mp3"
+  },
+  {
+    "key": "story_what",
+    "text": "Tell what happened in one short sentence.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_what.mp3"
+  },
+  {
+    "key": "story_where",
+    "text": "Choose where the story happens.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_where.mp3"
+  },
+  {
+    "key": "story_who",
+    "text": "Choose who is in your story and say their name.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/story_who.mp3"
+  },
+  {
+    "key": "trace_letter_a",
+    "text": "Trace the letter A along the dots.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_a.mp3"
+  },
+  {
+    "key": "trace_letter_a_small",
+    "text": "Trace the small letter a.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_a_small.mp3"
+  },
+  {
+    "key": "trace_letter_b",
+    "text": "Trace the letter B along the dots.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_b.mp3"
+  },
+  {
+    "key": "trace_letter_b_small",
+    "text": "Trace the small letter b.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_b_small.mp3"
+  },
+  {
+    "key": "trace_letter_c",
+    "text": "Trace the letter C along the dots.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_c.mp3"
+  },
+  {
+    "key": "trace_letter_c_small",
+    "text": "Trace the small letter c.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_c_small.mp3"
+  },
+  {
+    "key": "trace_letter_d_small",
+    "text": "Trace the small letter d.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_d_small.mp3"
+  },
+  {
+    "key": "trace_letter_m",
+    "text": "Trace the letter M without lifting your finger.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_m.mp3"
+  },
+  {
+    "key": "trace_letter_s",
+    "text": "Trace the curvy letter S.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_s.mp3"
+  },
+  {
+    "key": "trace_letter_t",
+    "text": "Trace the letter T, down then across.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_letter_t.mp3"
+  },
+  {
+    "key": "trace_number_1",
+    "text": "Trace the number one, straight down.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_1.mp3"
+  },
+  {
+    "key": "trace_number_2",
+    "text": "Trace the number two, around and across.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_2.mp3"
+  },
+  {
+    "key": "trace_number_3",
+    "text": "Trace the number three, two little curves.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_3.mp3"
+  },
+  {
+    "key": "trace_number_4",
+    "text": "Trace the number four.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_4.mp3"
+  },
+  {
+    "key": "trace_number_5",
+    "text": "Trace the number five.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_5.mp3"
+  },
+  {
+    "key": "trace_number_6",
+    "text": "Trace the number six.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_6.mp3"
+  },
+  {
+    "key": "trace_number_7",
+    "text": "Trace the number seven, across then down.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_7.mp3"
+  },
+  {
+    "key": "trace_number_8",
+    "text": "Trace the number eight, two circles.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_8.mp3"
+  },
+  {
+    "key": "trace_number_9",
+    "text": "Trace the number nine, a circle and a line.",
+    "bucket": "learning",
+    "lang": "en-US",
+    "asset": "assets/audio/learning/trace_number_9.mp3"
+  },
+  {
+    "key": "trace_urdu_alif",
+    "text": "نقطوں پر الف بنائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/trace_urdu_alif.mp3"
+  },
+  {
+    "key": "trace_urdu_bay",
+    "text": "نقطوں پر بے بنائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/trace_urdu_bay.mp3"
+  },
+  {
+    "key": "trace_urdu_meem",
+    "text": "نقطوں پر میم بنائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/trace_urdu_meem.mp3"
+  },
+  {
+    "key": "trace_urdu_noon",
+    "text": "نقطوں پر نون بنائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/trace_urdu_noon.mp3"
+  },
+  {
+    "key": "trace_urdu_pay",
+    "text": "نقطوں پر پے بنائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/trace_urdu_pay.mp3"
+  },
+  {
+    "key": "trace_urdu_seen",
+    "text": "نقطوں پر سین بنائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/trace_urdu_seen.mp3"
+  },
+  {
+    "key": "urdu_aam",
+    "text": "آ سے آم۔ درست لفظ چنیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_aam.mp3"
+  },
+  {
+    "key": "urdu_alif",
+    "text": "آواز سنیں: ا۔ پھر آہستہ سے دہرائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_alif.mp3"
+  },
+  {
+    "key": "urdu_anaar",
+    "text": "ا سے انار۔ لفظ کو دیکھیں اور بولیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_anaar.mp3"
+  },
+  {
+    "key": "urdu_baba",
+    "text": "ب سے بابا۔ درست لفظ چنیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_baba.mp3"
+  },
+  {
+    "key": "urdu_bakri",
+    "text": "ب سے بکری۔ لفظ کو دہرائیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_bakri.mp3"
+  },
+  {
+    "key": "urdu_bay",
+    "text": "یہ ب ہے۔ ب سے بکری۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_bay.mp3"
+  },
+  {
+    "key": "urdu_pani",
+    "text": "پ سے پانی۔ درست لفظ چنیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_pani.mp3"
+  },
+  {
+    "key": "urdu_patang",
+    "text": "پ سے شروع ہونے والا لفظ چنیں۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_patang.mp3"
+  },
+  {
+    "key": "urdu_pay",
+    "text": "پ سے پتنگ۔",
+    "bucket": "learning",
+    "lang": "ur-PK",
+    "asset": "assets/audio/learning/urdu_pay.mp3"
+  }
+]

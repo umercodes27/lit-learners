@@ -5,7 +5,6 @@ import '../../core/routing/app_router.dart';
 import '../../core/routing/route_names.dart';
 import '../../core/utils/age_stage_helper.dart';
 import '../../core/utils/learning_text_direction.dart';
-import '../../core/utils/module_visuals.dart';
 import '../../models/canvas_work.dart';
 import '../../models/koala_guide_message.dart';
 import '../../models/learning_level.dart';
@@ -13,8 +12,8 @@ import '../../models/parent_mark.dart';
 import '../../viewmodels/active_child_session.dart';
 import '../../viewmodels/learning_viewmodel.dart';
 import '../../viewmodels/level_activity_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
 import '../../widgets/koala_guide.dart';
+import '../../widgets/play/play.dart';
 import 'canvas_level_view.dart';
 import 'widgets/activity_chrome.dart';
 
@@ -49,25 +48,35 @@ class _LevelPlayerPageState extends State<LevelPlayerPage> {
             ? TextDirection.ltr
             : LearningTextDirection.forLevel(level);
 
+        final ground = level == null
+            ? PlayColors.blueberry
+            : PlayColors.forModuleId(level.moduleId);
+
         return Scaffold(
-          appBar: AppBar(
-            title: Directionality(
-              textDirection: textDirection,
-              child: Text(
-                level?.title ?? 'Level',
-                style: LearningTextDirection.styleFor(null, textDirection),
+          body: PlayGround(
+            color: ground,
+            safeArea: false,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _PlayerHeader(
+                    title: level?.title ?? 'Level',
+                    textDirection: textDirection,
+                    onBack: () => Navigator.of(context).maybePop(),
+                  ),
+                  Expanded(
+                    child: snapshot.connectionState != ConnectionState.done
+                        ? const Center(child: CircularProgressIndicator())
+                        : level == null
+                            ? const Center(child: Text('Level not found.'))
+                            : ChangeNotifierProvider(
+                                create: (_) => LevelActivityViewModel(level),
+                                child: _LevelBody(level: level),
+                              ),
+                  ),
+                ],
               ),
             ),
-          ),
-          body: SafeArea(
-            child: snapshot.connectionState != ConnectionState.done
-                ? const Center(child: CircularProgressIndicator())
-                : level == null
-                    ? const Center(child: Text('Level not found.'))
-                    : ChangeNotifierProvider(
-                        create: (_) => LevelActivityViewModel(level),
-                        child: _LevelBody(level: level),
-                      ),
           ),
         );
       },
@@ -127,22 +136,32 @@ class _LevelBody extends StatelessWidget {
           textDirection: textDirection,
         ),
         const SizedBox(height: 16),
-        LinearProgressIndicator(
-          value: (activity.itemIndex + (activity.currentItemComplete ? 1 : 0)) /
-              level.contentItems.length,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            minHeight: 16,
+            value:
+                (activity.itemIndex + (activity.currentItemComplete ? 1 : 0)) /
+                    level.contentItems.length,
+            color: PlayColors.sunshine,
+            backgroundColor: Colors.white.withValues(alpha: 0.4),
+          ),
         ),
         const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+        JellyCard(
+          color: Colors.white,
+          filled: true,
+          borderWidth: 4,
+          padding: const EdgeInsets.all(18),
+          child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   children: [
                     ActivityBadge(
                       text: item.displayText,
-                      accent: ModuleVisuals.colorForModuleId(level.moduleId),
+                      size: 104,
+                      accent: PlayColors.forModuleId(level.moduleId),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -158,10 +177,12 @@ class _LevelBody extends StatelessWidget {
                               textAlign:
                                   LearningTextDirection.alignFor(textDirection),
                               style: LearningTextDirection.styleFor(
-                                Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w900),
+                                const TextStyle(
+                                  fontFamily: 'Fredoka',
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w600,
+                                  color: PlayColors.ink,
+                                ),
                                 textDirection,
                               ),
                             ),
@@ -201,15 +222,15 @@ class _LevelBody extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 _ActivityInteraction(level: level),
-              ],
-            ),
-          ),
+            ],
+        ),
         ),
         const SizedBox(height: 12),
         if (activity.currentItemComplete && !activity.isLastItem)
-          AppPrimaryButton(
-            icon: Icons.arrow_forward,
+          PlayButton(
+            icon: Icons.arrow_forward_rounded,
             label: 'Next card',
+            color: PlayColors.sunshine,
             onPressed: activity.nextItem,
           ),
         if (activity.currentItemComplete && activity.isLastItem)
@@ -223,9 +244,11 @@ class _LevelBody extends StatelessWidget {
             textDirection: textDirection,
           ),
         const SizedBox(height: 8),
-        AppPrimaryButton(
-          icon: Icons.check_circle,
+        PlayButton(
+          icon: Icons.check_circle_rounded,
           label: level.quizQuestions.isEmpty ? 'Earn reward' : 'Start quiz',
+          color: PlayColors.grass,
+          big: true,
           onPressed: canFinish ? () => _complete(context, child.id) : null,
         ),
       ],
@@ -319,6 +342,56 @@ class _LevelBody extends StatelessWidget {
   }
 }
 
+/// Big round back button and the level name, replacing the plain AppBar.
+class _PlayerHeader extends StatelessWidget {
+  const _PlayerHeader({
+    required this.title,
+    required this.textDirection,
+    required this.onBack,
+  });
+
+  final String title;
+  final TextDirection textDirection;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      child: Row(
+        children: [
+          PlayIconButton(
+            icon: Icons.arrow_back_rounded,
+            semanticLabel: 'Go back',
+            onPressed: onBack,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Directionality(
+              textDirection: textDirection,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: LearningTextDirection.alignFor(textDirection),
+                style: LearningTextDirection.styleFor(
+                  const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                  textDirection,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ActivityInteraction extends StatelessWidget {
   const _ActivityInteraction({required this.level});
 
@@ -354,18 +427,30 @@ class _CountingInteraction extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 10),
-        FilledButton.icon(
+        PlayButton(
           onPressed: done ? null : activity.tapCounter,
-          icon: Icon(done ? Icons.check : Icons.touch_app),
-          label: Text(done ? 'Good counting' : 'Tap object'),
+          icon: done ? Icons.check_rounded : Icons.touch_app_rounded,
+          label: done ? 'Good counting' : 'Tap to count',
+          color: done ? PlayColors.grass : PlayColors.sunshine,
+          big: true,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
+        // Each tap leaves a big coloured dot, so a child can see the count
+        // they have made rather than only reading a number.
         Wrap(
           alignment: WrapAlignment.center,
-          spacing: 6,
-          runSpacing: 6,
+          spacing: 10,
+          runSpacing: 10,
           children: List.generate(activity.tapCount, (index) {
-            return const Icon(Icons.circle, size: 18);
+            return Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: PlayColors.byIndex(index),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+              ),
+            );
           }),
         ),
       ],
@@ -410,13 +495,15 @@ class _StoryInteraction extends StatelessWidget {
   Widget build(BuildContext context) {
     final activity = context.watch<LevelActivityViewModel>();
 
-    return FilledButton.icon(
+    return PlayButton(
       onPressed:
           activity.currentItemComplete ? null : activity.markCurrentLearned,
-      icon: const Icon(Icons.auto_stories),
-      label: Text(
-        activity.currentItemComplete ? 'Page told' : 'I told this page',
-      ),
+      icon: Icons.auto_stories_rounded,
+      label: activity.currentItemComplete ? 'Page told' : 'I told this page',
+      color: activity.currentItemComplete
+          ? PlayColors.grass
+          : PlayColors.strawberry,
+      big: true,
     );
   }
 }
@@ -428,11 +515,15 @@ class _FlashcardInteraction extends StatelessWidget {
   Widget build(BuildContext context) {
     final activity = context.watch<LevelActivityViewModel>();
 
-    return FilledButton.icon(
+    return PlayButton(
       onPressed:
           activity.currentItemComplete ? null : activity.markCurrentLearned,
-      icon: const Icon(Icons.record_voice_over),
-      label: Text(activity.currentItemComplete ? 'Learned' : 'I said it'),
+      icon: Icons.record_voice_over_rounded,
+      label: activity.currentItemComplete ? 'Learned' : 'I said it',
+      color: activity.currentItemComplete
+          ? PlayColors.grass
+          : PlayColors.bubblegum,
+      big: true,
     );
   }
 }

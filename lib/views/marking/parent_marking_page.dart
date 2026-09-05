@@ -8,8 +8,8 @@ import '../../models/canvas_work.dart';
 import '../../models/parent_mark.dart';
 import '../../services/tracing/trace_scorer.dart';
 import '../../viewmodels/active_child_session.dart';
-import '../../widgets/app_primary_button.dart';
 import '../../widgets/drawing/canvas_work_preview.dart';
+import '../../widgets/play/play.dart';
 
 /// Where a grown-up grades the drawing or tracing a child has just finished.
 ///
@@ -69,7 +69,19 @@ class _ParentMarkingPageState extends State<ParentMarkingPage> {
     final accuracy = _accuracy;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mark the work')),
+      backgroundColor: PlayColors.cream,
+      appBar: AppBar(
+        toolbarHeight: 68,
+        backgroundColor: PlayColors.mint,
+        foregroundColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Fredoka',
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+        title: const Text('Mark the work'),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -113,7 +125,7 @@ class _ParentMarkingPageState extends State<ParentMarkingPage> {
                   ),
             ),
             const SizedBox(height: 18),
-            AppPrimaryButton(
+            PlayButton(
               icon: Icons.check_circle,
               label: 'Save this mark',
               onPressed: _selected == null

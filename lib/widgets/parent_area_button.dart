@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/constants/app_colors.dart';
+import 'play/play.dart';
 
 /// The one labelled door from a child screen into the parent dashboard. An
 /// icon on its own read as decoration, so the words travel with it everywhere
@@ -20,26 +20,11 @@ class ParentAreaButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
-      style: FilledButton.styleFrom(
-        backgroundColor: AppColors.honey,
-        foregroundColor: AppColors.ink,
-        minimumSize: compact ? const Size(0, 42) : const Size(48, 52),
-        padding: compact
-            ? const EdgeInsets.symmetric(horizontal: 14)
-            : const EdgeInsets.symmetric(horizontal: 12),
-        textStyle: TextStyle(
-          fontSize: compact ? 13 : 14,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
+    return PlayButton(
+      label: 'Parent dashboard',
+      icon: Icons.family_restroom_rounded,
+      color: PlayColors.sunshine,
       onPressed: onPressed,
-      icon: const Icon(Icons.family_restroom_rounded, size: 20),
-      label: const Text(
-        'Parent dashboard',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
     );
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/constants/app_colors.dart';
 import '../core/utils/learning_text_direction.dart';
 import '../models/koala_guide_message.dart';
 import '../repositories/koala_guide_repository.dart';
 import '../services/audio/koala_audio_player.dart';
+import 'play/play.dart';
 
 class KoalaGuide extends StatelessWidget {
   const KoalaGuide({
@@ -34,31 +34,28 @@ class KoalaGuide extends StatelessWidget {
       KoalaGuideMood.neutral => Icons.child_care,
     };
     final accent = switch (mood) {
-      KoalaGuideMood.celebrating => AppColors.honey,
-      KoalaGuideMood.encouraging => AppColors.rose,
-      KoalaGuideMood.thinking => AppColors.plum,
-      KoalaGuideMood.parent => AppColors.sky,
-      KoalaGuideMood.neutral => AppColors.leaf,
+      KoalaGuideMood.celebrating => PlayColors.sunshine,
+      KoalaGuideMood.encouraging => PlayColors.bubblegum,
+      KoalaGuideMood.thinking => PlayColors.grape,
+      KoalaGuideMood.parent => PlayColors.sky,
+      KoalaGuideMood.neutral => PlayColors.grass,
     };
 
     return Container(
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          accent.withValues(alpha: 0.1),
-          AppColors.panel,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: accent.withValues(alpha: 0.3)),
+        color: PlayColors.card,
+        borderRadius: BorderRadius.circular(PlayMotion.radiusLarge),
+        border: Border.all(color: Colors.white, width: 4),
         boxShadow: [
           BoxShadow(
-            color: accent.withValues(alpha: 0.1),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: PlayColors.ink.withValues(alpha: 0.20),
+            offset: const Offset(0, 6),
+            blurRadius: 0,
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -66,12 +63,12 @@ class KoalaGuide extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: 84,
+                  height: 84,
                   decoration: BoxDecoration(
-                    color: AppColors.lemon,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white, width: 2),
+                    color: PlayColors.sunshine,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Image.asset(
@@ -85,17 +82,17 @@ class KoalaGuide extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  right: -5,
-                  bottom: -5,
+                  right: -3,
+                  bottom: -3,
                   child: Container(
-                    width: 26,
-                    height: 26,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       color: accent,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
-                    child: Icon(icon, color: AppColors.ink, size: 14),
+                    child: Icon(icon, color: Colors.white, size: 18),
                   ),
                 ),
               ],
@@ -115,9 +112,13 @@ class KoalaGuide extends StatelessWidget {
                         resolvedDirection,
                       ),
                       style: LearningTextDirection.styleFor(
-                        Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        const TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 19,
+                          height: 1.3,
+                          fontWeight: FontWeight.w500,
+                          color: PlayColors.ink,
+                        ),
                         resolvedDirection,
                       ),
                     ),
@@ -145,23 +146,13 @@ class KoalaGuide extends StatelessWidget {
                           ? MainAxisAlignment.end
                           : MainAxisAlignment.start,
                       children: [
-                        IconButton(
-                          tooltip: 'Play Koala guide audio',
+                        PlayIconButton(
+                          icon: Icons.volume_up,
+                          semanticLabel: 'Play Koala guide audio',
                           onPressed: () => _playAudioCue(context),
-                          iconSize: 18,
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                          icon: Icon(
-                            Icons.volume_up,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.72),
-                          ),
+                          color: accent,
+                          iconColor: Colors.white,
+                          size: 52,
                         ),
                       ],
                     ),

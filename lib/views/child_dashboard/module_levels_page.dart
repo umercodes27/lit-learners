@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
 import '../../core/utils/age_stage_helper.dart';
 import '../../core/utils/learning_text_direction.dart';
-import '../../core/utils/module_visuals.dart';
 import '../../models/koala_guide_message.dart';
+import '../../models/learning_level.dart';
 import '../../viewmodels/active_child_session.dart';
 import '../../viewmodels/learning_viewmodel.dart';
+import '../../services/audio/app_sounds.dart';
+import '../../services/audio/sound_controller.dart';
 import '../../widgets/koala_guide.dart';
-import '../../widgets/locked_overlay.dart';
-import '../../widgets/star_rating.dart';
+import '../../widgets/play/play.dart';
+import 'widgets/level_map.dart';
 
+/// A module's levels, as a map a child walks rather than a list they scroll.
+///
+/// This started as a `ListView` of Material `Card`s, then became a column of
+/// numbered rows. Both were still a list: four things stacked up, with nothing
+/// saying where the child is or how far there is to go.
+///
+/// It is now a road. The stops are joined by a winding path, the part already
+/// walked is filled in behind them, and there is a trophy at the end. Every
+/// module gets a different road, derived from its id — see [MapShape].
 class ModuleLevelsPage extends StatefulWidget {
   const ModuleLevelsPage({
     required this.moduleId,
@@ -29,6 +39,7 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
   @override
   void initState() {
     super.initState();
+    AppSound.instance.playMusic(MusicTrack.home);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LearningViewModel>().loadLevelsForModule(widget.moduleId);
     });
@@ -40,178 +51,93 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
     final child = context.watch<ActiveChildSession>().activeChild;
     final module = learning.moduleById(widget.moduleId);
     final levels = learning.levelsFor(widget.moduleId);
+    final ground = PlayColors.forModuleId(widget.moduleId);
     final textDirection = module == null
         ? TextDirection.ltr
         : LearningTextDirection.forModule(module);
-    final learningTextStyle = LearningTextDirection.styleFor(
-      null,
-      textDirection,
-    );
+
+    final stops = [
+      for (final level in levels)
+        LevelStopData(
+          level: level,
+          stars: learning.starsFor(level.id),
+          completed: learning.isLevelCompleted(level.id),
+          canOpen: learning.canOpenLevel(level),
+          canDownload: learning.canDownloadLevel(level),
+          lockReason: learning.lockReasonFor(level),
+        ),
+    ];
+    final done = stops.where((stop) => stop.completed).length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Directionality(
-          textDirection: textDirection,
-          child: Text(
-            module?.title ?? 'Levels',
-            style: learningTextStyle,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: levels.length + 1,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return ContextualKoalaGuide(
-                trigger: KoalaGuideTrigger.moduleIntro,
-                audience: KoalaGuideAudience.child,
-                moduleId: widget.moduleId,
-                stage: child == null
-                    ? null
-                    : AgeStageHelper.stageForAge(child.age),
+      body: PlayGround(
+        color: ground,
+        safeArea: false,
+        child: SafeArea(
+          child: Column(
+            children: [
+              PlayHeader(
+                title: module?.title ?? 'Levels',
                 textDirection: textDirection,
-                fallbackMessage: module?.description ??
-                    'Choose a level and try one short activity.',
-              );
-            }
-
-            final level = levels[index - 1];
-            final canOpen = learning.canOpenLevel(level);
-            final canDownload = learning.canDownloadLevel(level);
-            final reason = learning.lockReasonFor(level);
-
-            return Stack(
-              children: [
-                Card(
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
-                    leading: CircleAvatar(
-                      child: Text(level.levelNumber.toString()),
-                    ),
-                    title: Directionality(
-                      textDirection: textDirection,
-                      child: Text(
-                        level.title,
-                        textAlign:
-                            LearningTextDirection.alignFor(textDirection),
-                        style: LearningTextDirection.styleFor(
-                          null,
-                          textDirection,
-                        ),
+                titleStyle: LearningTextDirection.styleFor(
+                  const TextStyle(),
+                  textDirection,
+                ),
+                onBack: () => Navigator.of(context).maybePop(),
+              ),
+              if (stops.isNotEmpty)
+                MapProgressBar(done: done, total: stops.length),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                  child: Column(
+                    children: [
+                      ContextualKoalaGuide(
+                        trigger: KoalaGuideTrigger.moduleIntro,
+                        audience: KoalaGuideAudience.child,
+                        moduleId: widget.moduleId,
+                        stage: child == null
+                            ? null
+                            : AgeStageHelper.stageForAge(child.age),
+                        textDirection: textDirection,
+                        fallbackMessage: module?.description ??
+                            'Choose a level and try one short activity.',
                       ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: textDirection == TextDirection.rtl
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
-                      children: [
-                        _PortionChip(
-                          portionLabel: level.portionLabel,
-                          stepCount: level.contentItems.length,
-                          accent: ModuleVisuals.colorForModuleId(
-                            level.moduleId,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Directionality(
-                          textDirection: textDirection,
-                          child: Text(
-                            level.subtitle,
-                            textAlign:
-                                LearningTextDirection.alignFor(textDirection),
-                            style: LearningTextDirection.styleFor(
-                              null,
-                              textDirection,
-                            ),
-                          ),
-                        ),
-                        if (canDownload) ...[
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              await context
-                                  .read<LearningViewModel>()
-                                  .downloadLevel(level);
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('${level.title} downloaded.'),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.download),
-                            label: const Text('Download'),
-                          ),
-                        ],
-                      ],
-                    ),
-                    trailing: StarRating(count: learning.starsFor(level.id)),
-                    onTap: () {
-                      if (!canOpen) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(reason)),
-                        );
-                        return;
-                      }
-                      Navigator.of(context).pushNamed(
-                        RouteNames.levelPlayer,
-                        arguments: level.id,
-                      );
-                    },
+                      const SizedBox(height: 12),
+                      LevelMap(
+                        stops: stops,
+                        moduleId: widget.moduleId,
+                        accent: PlayColors.sunshine,
+                        textDirection: textDirection,
+                        onOpen: (level) => _openLevel(context, level),
+                        onDownload: (level) => _download(context, level),
+                        onLocked: (reason) => _showLocked(context, reason),
+                      ),
+                    ],
                   ),
                 ),
-                if (!canOpen && !canDownload) LockedOverlay(reason: reason),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
+  void _openLevel(BuildContext context, LearningLevel level) {
+    Navigator.of(context)
+        .pushNamed(RouteNames.levelPlayer, arguments: level.id);
+  }
 
-/// Names the slice of the module a level covers, so a parent scanning the list
-/// can see the ladder — `A – F`, then `G – L` — rather than only level numbers.
-class _PortionChip extends StatelessWidget {
-  const _PortionChip({
-    required this.portionLabel,
-    required this.stepCount,
-    required this.accent,
-  });
+  void _showLocked(BuildContext context, String reason) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(reason)));
+  }
 
-  final String? portionLabel;
-  final int stepCount;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final steps = stepCount == 1 ? '1 step' : '$stepCount steps';
-    // Modules that are not a sequence (Story, Drawing) carry no portion, so
-    // the chip falls back to how much there is to work through.
-    final label = portionLabel == null ? steps : '$portionLabel  ·  $steps';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: 0.32)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Color.alphaBlend(
-            accent.withValues(alpha: 0.85),
-            AppColors.ink,
-          ),
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
+  Future<void> _download(BuildContext context, LearningLevel level) async {
+    await context.read<LearningViewModel>().downloadLevel(level);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${level.title} downloaded.')),
     );
   }
 }

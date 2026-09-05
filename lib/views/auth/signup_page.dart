@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/routing/auth_flow_router.dart';
 import '../../core/routing/route_names.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../widgets/play/play.dart';
 import 'widgets/auth_page_shell.dart';
 
 class SignupPage extends StatefulWidget {
@@ -32,89 +33,78 @@ class _SignupPageState extends State<SignupPage> {
     return AuthPageShell(
       titleLeading: 'CREATE',
       titleTrailing: 'ACCOUNT',
+      ground: PlayColors.mint,
+      accent: PlayColors.grape,
       child: AutofillGroup(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthWoodenTextField(
+            PlayField(
               controller: _emailController,
               label: 'Email address',
               hint: 'parent@example.com',
-              prefixIcon: Icons.mail_outline_rounded,
+              icon: Icons.mail_rounded,
+              color: PlayColors.mint,
+              labelColor: PlayColors.ink,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.newUsername],
               autocorrect: false,
             ),
             const SizedBox(height: 14),
-            AuthWoodenTextField(
+            PlayField(
               controller: _passwordController,
               label: 'Create password',
-              prefixIcon: Icons.lock_outline_rounded,
+              icon: Icons.lock_rounded,
+              color: PlayColors.grape,
+              labelColor: PlayColors.ink,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.newPassword],
               autocorrect: false,
               enableSuggestions: false,
-              suffixIcon: IconButton(
-                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              onSubmitted: (_) => _submit(context),
+              trailing: AuthPeekButton(
+                hidden: _obscurePassword,
                 onPressed: () {
                   setState(() => _obscurePassword = !_obscurePassword);
                 },
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                ),
               ),
-              onSubmitted: (_) => _submit(context),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            const SizedBox(height: 10),
+            PlayNote(
               '8+ characters with uppercase, number and symbol',
-              textAlign: TextAlign.center,
+              color: PlayColors.ink,
               style: TextStyle(
-                color: Color(0xFF6F3D20),
-                fontFamily: 'Fredoka',
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: PlayColors.ink.withValues(alpha: 0.6),
               ),
             ),
             if (auth.errorMessage != null) ...[
               const SizedBox(height: 12),
-              AuthMessageBanner(
-                message: auth.errorMessage!,
-              ),
+              PlayBanner(message: auth.errorMessage!),
             ],
             const SizedBox(height: 16),
-            AuthActionButton(
-              icon: Icons.person_add_alt_1_rounded,
+            PlayButton(
+              icon: Icons.arrow_forward_rounded,
               label: auth.isLoading ? 'Creating...' : 'Create account',
+              color: PlayColors.sunshine,
+              big: true,
               onPressed: auth.isLoading ? null : () => _submit(context),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             const AuthOrDivider(),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             AuthGoogleButton(
               label: 'Sign up with Google',
               onPressed: auth.isLoading ? null : () => _submitGoogle(context),
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const Text(
-                  'Already registered?',
-                  style: TextStyle(
-                    color: Color(0xFF6F3D20),
-                    fontFamily: 'Fredoka',
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                TextButton(
-                  onPressed: auth.isLoading ? null : () => _openLogin(context),
-                  child: const Text('Sign in'),
-                ),
-              ],
+            const SizedBox(height: 6),
+            AuthFooterPrompt(
+              question: 'Already registered?',
+              action: 'Sign in',
+              color: PlayColors.grape,
+              onPressed: auth.isLoading ? null : () => _openLogin(context),
             ),
           ],
         ),

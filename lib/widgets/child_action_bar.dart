@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/constants/app_colors.dart';
+import 'play/play.dart';
 
 /// The strip along the bottom of every child screen that holds the grown-up
 /// actions. Same place, same look on each screen, so "leave this child's
@@ -16,13 +16,16 @@ class ChildActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.panel,
-        border: Border(top: BorderSide(color: AppColors.line)),
+        color: PlayColors.card,
+        border: Border(top: BorderSide(color: Colors.white, width: 4)),
+        boxShadow: [
+          BoxShadow(color: Color(0x1A2B2145), offset: Offset(0, -4)),
+        ],
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
               for (final action in actions) ...[

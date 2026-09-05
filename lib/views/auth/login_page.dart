@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/routing/auth_flow_router.dart';
 import '../../core/routing/route_names.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../widgets/play/play.dart';
 import 'widgets/auth_page_shell.dart';
 
 class LoginPage extends StatefulWidget {
@@ -32,102 +33,102 @@ class _LoginPageState extends State<LoginPage> {
     return AuthPageShell(
       titleLeading: 'PARENT',
       titleTrailing: 'LOGIN',
+      ground: PlayColors.blueberry,
+      accent: PlayColors.sunshine,
       child: AutofillGroup(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthWoodenTextField(
+            PlayField(
               controller: _emailController,
               label: 'Email address',
               hint: 'parent@example.com',
-              prefixIcon: Icons.mail_outline_rounded,
+              icon: Icons.mail_rounded,
+              color: PlayColors.blueberry,
+              labelColor: PlayColors.ink,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.email],
               autocorrect: false,
             ),
             const SizedBox(height: 14),
-            AuthWoodenTextField(
+            PlayField(
               controller: _passwordController,
               label: 'Password',
-              prefixIcon: Icons.lock_outline_rounded,
+              icon: Icons.lock_rounded,
+              color: PlayColors.grape,
+              labelColor: PlayColors.ink,
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.password],
               autocorrect: false,
               enableSuggestions: false,
-              suffixIcon: IconButton(
-                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              onSubmitted: (_) => _submit(context),
+              trailing: AuthPeekButton(
+                hidden: _obscurePassword,
                 onPressed: () {
                   setState(() => _obscurePassword = !_obscurePassword);
                 },
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                ),
               ),
-              onSubmitted: (_) => _submit(context),
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
+              child: AuthTextLink(
+                label: 'Forgot password?',
+                color: PlayColors.grape,
                 onPressed: auth.isLoading
                     ? null
-                    : () {
-                        Navigator.of(context).pushNamed(
+                    : () => Navigator.of(context).pushNamed(
                           RouteNames.forgotPassword,
-                        );
-                      },
-                child: const Text('Forgot password?'),
+                        ),
               ),
             ),
             if (auth.errorMessage != null) ...[
               const SizedBox(height: 4),
-              AuthMessageBanner(
-                message: auth.errorMessage!,
-              ),
+              PlayBanner(message: auth.errorMessage!),
             ],
-            const SizedBox(height: 12),
-            AuthActionButton(
-              icon: Icons.login_rounded,
+            const SizedBox(height: 14),
+            PlayButton(
+              icon: Icons.arrow_forward_rounded,
               label: auth.isLoading ? 'Signing in...' : 'Sign in',
+              color: PlayColors.sunshine,
+              big: true,
               onPressed: auth.isLoading ? null : () => _submit(context),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             const AuthOrDivider(),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             AuthGoogleButton(
               onPressed: auth.isLoading ? null : () => _submitGoogle(context),
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const Text(
-                  'New here?',
-                  style: TextStyle(
-                    color: Color(0xFF6F3D20),
-                    fontFamily: 'Fredoka',
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                TextButton(
-                  onPressed: auth.isLoading
-                      ? null
-                      : () =>
-                          Navigator.of(context).pushNamed(RouteNames.signup),
-                  child: const Text('Create account'),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            TextButton.icon(
+            const SizedBox(height: 6),
+            AuthFooterPrompt(
+              question: 'New here?',
+              action: 'Create account',
+              color: PlayColors.blueberry,
               onPressed: auth.isLoading
                   ? null
-                  : () =>
-                      Navigator.of(context).pushNamed(RouteNames.adminLogin),
-              icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
-              label: const Text('Admin login'),
+                  : () => Navigator.of(context).pushNamed(RouteNames.signup),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                color: PlayColors.ink.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Center(
+              child: AuthTextLink(
+                label: 'Admin login',
+                icon: Icons.admin_panel_settings_outlined,
+                color: PlayColors.ink,
+                onPressed: auth.isLoading
+                    ? null
+                    : () =>
+                        Navigator.of(context).pushNamed(RouteNames.adminLogin),
+              ),
             ),
           ],
         ),

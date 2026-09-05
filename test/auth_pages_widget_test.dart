@@ -9,7 +9,7 @@ import 'package:little_learners/views/auth/signup_page.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  testWidgets('LoginPage wooden form remains overflow-free on a compact phone',
+  testWidgets('LoginPage form remains overflow-free on a compact phone',
       (tester) async {
     final errorCapture = _FlutterErrorCapture.start();
     addTearDown(errorCapture.restore);
@@ -23,7 +23,7 @@ void main() {
     expect(errorCapture.errors, isEmpty);
   });
 
-  testWidgets('SignupPage keeps its minimal wooden form responsive',
+  testWidgets('SignupPage keeps its minimal form responsive',
       (tester) async {
     final errorCapture = _FlutterErrorCapture.start();
     addTearDown(errorCapture.restore);

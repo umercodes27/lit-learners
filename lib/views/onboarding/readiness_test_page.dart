@@ -3,15 +3,25 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/localization/onboarding_strings.dart';
 import '../../core/routing/auth_flow_router.dart';
 import '../../models/onboarding.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/onboarding_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
+import '../../widgets/play/play.dart';
 import 'widgets/onboarding_language_toggle.dart';
 
+/// The readiness test a parent takes before their child gets in.
+///
+/// This was an `AppBar`, a gradient banner and a stack of `RadioListTile`s in
+/// grey boxes — a web form, on the screen that decides whether a family sees
+/// the app at all. It was also throwing "ListTile background color or ink
+/// splashes may be invisible" on every build, which is what four of the
+/// onboarding widget tests had been failing on.
+///
+/// It is now built from the same parts as the child quiz: a colour ground,
+/// white question cards, and answers that fill with colour when chosen. The
+/// questions themselves are untouched — content belongs to someone else.
 class ReadinessTestPage extends StatefulWidget {
   const ReadinessTestPage({super.key});
 
@@ -36,154 +46,87 @@ class _ReadinessTestPageState extends State<ReadinessTestPage> {
 
     _ensureShuffledOptions(onboarding.questions);
 
+    final questions = onboarding.questions;
+    final answered = questions
+        .where((q) => onboarding.selectedAnswerFor(q.id) != null)
+        .length;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Directionality(
-          textDirection: language.textDirection,
-          child: Text(
-            strings.testTitle,
-            style: language.styleFor(null),
-          ),
-        ),
-        actions: const [
-          OnboardingLanguageToggle(),
-          SizedBox(width: 12),
-        ],
-      ),
-      body: SafeArea(
-        child: Directionality(
-          textDirection: language.textDirection,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.grape, AppColors.violet],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
+      body: PlayGround(
+        color: PlayColors.blueberry,
+        safeArea: false,
+        child: SafeArea(
+          child: Directionality(
+            textDirection: language.textDirection,
+            child: Column(
+              children: [
+                PlayHeader(
+                  title: strings.testTitle,
+                  textDirection: language.textDirection,
+                  titleStyle: language.styleFor(null),
+                  onBack: Navigator.of(context).canPop()
+                      ? () => Navigator.of(context).maybePop()
+                      : null,
+                  trailing: const OnboardingLanguageToggle(),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.honey,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.fact_check_rounded,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        strings.passingBannerFor(
+                _AnsweredBar(answered: answered, total: questions.length),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+                    children: [
+                      _PassingBanner(
+                        message: strings.passingBannerFor(
                           OnboardingViewModel.passingScore,
                         ),
-                        textAlign: language.textAlign,
-                        style: language.styleFor(
-                          Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                height: language.bodyLineHeight,
-                              ),
-                        ),
+                        language: language,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              for (var index = 0; index < onboarding.questions.length; index++)
-                _ReadinessQuestionCard(
-                  questionNumber: index + 1,
-                  question: onboarding.questions[index],
-                  language: language,
-                  optionOrder:
-                      _optionOrderByQuestionId[onboarding.questions[index].id] ??
-                          const [],
-                  selectedAnswer: onboarding
-                      .selectedAnswerFor(onboarding.questions[index].id),
-                  onChanged: (value) {
-                    context.read<OnboardingViewModel>().selectAnswer(
-                          onboarding.questions[index].id,
-                          value,
-                        );
-                  },
-                ),
-              if (onboarding.latestPassed == false) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.lemon.withValues(alpha: 0.82),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: AppColors.honey.withValues(alpha: 0.62),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        strings.scoreLabelFor(onboarding.latestScore ?? 0),
-                        textAlign: language.textAlign,
-                        style: language.styleFor(
-                          Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        strings.reviewTips,
-                        textAlign: language.textAlign,
-                        style: language.styleFor(null),
-                      ),
-                      const SizedBox(height: 8),
-                      for (final question in onboarding.questions)
-                        if (onboarding.selectedAnswerFor(question.id) !=
-                            question.correctIndex)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Text(
-                              '- ${question.tip}',
-                              textAlign: language.textAlign,
-                              style: language.styleFor(
-                                TextStyle(height: language.bodyLineHeight),
-                              ),
+                      const SizedBox(height: 16),
+                      for (var index = 0; index < questions.length; index++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: PopIn(
+                            index: index,
+                            child: _QuestionCard(
+                              questionNumber: index + 1,
+                              question: questions[index],
+                              color: PlayColors.byIndex(index),
+                              language: language,
+                              optionOrder: _optionOrderByQuestionId[
+                                      questions[index].id] ??
+                                  const [],
+                              selectedAnswer: onboarding
+                                  .selectedAnswerFor(questions[index].id),
+                              onChanged: (value) {
+                                context
+                                    .read<OnboardingViewModel>()
+                                    .selectAnswer(questions[index].id, value);
+                              },
                             ),
                           ),
+                        ),
+                      if (onboarding.latestPassed == false) ...[
+                        _RetryCard(
+                          onboarding: onboarding,
+                          language: language,
+                          strings: strings,
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+                      PlayButton(
+                        icon: Icons.check_rounded,
+                        label: strings.submitTest,
+                        labelStyle: language.styleFor(null),
+                        color: PlayColors.sunshine,
+                        big: true,
+                        onPressed: onboarding.allQuestionsAnswered
+                            ? () => _submit(context, parent.id, strings)
+                            : null,
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    context.read<OnboardingViewModel>().resetReadinessAttempt();
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: Text(
-                    strings.retakeTest,
-                    style: language.styleFor(null),
-                  ),
-                ),
-                const SizedBox(height: 12),
               ],
-              AppPrimaryButton(
-                icon: Icons.check_circle,
-                label: strings.submitTest,
-                labelStyle: language.styleFor(null),
-                onPressed: onboarding.allQuestionsAnswered
-                    ? () => _submit(context, parent.id, strings)
-                    : null,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -229,97 +172,51 @@ class _ReadinessTestPageState extends State<ReadinessTestPage> {
   }
 }
 
-class _ReadinessQuestionCard extends StatelessWidget {
-  const _ReadinessQuestionCard({
-    required this.questionNumber,
-    required this.question,
-    required this.language,
-    required this.optionOrder,
-    required this.selectedAnswer,
-    required this.onChanged,
-  });
+/// How far through the test the parent is, as a bar and a count.
+///
+/// Deliberately digits rather than words: this screen runs in English and in
+/// Urdu, and "3 of 5" would need a string nobody has written. Numbers read the
+/// same in both.
+class _AnsweredBar extends StatelessWidget {
+  const _AnsweredBar({required this.answered, required this.total});
 
-  final int questionNumber;
-  final ReadinessQuestion question;
-  final OnboardingLanguage language;
-  final List<int> optionOrder;
-  final int? selectedAnswer;
-  final ValueChanged<int> onChanged;
+  final int answered;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.panel,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.52)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.grape.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final progress = total == 0 ? 0.0 : answered / total;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.coral.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$questionNumber',
-                  style: const TextStyle(
-                    color: AppColors.coral,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: progress),
+                duration: PlayMotion.enter,
+                curve: PlayMotion.settleCurve,
+                builder: (context, value, _) {
+                  return LinearProgressIndicator(
+                    value: value,
+                    minHeight: 14,
+                    color: PlayColors.sunshine,
+                    backgroundColor: Colors.white.withValues(alpha: 0.28),
+                  );
+                },
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  question.prompt,
-                  textAlign: language.textAlign,
-                  style: language.styleFor(
-                    Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          height: language.bodyLineHeight,
-                        ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          RadioGroup<int>(
-            groupValue: selectedAnswer,
-            onChanged: (value) {
-              if (value == null) return;
-              onChanged(value);
-            },
-            child: Column(
-              children: [
-                for (final optionIndex in optionOrder)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _ReadinessOptionTile(
-                      value: optionIndex,
-                      label: question.options[optionIndex],
-                      language: language,
-                      selected: selectedAnswer == optionIndex,
-                    ),
-                  ),
-              ],
+          const SizedBox(width: 12),
+          Text(
+            '$answered/$total',
+            style: const TextStyle(
+              fontFamily: 'Fredoka',
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
           ),
         ],
@@ -328,43 +225,252 @@ class _ReadinessQuestionCard extends StatelessWidget {
   }
 }
 
-class _ReadinessOptionTile extends StatelessWidget {
-  const _ReadinessOptionTile({
-    required this.value,
-    required this.label,
-    required this.language,
-    required this.selected,
-  });
+/// The pass mark, on the koala's card rather than in a gradient banner.
+class _PassingBanner extends StatelessWidget {
+  const _PassingBanner({required this.message, required this.language});
 
-  final int value;
-  final String label;
+  final String message;
   final OnboardingLanguage language;
-  final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: selected ? AppColors.lavender : AppColors.cloud,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: selected ? AppColors.plum : AppColors.line,
-        ),
-      ),
-      child: RadioListTile<int>(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-        value: value,
-        activeColor: AppColors.plum,
-        title: Text(
-          label,
-          textAlign: language.textAlign,
-          style: language.styleFor(
-            TextStyle(
-              fontWeight: FontWeight.w700,
-              height: language.bodyLineHeight,
+    return PlayPanel(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: const BoxDecoration(
+              color: PlayColors.sunshine,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.fact_check_rounded,
+              size: 32,
+              color: PlayColors.ink,
             ),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              textAlign: language.textAlign,
+              style: language.styleFor(
+                TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 17,
+                  height: language.bodyLineHeight,
+                  fontWeight: FontWeight.w600,
+                  color: PlayColors.ink,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One question: a numbered disc, the prompt, and its answers.
+class _QuestionCard extends StatelessWidget {
+  const _QuestionCard({
+    required this.questionNumber,
+    required this.question,
+    required this.color,
+    required this.language,
+    required this.optionOrder,
+    required this.selectedAnswer,
+    required this.onChanged,
+  });
+
+  final int questionNumber;
+  final ReadinessQuestion question;
+  final Color color;
+  final OnboardingLanguage language;
+  final List<int> optionOrder;
+  final int? selectedAnswer;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PlayPanel(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                child: Text(
+                  '$questionNumber',
+                  style: TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 26,
+                    height: 1,
+                    fontWeight: FontWeight.w700,
+                    color: PlayColors.onGround(color),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  question.prompt,
+                  textAlign: language.textAlign,
+                  style: language.styleFor(
+                    TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 20,
+                      height: language.bodyLineHeight,
+                      fontWeight: FontWeight.w600,
+                      color: PlayColors.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          for (final optionIndex in optionOrder)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: PlayChoice(
+                label: question.options[optionIndex],
+                selected: selectedAnswer == optionIndex,
+                color: color,
+                textDirection: language.textDirection,
+                labelStyle: language.styleFor(null),
+                onTap: () => onChanged(optionIndex),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown after a failed attempt: the score, the tips for the questions that
+/// went wrong, and the way to try again.
+class _RetryCard extends StatelessWidget {
+  const _RetryCard({
+    required this.onboarding,
+    required this.language,
+    required this.strings,
+  });
+
+  final OnboardingViewModel onboarding;
+  final OnboardingLanguage language;
+  final OnboardingStrings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final missed = onboarding.questions
+        .where((q) => onboarding.selectedAnswerFor(q.id) != q.correctIndex)
+        .toList();
+
+    return PlayPanel(
+      color: PlayColors.cream,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(
+                  color: PlayColors.tangerine,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.replay_rounded,
+                  size: 30,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  strings.scoreLabelFor(onboarding.latestScore ?? 0),
+                  textAlign: language.textAlign,
+                  style: language.styleFor(
+                    const TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 21,
+                      fontWeight: FontWeight.w600,
+                      color: PlayColors.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            strings.reviewTips,
+            textAlign: language.textAlign,
+            style: language.styleFor(
+              TextStyle(
+                fontSize: 15,
+                height: language.bodyLineHeight,
+                fontWeight: FontWeight.w700,
+                color: PlayColors.ink.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          for (final question in missed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    margin: const EdgeInsets.only(top: 6),
+                    decoration: const BoxDecoration(
+                      color: PlayColors.tangerine,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      question.tip,
+                      textAlign: language.textAlign,
+                      style: language.styleFor(
+                        TextStyle(
+                          fontSize: 15,
+                          height: language.bodyLineHeight,
+                          fontWeight: FontWeight.w600,
+                          color: PlayColors.ink,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 6),
+          PlayButton(
+            icon: Icons.refresh_rounded,
+            label: strings.retakeTest,
+            labelStyle: language.styleFor(null),
+            color: PlayColors.tangerine,
+            onPressed: () {
+              context.read<OnboardingViewModel>().resetReadinessAttempt();
+            },
+          ),
+        ],
       ),
     );
   }

@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/localization/onboarding_strings.dart';
 import '../../core/routing/route_names.dart';
 import '../../models/onboarding.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/onboarding_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
+import '../../widgets/play/play.dart';
 import 'widgets/onboarding_language_toggle.dart';
 
+/// The parent guide, swiped one card at a time.
+///
+/// The cards themselves were the least bad thing on the parent path, but they
+/// were purple gradient panels under an `AppBar` — the grown-up palette, on
+/// the first screen a parent sees after signing up. Same cards, same words,
+/// now built out of the play kit.
 class ManualPage extends StatefulWidget {
   const ManualPage({super.key});
 
@@ -53,34 +58,27 @@ class _ManualPageState extends State<ManualPage> {
     final isLastPage = _pageIndex == pages.length - 1;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Directionality(
-          textDirection: language.textDirection,
-          child: Text(
-            strings.manualTitle,
-            style: language.styleFor(null),
-          ),
-        ),
-        actions: const [
-          OnboardingLanguageToggle(),
-          SizedBox(width: 12),
-        ],
-      ),
-      body: SafeArea(
-        child: pages.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: _ManualHeader(
-                      parentName: _parentLabel(parent.email),
-                      currentPage: _pageIndex + 1,
-                      totalPages: pages.length,
-                      language: language,
-                      strings: strings,
-                    ),
-                  ),
+      body: PlayGround(
+        color: PlayColors.grape,
+        safeArea: false,
+        child: SafeArea(
+          child: Directionality(
+            textDirection: language.textDirection,
+            child: Column(
+              children: [
+                PlayHeader(
+                  title: strings.manualTitle,
+                  subtitle: '${strings.welcomeBack}, '
+                      '${_parentLabel(parent.email)} 👋',
+                  textDirection: language.textDirection,
+                  titleStyle: language.styleFor(null),
+                  trailing: const OnboardingLanguageToggle(),
+                ),
+                if (pages.isEmpty)
+                  const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else ...[
                   Expanded(
                     child: PageView.builder(
                       controller: _pageController,
@@ -92,10 +90,11 @@ class _ManualPageState extends State<ManualPage> {
                       itemBuilder: (context, index) {
                         final page = pages[index];
                         return Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-                          // Centred when the card fits, scrollable when it does
-                          // not: Urdu bodies run taller than their English
-                          // counterparts and short phones have little room.
+                          padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                          // Centred when the card fits, scrollable when it
+                          // does not: Urdu bodies run taller than their
+                          // English counterparts and short phones have little
+                          // room.
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               return SingleChildScrollView(
@@ -106,6 +105,7 @@ class _ManualPageState extends State<ManualPage> {
                                   child: Center(
                                     child: _ManualCard(
                                       icon: _iconFor(page.iconName),
+                                      color: PlayColors.byIndex(index),
                                       title: page.title,
                                       body: page.body,
                                       language: language,
@@ -120,25 +120,37 @@ class _ManualPageState extends State<ManualPage> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(pages.length, (index) {
-                            final selected = index == _pageIndex;
-                            return _ManualProgressDot(selected: selected);
-                          }),
+                          children: [
+                            for (var index = 0; index < pages.length; index++)
+                              _ManualProgressDot(
+                                selected: index == _pageIndex,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        PlayNote(
+                          strings.guideProgressFor(
+                            _pageIndex + 1,
+                            pages.length,
+                          ),
+                          style: language.styleFor(null),
                         ),
                         const SizedBox(height: 14),
-                        AppPrimaryButton(
+                        PlayButton(
                           icon: isLastPage
-                              ? Icons.assignment_turned_in
-                              : Icons.arrow_forward,
+                              ? Icons.assignment_turned_in_rounded
+                              : Icons.arrow_forward_rounded,
                           label: isLastPage
                               ? strings.startReadinessTest
                               : strings.next,
                           labelStyle: language.styleFor(null),
+                          color: PlayColors.sunshine,
+                          big: true,
                           onPressed: () async {
                             if (isLastPage) {
                               await onboarding.completeManual(parent.id);
@@ -160,7 +172,10 @@ class _ManualPageState extends State<ManualPage> {
                     ),
                   ),
                 ],
-              ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -177,90 +192,18 @@ class _ManualPageState extends State<ManualPage> {
   }
 }
 
-class _ManualHeader extends StatelessWidget {
-  const _ManualHeader({
-    required this.parentName,
-    required this.currentPage,
-    required this.totalPages,
-    required this.language,
-    required this.strings,
-  });
-
-  final String parentName;
-  final int currentPage;
-  final int totalPages;
-  final OnboardingLanguage language;
-  final OnboardingStrings strings;
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: language.textDirection,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.lavender,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.lilac.withValues(alpha: 0.54)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: AppColors.honey,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.menu_book_rounded, color: AppColors.ink),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${strings.welcomeBack}, $parentName 👋',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: language.textAlign,
-                    style: language.styleFor(
-                      Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    strings.guideProgressFor(currentPage, totalPages),
-                    textAlign: language.textAlign,
-                    style: language.styleFor(
-                      TextStyle(
-                        color: AppColors.ink.withValues(alpha: 0.64),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
+/// One page of the guide: a big coloured badge, a title, and the body.
 class _ManualCard extends StatelessWidget {
   const _ManualCard({
     required this.icon,
+    required this.color,
     required this.title,
     required this.body,
     required this.language,
   });
 
   final IconData icon;
+  final Color color;
   final String title;
   final String body;
   final OnboardingLanguage language;
@@ -269,34 +212,16 @@ class _ManualCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 430),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.grape, AppColors.violet],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.grape.withValues(alpha: 0.18),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+      child: PlayPanel(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(icon, size: 34, color: AppColors.honey),
+              width: 92,
+              height: 92,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(icon, size: 48, color: PlayColors.onGround(color)),
             ),
             const SizedBox(height: 18),
             Directionality(
@@ -305,10 +230,13 @@ class _ManualCard extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: language.styleFor(
-                  Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
+                  const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 28,
+                    height: 1.15,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink,
+                  ),
                 ),
               ),
             ),
@@ -319,10 +247,12 @@ class _ManualCard extends StatelessWidget {
                 body,
                 textAlign: TextAlign.center,
                 style: language.styleFor(
-                  Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.86),
-                        height: language.bodyLineHeight,
-                      ),
+                  TextStyle(
+                    fontSize: 17,
+                    height: language.bodyLineHeight,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink.withValues(alpha: 0.68),
+                  ),
                 ),
               ),
             ),
@@ -341,13 +271,17 @@ class _ManualProgressDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      width: selected ? 28 : 9,
-      height: 9,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
+      duration: const Duration(milliseconds: 220),
+      curve: PlayMotion.settleCurve,
+      width: selected ? 44 : 16,
+      height: 16,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: selected ? AppColors.coral : AppColors.lilac,
+        color: selected ? PlayColors.sunshine : Colors.white.withValues(
+          alpha: 0.42,
+        ),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white, width: 2),
       ),
     );
   }

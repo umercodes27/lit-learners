@@ -9,11 +9,11 @@ import '../../models/learning_level.dart';
 import '../../services/tracing/trace_glyph.dart';
 import '../../viewmodels/drawing_canvas_controller.dart';
 import '../../viewmodels/level_activity_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
 import '../../widgets/drawing/drawing_canvas.dart';
 import '../../widgets/drawing/drawing_toolbar.dart';
 import '../../widgets/tracing/trace_guide_painter.dart';
 import 'widgets/activity_chrome.dart';
+import '../../widgets/play/play.dart';
 
 /// Hands the finished pages to whoever is hosting the activity, which passes
 /// them on to a grown-up to mark.
@@ -159,7 +159,7 @@ class _DrawingLevelViewState extends State<DrawingLevelView> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
-          AppPrimaryButton(
+          PlayButton(
             icon: Icons.check,
             label: 'I finished this step',
             onPressed: _hasNewInk ? activity.markCurrentLearned : null,
@@ -169,14 +169,14 @@ class _DrawingLevelViewState extends State<DrawingLevelView> {
     }
 
     if (!activity.isLastItem) {
-      return AppPrimaryButton(
+      return PlayButton(
         icon: Icons.arrow_forward,
         label: 'Next step',
         onPressed: activity.nextItem,
       );
     }
 
-    return AppPrimaryButton(
+    return PlayButton(
       icon: Icons.how_to_reg,
       label: _handOverLabel,
       onPressed: widget.onFinish == null ? null : _finish,
@@ -405,7 +405,7 @@ class _TracingLevelViewState extends State<TracingLevelView> {
               const SizedBox(width: 10),
               Expanded(
                 flex: 2,
-                child: AppPrimaryButton(
+                child: PlayButton(
                   icon: Icons.check,
                   label: 'I finished this letter',
                   onPressed: _hasInk ? activity.markCurrentLearned : null,
@@ -430,12 +430,12 @@ class _TracingLevelViewState extends State<TracingLevelView> {
         Expanded(
           flex: 2,
           child: activity.isLastItem
-              ? AppPrimaryButton(
+              ? PlayButton(
                   icon: Icons.how_to_reg,
                   label: _handOverLabel,
                   onPressed: widget.onFinish == null ? null : _finish,
                 )
-              : AppPrimaryButton(
+              : PlayButton(
                   icon: Icons.arrow_forward,
                   label: 'Next letter',
                   onPressed: activity.nextItem,

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/localization/onboarding_strings.dart';
 import '../../core/routing/route_names.dart';
 import '../../models/onboarding.dart';
 import '../../viewmodels/onboarding_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
+import '../../widgets/play/play.dart';
 
 /// Sits between the parent guide and the readiness test so the parent picks
 /// the language the test is written in before answering anything.
@@ -20,102 +19,97 @@ class OnboardingLanguagePage extends StatelessWidget {
     final strings = OnboardingStrings.of(language);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Directionality(
-          textDirection: language.textDirection,
-          child: Text(
-            strings.languageTitle,
-            style: language.styleFor(null),
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: Directionality(
-          textDirection: language.textDirection,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.grape, AppColors.violet],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+      body: PlayGround(
+        color: PlayColors.sky,
+        safeArea: false,
+        child: SafeArea(
+          child: Directionality(
+            textDirection: language.textDirection,
+            child: Column(
+              children: [
+                PlayHeader(
+                  title: strings.languageTitle,
+                  textDirection: language.textDirection,
+                  titleStyle: language.styleFor(null),
+                  onBack: Navigator.of(context).canPop()
+                      ? () => Navigator.of(context).maybePop()
+                      : null,
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+                    children: [
+                      PopIn(
+                        index: 0,
+                        child: _LanguageHero(
+                          heading: strings.languageHeading,
+                          subtitle: strings.languageSubtitle,
+                          language: language,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      for (var index = 0;
+                          index < OnboardingLanguage.values.length;
+                          index++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: PopIn(
+                            index: index + 1,
+                            child: Builder(
+                              builder: (context) {
+                                final option =
+                                    OnboardingLanguage.values[index];
+                                return PlayChoice(
+                                  label: option.nativeLabel,
+                                  // Only when it adds something: the English
+                                  // option would otherwise say "English"
+                                  // twice.
+                                  caption:
+                                      option.nativeLabel == option.englishLabel
+                                          ? null
+                                          : option.englishLabel,
+                                  selected: option == language,
+                                  color: PlayColors.byIndex(index + 3),
+                                  textDirection: option.textDirection,
+                                  labelStyle: option.styleFor(null),
+                                  semanticLabel: option.englishLabel,
+                                  onTap: () => context
+                                      .read<OnboardingViewModel>()
+                                      .setLanguage(option),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 6),
+                      PlayNote(
+                        strings.languageNote,
+                        align: language.textAlign,
+                        style: language.styleFor(null),
+                      ),
+                    ],
                   ),
-                  borderRadius: BorderRadius.circular(24),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: AppColors.honey,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.translate_rounded,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      strings.languageHeading,
-                      textAlign: language.textAlign,
-                      style: language.styleFor(
-                        Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      strings.languageSubtitle,
-                      textAlign: language.textAlign,
-                      style: language.styleFor(
-                        Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.86),
-                              height: language.bodyLineHeight,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              for (final option in OnboardingLanguage.values)
+                // Pinned below the list rather than sitting at the end of it.
+                // There are only two things to choose from, so the way onward
+                // should never be something a parent has to scroll to find.
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _LanguageOptionCard(
-                    language: option,
-                    selected: option == language,
-                    onTap: () =>
-                        context.read<OnboardingViewModel>().setLanguage(option),
+                  padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
+                  child: PlayButton(
+                    icon: Icons.arrow_forward_rounded,
+                    label: strings.continueLabel,
+                    labelStyle: language.styleFor(null),
+                    color: PlayColors.sunshine,
+                    big: true,
+                    onPressed: () {
+                      Navigator.of(context).pushReplacementNamed(
+                        RouteNames.onboardingTest,
+                      );
+                    },
                   ),
                 ),
-              const SizedBox(height: 4),
-              Text(
-                strings.languageNote,
-                textAlign: language.textAlign,
-                style: language.styleFor(
-                  Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              const SizedBox(height: 18),
-              AppPrimaryButton(
-                icon: Icons.arrow_forward,
-                label: strings.continueLabel,
-                labelStyle: language.styleFor(null),
-                onPressed: () {
-                  Navigator.of(context).pushReplacementNamed(
-                    RouteNames.onboardingTest,
-                  );
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -123,77 +117,68 @@ class OnboardingLanguagePage extends StatelessWidget {
   }
 }
 
-class _LanguageOptionCard extends StatelessWidget {
-  const _LanguageOptionCard({
+/// What the choice is for, on the koala's white card.
+class _LanguageHero extends StatelessWidget {
+  const _LanguageHero({
+    required this.heading,
+    required this.subtitle,
     required this.language,
-    required this.selected,
-    required this.onTap,
   });
 
+  final String heading;
+  final String subtitle;
   final OnboardingLanguage language;
-  final bool selected;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: language.englishLabel,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.lavender : AppColors.panel,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: selected ? AppColors.violet : AppColors.line,
-              width: selected ? 2 : 1,
+    return PlayPanel(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: language.textDirection == TextDirection.rtl
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            decoration: const BoxDecoration(
+              color: PlayColors.grape,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.translate_rounded,
+              size: 38,
+              color: Colors.white,
             ),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Always shown in its own script so a parent who reads only
-                    // one of the two can still recognise their language.
-                    Directionality(
-                      textDirection: language.textDirection,
-                      child: Text(
-                        language.nativeLabel,
-                        style: language.styleFor(
-                          Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w900,
-                              ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      language.englishLabel,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.ink.withValues(alpha: 0.64),
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                  ],
-                ),
+          const SizedBox(height: 14),
+          Text(
+            heading,
+            textAlign: language.textAlign,
+            style: language.styleFor(
+              const TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 26,
+                height: 1.15,
+                fontWeight: FontWeight.w600,
+                color: PlayColors.ink,
               ),
-              Icon(
-                selected
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_unchecked,
-                color: selected ? AppColors.violet : AppColors.line,
-                size: 28,
-              ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: language.textAlign,
+            style: language.styleFor(
+              TextStyle(
+                fontSize: 16,
+                height: language.bodyLineHeight,
+                fontWeight: FontWeight.w600,
+                color: PlayColors.ink.withValues(alpha: 0.66),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

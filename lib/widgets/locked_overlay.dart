@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'play/play.dart';
+
 class LockedOverlay extends StatelessWidget {
   const LockedOverlay({
     required this.reason,
@@ -13,13 +15,23 @@ class LockedOverlay extends StatelessWidget {
     return Positioned.fill(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.78),
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.white.withValues(alpha: 0.66),
+          borderRadius: BorderRadius.circular(PlayMotion.radiusLarge),
         ),
         child: Center(
           child: Tooltip(
             message: reason,
-            child: const Icon(Icons.lock, size: 32),
+            child: Container(
+              width: 66,
+              height: 66,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: PlayColors.grape,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 4),
+              ),
+              child: const Icon(Icons.lock, size: 32, color: Colors.white),
+            ),
           ),
         ),
       ),

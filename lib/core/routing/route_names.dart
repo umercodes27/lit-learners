@@ -1,7 +1,10 @@
 class RouteNames {
   const RouteNames._();
 
-  static const splash = '/';
+  /// The koala on the skateboard. First thing the app shows, for three
+  /// seconds, then it hands over to [splash].
+  static const intro = '/';
+  static const splash = '/welcome';
   static const login = '/login';
   static const signup = '/signup';
   static const forgotPassword = '/forgot-password';

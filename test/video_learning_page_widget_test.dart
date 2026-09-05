@@ -12,6 +12,7 @@ import 'package:little_learners/services/local/content_dao.dart';
 import 'package:little_learners/viewmodels/active_child_session.dart';
 import 'package:little_learners/viewmodels/learning_viewmodel.dart';
 import 'package:little_learners/views/video/video_learning_page.dart';
+import 'package:little_learners/widgets/play/play.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -25,7 +26,7 @@ void main() {
 
     expect(find.text('Watch and Count'), findsOneWidget);
     expect(find.text('Shapes in Motion'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Download'), findsOneWidget);
+    expect(find.widgetWithText(PlayButton, 'Download'), findsOneWidget);
   });
 
   testWidgets('downloading unlocks the level for playing', (tester) async {
@@ -38,14 +39,18 @@ void main() {
     expect(learning.canOpenLevel(locked), isFalse);
     expect(learning.canDownloadLevel(locked), isTrue);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Download'));
+    // The levels are a map now, so a stop further along the road can sit
+    // below the fold. Scroll to it the way a parent would before tapping.
+    await tester.ensureVisible(find.widgetWithText(PlayButton, 'Download'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PlayButton, 'Download'));
     await tester.pumpAndSettle();
 
     final unlocked = learning
         .levelsFor('video')
         .firstWhere((level) => level.id == 'video-stage3-2');
     expect(learning.canOpenLevel(unlocked), isTrue);
-    expect(find.widgetWithText(OutlinedButton, 'Download'), findsNothing);
+    expect(find.widgetWithText(PlayButton, 'Download'), findsNothing);
   });
 
   testWidgets('a level behind an unfinished one stays locked', (tester) async {
@@ -58,7 +63,7 @@ void main() {
 
     expect(learning.canDownloadLevel(second), isFalse);
     expect(learning.lockReasonFor(second), 'Finish the previous level first.');
-    expect(find.widgetWithText(OutlinedButton, 'Download'), findsNothing);
+    expect(find.widgetWithText(PlayButton, 'Download'), findsNothing);
   });
 }
 

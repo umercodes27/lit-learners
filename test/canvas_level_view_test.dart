@@ -6,6 +6,7 @@ import 'package:little_learners/models/content_item.dart';
 import 'package:little_learners/models/learning_level.dart';
 import 'package:little_learners/viewmodels/level_activity_viewmodel.dart';
 import 'package:little_learners/views/child_dashboard/canvas_level_view.dart';
+import 'package:little_learners/widgets/play/play.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -185,11 +186,11 @@ Future<void> _scribble(
   await tester.pumpAndSettle();
 }
 
-FilledButton _button(WidgetTester tester, String label) {
-  return tester.widget<FilledButton>(
+PlayButton _button(WidgetTester tester, String label) {
+  return tester.widget<PlayButton>(
     find.ancestor(
       of: find.text(label),
-      matching: find.byType(FilledButton),
+      matching: find.byType(PlayButton),
     ),
   );
 }

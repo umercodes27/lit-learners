@@ -27,6 +27,7 @@ dependencies:
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
   image_picker: ^1.2.3
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -37,8 +38,14 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/animations/
     - assets/audio/learning/
     - assets/audio/koala/
+    # Cut from assets/audio/_masters/ by tool/prepare_audio.py. The masters
+    # are deliberately not listed here: they stay in the repo for re-cutting
+    # and add nothing to the app.
+    - assets/audio/music/
+    - assets/audio/sfx/
     - assets/images/koala/
     - assets/images/splash/
     - assets/seed/

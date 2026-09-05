@@ -8,6 +8,7 @@ import 'package:little_learners/viewmodels/auth_viewmodel.dart';
 import 'package:little_learners/viewmodels/profile_viewmodel.dart';
 import 'package:little_learners/views/profile/profile_create_edit_page.dart';
 import 'package:little_learners/widgets/child_avatar.dart';
+import 'package:little_learners/widgets/play/play.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -47,11 +48,14 @@ void main() {
     await _pumpForm(tester);
 
     expect(find.text('Choose an age from 1 to 4.'), findsOneWidget);
+    // Squishy rather than ChoiceChip: the age options are play-kit tiles now.
+    // The assertion is unchanged — each age in range is offered as something
+    // tappable, and nothing outside the range is.
     for (final age in ['1', '2', '3', '4']) {
-      expect(find.widgetWithText(ChoiceChip, age), findsOneWidget);
+      expect(find.widgetWithText(Squishy, age), findsOneWidget);
     }
     for (final age in ['5', '6', '7', '8']) {
-      expect(find.widgetWithText(ChoiceChip, age), findsNothing);
+      expect(find.widgetWithText(Squishy, age), findsNothing);
     }
   });
 

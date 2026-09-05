@@ -7,15 +7,14 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/avatar_presets.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/routing/route_names.dart';
 import '../../models/child_profile.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
 import '../../widgets/child_avatar.dart';
+import '../../widgets/play/play.dart';
 
 /// The ages the learning content is authored for. `AgeStageHelper` turns each
 /// one into its own stage, so anything outside this range has no content of
@@ -79,134 +78,126 @@ class _ProfileCreateEditPageState extends State<ProfileCreateEditPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Edit Profile' : 'Create Profile'),
-        actions: [
-          if (isEditing)
-            IconButton(
-              tooltip: 'Delete profile',
-              onPressed: () => _confirmDelete(context, editingProfile),
-              icon: const Icon(Icons.delete),
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            _ProfileFormHero(isEditing: isEditing),
-            const SizedBox(height: 16),
-            _FancyProfileField(
-              child: TextField(
-                controller: _nameController,
-                textInputAction: TextInputAction.done,
-                cursorColor: AppColors.plum,
-                decoration: const InputDecoration(
-                  labelText: 'Child name',
-                  prefixIcon: Icon(Icons.badge_rounded),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const _SectionHeading(
-              icon: Icons.cake_rounded,
-              label: 'Age',
-              helper: 'Choose an age from $_minAge to $_maxAge.',
-            ),
-            const SizedBox(height: 10),
-            _AgeSelector(
-              age: _age,
-              onChanged: (age) => setState(() => _age = age),
-            ),
-            const SizedBox(height: 16),
-            const _SectionHeading(
-              icon: Icons.face_rounded,
-              label: 'Avatar',
-              helper: 'Pick a buddy, or use a photo.',
-            ),
-            const SizedBox(height: 8),
-            _AvatarPicker(
-              name: _nameController.text.trim().isEmpty
-                  ? 'Learner'
-                  : _nameController.text,
-              selectedAvatar: _avatarAsset,
-              onAvatarSelected: (avatar) {
-                setState(() => _avatarAsset = avatar);
-              },
-              onPickPhoto: _pickAvatarPhoto,
-            ),
-            const SizedBox(height: 16),
-            _FancyProfileField(
-              child: SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Opt in to age-group leaderboard'),
-                subtitle: const Text('Display is anonymized in parent views.'),
-                activeThumbColor: AppColors.honey,
-                activeTrackColor: AppColors.violet,
-                value: _leaderboardOptIn,
-                onChanged: (value) {
-                  setState(() => _leaderboardOptIn = value);
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-            _FancyProfileField(
-              child: DropdownButtonFormField<String>(
-                initialValue: _displayPreference,
-                decoration: const InputDecoration(
-                  labelText: 'Leaderboard display',
-                  prefixIcon: Icon(Icons.visibility_rounded),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'alias', child: Text('Alias')),
-                  DropdownMenuItem(
-                    value: 'firstName',
-                    child: Text('First name'),
-                  ),
-                ],
-                onChanged: _leaderboardOptIn
-                    ? (value) {
-                        if (value == null) return;
-                        setState(() => _displayPreference = value);
-                      }
+      body: PlayGround(
+        color: PlayColors.bubblegum,
+        safeArea: false,
+        child: SafeArea(
+          child: Column(
+            children: [
+              PlayHeader(
+                title: isEditing ? 'Edit Profile' : 'Create Profile',
+                onBack: Navigator.of(context).canPop()
+                    ? () => Navigator.of(context).maybePop()
+                    : null,
+                trailing: isEditing
+                    ? PlayIconButton(
+                        icon: Icons.delete_outline_rounded,
+                        semanticLabel: 'Delete profile',
+                        onPressed: () =>
+                            _confirmDelete(context, editingProfile),
+                        color: PlayColors.card,
+                        iconColor: PlayColors.strawberry,
+                        size: 54,
+                      )
                     : null,
               ),
-            ),
-            if (profileVm.errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                profileVm.errorMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+                  children: [
+                    _ProfileFormHero(isEditing: isEditing),
+                    const SizedBox(height: 18),
+                    PlayField(
+                      controller: _nameController,
+                      label: 'Child name',
+                      icon: Icons.badge_rounded,
+                      color: PlayColors.grape,
+                      textInputAction: TextInputAction.done,
+                    ),
+                    const SizedBox(height: 20),
+                    const _SectionHeading(
+                      icon: Icons.cake_rounded,
+                      label: 'Age',
+                      helper: 'Choose an age from $_minAge to $_maxAge.',
+                    ),
+                    const SizedBox(height: 12),
+                    _AgeSelector(
+                      age: _age,
+                      onChanged: (age) => setState(() => _age = age),
+                    ),
+                    const SizedBox(height: 20),
+                    const _SectionHeading(
+                      icon: Icons.face_rounded,
+                      label: 'Avatar',
+                      helper: 'Pick a buddy, or use a photo.',
+                    ),
+                    const SizedBox(height: 12),
+                    _AvatarPicker(
+                      name: _nameController.text.trim().isEmpty
+                          ? 'Learner'
+                          : _nameController.text,
+                      selectedAvatar: _avatarAsset,
+                      onAvatarSelected: (avatar) {
+                        setState(() => _avatarAsset = avatar);
+                      },
+                      onPickPhoto: _pickAvatarPhoto,
+                    ),
+                    const SizedBox(height: 20),
+                    _LeaderboardCard(
+                      optIn: _leaderboardOptIn,
+                      preference: _displayPreference,
+                      onOptInChanged: (value) {
+                        setState(() => _leaderboardOptIn = value);
+                      },
+                      onPreferenceChanged: (value) {
+                        setState(() => _displayPreference = value);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              // Pinned below the list rather than sitting at the end of it.
+              // This form is long enough that the save button fell outside
+              // the ListView's built range, which left a parent scrolling to
+              // find the only way to finish.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (profileVm.errorMessage != null) ...[
+                      PlayBanner(message: profileVm.errorMessage!),
+                      const SizedBox(height: 12),
+                    ],
+                    PlayButton(
+                      icon: _isUploadingAvatar
+                          ? Icons.cloud_upload_rounded
+                          : Icons.save_rounded,
+                      label: _isUploadingAvatar
+                          ? 'Uploading avatar...'
+                          : isEditing
+                              ? 'Save changes'
+                              : 'Create profile',
+                      color: PlayColors.sunshine,
+                      big: true,
+                      onPressed: profileVm.isLoading || _isUploadingAvatar
+                          ? null
+                          : () => _save(
+                                context,
+                                parent.id,
+                                editingProfile,
+                              ),
+                    ),
+                  ],
+                ),
               ),
             ],
-            const SizedBox(height: 20),
-            AppPrimaryButton(
-              icon: _isUploadingAvatar ? Icons.cloud_upload : Icons.save,
-              label: _isUploadingAvatar
-                  ? 'Uploading avatar...'
-                  : isEditing
-                      ? 'Save changes'
-                      : 'Create profile',
-              onPressed: profileVm.isLoading || _isUploadingAvatar
-                  ? null
-                  : () => _save(
-                        context,
-                        parent.id,
-                        editingProfile,
-                      ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
-
   void _seedFields(ChildProfile profile) {
     _nameController.text = profile.name;
     // Clamped: a profile saved before the age range narrowed to 1-4 would
@@ -301,43 +292,54 @@ class _ProfileCreateEditPageState extends State<ProfileCreateEditPage> {
   Future<ImageSource?> _chooseImageSource() {
     return showModalBottomSheet<ImageSource>(
       context: context,
-      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      // Without this the sheet is capped at nine sixteenths of the screen, and
+      // rows sized for a finger no longer fit inside that.
+      isScrollControlled: true,
       builder: (sheetContext) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                child: Text(
-                  'Add a profile photo',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Material(
+              color: Colors.transparent,
+              child: PlayPanel(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Add a profile photo',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Fredoka',
+                        fontSize: 23,
+                        fontWeight: FontWeight.w600,
+                        color: PlayColors.ink,
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    _SourceOption(
+                      icon: Icons.photo_camera_rounded,
+                      color: PlayColors.grape,
+                      title: 'Take a photo',
+                      subtitle: 'Uses the camera on this device.',
+                      onTap: () =>
+                          Navigator.of(sheetContext).pop(ImageSource.camera),
+                    ),
+                    const SizedBox(height: 10),
+                    _SourceOption(
+                      icon: Icons.photo_library_rounded,
+                      color: PlayColors.sky,
+                      title: 'Choose from gallery',
+                      subtitle: 'Pick a picture already on this device.',
+                      onTap: () =>
+                          Navigator.of(sheetContext).pop(ImageSource.gallery),
+                    ),
+                  ],
                 ),
               ),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_camera_rounded,
-                  color: AppColors.plum,
-                ),
-                title: const Text('Take a photo'),
-                subtitle: const Text('Uses the camera on this device.'),
-                onTap: () =>
-                    Navigator.of(sheetContext).pop(ImageSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library_rounded,
-                  color: AppColors.plum,
-                ),
-                title: const Text('Choose from gallery'),
-                subtitle: const Text('Pick a picture already on this device.'),
-                onTap: () =>
-                    Navigator.of(sheetContext).pop(ImageSource.gallery),
-              ),
-              const SizedBox(height: 12),
-            ],
+            ),
           ),
         );
       },
@@ -349,35 +351,29 @@ class _ProfileCreateEditPageState extends State<ProfileCreateEditPage> {
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          icon: Icon(
-            isCamera
-                ? Icons.photo_camera_rounded
-                : Icons.photo_library_rounded,
-            color: AppColors.plum,
-          ),
-          title: Text(
-            isCamera ? 'Allow camera access?' : 'Allow photo access?',
-          ),
-          content: Text(
-            isCamera
-                ? 'Little Learners needs the camera to take this profile '
-                    'photo. The picture stays on this device until you save '
-                    'the profile, and it is only used as the child avatar.'
-                : 'Little Learners needs access to your photos so you can '
-                    'pick a profile picture. Only the picture you choose is '
-                    'used, and only as the child avatar.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Not now'),
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: PlayDialog(
+              icon: isCamera
+                  ? Icons.photo_camera_rounded
+                  : Icons.photo_library_rounded,
+              accent: PlayColors.sky,
+              title: isCamera ? 'Allow camera access?' : 'Allow photo access?',
+              message: isCamera
+                  ? 'Little Learners needs the camera to take this profile '
+                      'photo. The picture stays on this device until you save '
+                      'the profile, and it is only used as the child avatar.'
+                  : 'Little Learners needs access to your photos so you can '
+                      'pick a profile picture. Only the picture you choose is '
+                      'used, and only as the child avatar.',
+              cancelLabel: 'Not now',
+              confirmLabel: 'Continue',
+              confirmIcon: Icons.arrow_forward_rounded,
+              onCancel: () => Navigator.of(dialogContext).pop(false),
+              onConfirm: () => Navigator.of(dialogContext).pop(true),
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Continue'),
-            ),
-          ],
+          ),
         );
       },
     );
@@ -457,22 +453,24 @@ class _ProfileCreateEditPageState extends State<ProfileCreateEditPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Save without the photo?'),
-          content: const Text(
-            'The photo could not be uploaded. The profile can be saved with a '
-            'colour avatar instead, and you can add a photo later.',
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: PlayDialog(
+              icon: Icons.image_not_supported_rounded,
+              accent: PlayColors.tangerine,
+              title: 'Save without the photo?',
+              message:
+                  'The photo could not be uploaded. The profile can be saved '
+                  'with a colour avatar instead, and you can add a photo '
+                  'later.',
+              cancelLabel: 'Back',
+              confirmLabel: 'Save anyway',
+              confirmIcon: Icons.save_rounded,
+              onCancel: () => Navigator.of(dialogContext).pop(false),
+              onConfirm: () => Navigator.of(dialogContext).pop(true),
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Back'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Save anyway'),
-            ),
-          ],
         );
       },
     );
@@ -494,19 +492,21 @@ class _ProfileCreateEditPageState extends State<ProfileCreateEditPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete profile?'),
-          content: Text('This removes ${profile.name} from this device.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: PlayDialog(
+              icon: Icons.delete_outline_rounded,
+              accent: PlayColors.strawberry,
+              title: 'Delete profile?',
+              message: 'This removes ${profile.name} from this device.',
+              cancelLabel: 'Cancel',
+              confirmLabel: 'Delete',
+              confirmIcon: Icons.delete_outline_rounded,
+              onCancel: () => Navigator.of(dialogContext).pop(false),
+              onConfirm: () => Navigator.of(dialogContext).pop(true),
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
-            ),
-          ],
+          ),
         );
       },
     );
@@ -521,6 +521,7 @@ class _ProfileCreateEditPageState extends State<ProfileCreateEditPage> {
   }
 }
 
+/// What this form is for, on a white slab rather than a purple gradient.
 class _ProfileFormHero extends StatelessWidget {
   const _ProfileFormHero({required this.isEditing});
 
@@ -528,38 +529,34 @@ class _ProfileFormHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.grape, AppColors.violet],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(26),
-      ),
+    return PlayPanel(
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppColors.honey,
-              borderRadius: BorderRadius.circular(18),
+            width: 68,
+            height: 68,
+            decoration: const BoxDecoration(
+              color: PlayColors.sunshine,
+              shape: BoxShape.circle,
             ),
             child: Icon(
               isEditing ? Icons.edit_rounded : Icons.add_reaction_rounded,
-              color: AppColors.ink,
+              color: PlayColors.ink,
+              size: 36,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(
               isEditing ? 'Make this profile sparkle' : 'Create a learner',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
+              style: const TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 25,
+                height: 1.15,
+                fontWeight: FontWeight.w600,
+                color: PlayColors.ink,
+              ),
             ),
           ),
         ],
@@ -568,32 +565,11 @@ class _ProfileFormHero extends StatelessWidget {
   }
 }
 
-class _FancyProfileField extends StatelessWidget {
-  const _FancyProfileField({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.panel,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.58)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.grape.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
+/// A titled section of the form, painted onto the ground.
+///
+/// The helper line now sits under the label instead of beside it: at play-kit
+/// type sizes the two no longer fit on one row of a narrow phone, and the
+/// helper is the half that was getting ellipsised away.
 class _SectionHeading extends StatelessWidget {
   const _SectionHeading({
     required this.icon,
@@ -607,32 +583,43 @@ class _SectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.coral, size: 20),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            helper,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.ink.withValues(alpha: 0.58),
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 26),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 24,
+                  height: 1.1,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            helper,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
+/// The four ages, as tiles big enough to hit rather than as Material chips.
 class _AgeSelector extends StatelessWidget {
   const _AgeSelector({
     required this.age,
@@ -644,23 +631,71 @@ class _AgeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    return Row(
       children: [
-        for (var option = _minAge; option <= _maxAge; option++)
-          ChoiceChip(
-            label: Text('$option'),
-            selected: age == option,
-            selectedColor: AppColors.honey,
-            backgroundColor: AppColors.lavender,
-            labelStyle: TextStyle(
-              color: age == option ? AppColors.coral : AppColors.ink,
-              fontWeight: FontWeight.w900,
+        for (var option = _minAge; option <= _maxAge; option++) ...[
+          if (option > _minAge) const SizedBox(width: 10),
+          Expanded(
+            child: _AgeTile(
+              age: option,
+              selected: age == option,
+              color: PlayColors.byIndex(option),
+              onTap: () => onChanged(option),
             ),
-            onSelected: (_) => onChanged(option),
           ),
+        ],
       ],
+    );
+  }
+}
+
+class _AgeTile extends StatelessWidget {
+  const _AgeTile({
+    required this.age,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  final int age;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Squishy(
+      semanticLabel: 'Age $age',
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: PlayMotion.pressDown,
+        height: 76,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? color : PlayColors.card,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: Colors.white, width: 4),
+          boxShadow: [
+            BoxShadow(
+              color: PlayColors.ink.withValues(alpha: selected ? 0.24 : 0.14),
+              offset: const Offset(0, 5),
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Text(
+          '$age',
+          style: TextStyle(
+            fontFamily: 'Fredoka',
+            fontSize: 34,
+            height: 1,
+            fontWeight: FontWeight.w700,
+            color: selected
+                ? PlayColors.onGround(color)
+                : PlayColors.ink.withValues(alpha: 0.55),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -680,13 +715,8 @@ class _AvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.lavender,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.62)),
-      ),
+    return PlayPanel(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -695,36 +725,44 @@ class _AvatarPicker extends StatelessWidget {
               ChildAvatar(
                 name: name,
                 avatarValue: selectedAvatar,
-                radius: 32,
+                radius: 38,
                 borderColor: Colors.white,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Profile photo',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
+                      style: TextStyle(
+                        fontFamily: 'Fredoka',
+                        fontSize: 20,
+                        height: 1.15,
+                        fontWeight: FontWeight.w600,
+                        color: PlayColors.ink,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Tap a buddy below, or use a photo of your child.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.ink.withValues(alpha: 0.6),
-                          ),
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.3,
+                        fontWeight: FontWeight.w600,
+                        color: PlayColors.ink.withValues(alpha: 0.6),
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: 10,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
             children: [
               for (final preset in AvatarPresets.all)
                 _PresetOption(
@@ -734,11 +772,12 @@ class _AvatarPicker extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 14),
-          OutlinedButton.icon(
+          const SizedBox(height: 16),
+          PlayButton(
+            icon: Icons.add_a_photo_rounded,
+            label: 'Use a photo',
+            color: PlayColors.sky,
             onPressed: onPickPhoto,
-            icon: const Icon(Icons.add_a_photo_rounded),
-            label: const Text('Use a photo'),
           ),
         ],
       ),
@@ -759,38 +798,199 @@ class _PresetOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: '${preset.label} avatar',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ChildAvatar(
-                name: preset.label,
-                avatarValue: preset.id,
-                radius: 26,
-                borderColor: selected ? AppColors.coral : Colors.white,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                preset.label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: selected
-                      ? AppColors.coral
-                      : AppColors.ink.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-          ),
+    // The chosen buddy is carried by the tile going solid, the same way every
+    // other choice in the app reads. The old version marked it with a 2px
+    // coral ring, which is invisible at arm's length.
+    return Squishy(
+      semanticLabel: '${preset.label} avatar',
+      onTap: onTap,
+      scale: 0.9,
+      child: AnimatedContainer(
+        duration: PlayMotion.pressDown,
+        width: 88,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? PlayColors.grape : PlayColors.cream,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: [
+            BoxShadow(
+              color: PlayColors.ink.withValues(alpha: selected ? 0.22 : 0.12),
+              offset: const Offset(0, 4),
+              blurRadius: 0,
+            ),
+          ],
         ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ChildAvatar(
+              name: preset.label,
+              avatarValue: preset.id,
+              radius: 28,
+              borderColor: Colors.white,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              preset.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 14,
+                height: 1,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : PlayColors.ink,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The leaderboard opt-in and, once it is on, how the child is named there.
+///
+/// This was a [SwitchListTile] and a [DropdownButtonFormField] inside a white
+/// `DecoratedBox`. That nesting throws "ListTile background color or ink
+/// splashes may be invisible" on every build, which is what all four of this
+/// screen's widget tests were failing on. Neither Material control survives.
+class _LeaderboardCard extends StatelessWidget {
+  const _LeaderboardCard({
+    required this.optIn,
+    required this.preference,
+    required this.onOptInChanged,
+    required this.onPreferenceChanged,
+  });
+
+  final bool optIn;
+  final String preference;
+  final ValueChanged<bool> onOptInChanged;
+  final ValueChanged<String> onPreferenceChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PlayPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Squishy(
+            semanticLabel: 'Opt in to age-group leaderboard',
+            onTap: () => onOptInChanged(!optIn),
+            scale: 0.98,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Opt in to age-group leaderboard',
+                        style: TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 19,
+                          height: 1.2,
+                          fontWeight: FontWeight.w600,
+                          color: PlayColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Display is anonymized in parent views.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.3,
+                          fontWeight: FontWeight.w600,
+                          color: PlayColors.ink.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _PlaySwitch(value: optIn),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Leaderboard display',
+            style: TextStyle(
+              fontFamily: 'Fredoka',
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: PlayColors.ink.withValues(alpha: optIn ? 1 : 0.4),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Two options shown side by side rather than hidden behind a
+          // dropdown: a parent should be able to see what the choice is
+          // without opening anything.
+          Opacity(
+            opacity: optIn ? 1 : 0.45,
+            child: IgnorePointer(
+              ignoring: !optIn,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: PlayChoice(
+                      label: 'Alias',
+                      selected: preference == 'alias',
+                      color: PlayColors.grape,
+                      onTap: () => onPreferenceChanged('alias'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PlayChoice(
+                      label: 'First name',
+                      selected: preference == 'firstName',
+                      color: PlayColors.grape,
+                      onTap: () => onPreferenceChanged('firstName'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A chunky toggle, sized like everything else a finger lands on.
+class _PlaySwitch extends StatelessWidget {
+  const _PlaySwitch({required this.value});
+
+  final bool value;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: PlayMotion.settleCurve,
+      width: 76,
+      height: 44,
+      padding: const EdgeInsets.all(4),
+      alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+      decoration: BoxDecoration(
+        color: value ? PlayColors.grass : PlayColors.ink.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white, width: 3),
+      ),
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: value
+            ? const Icon(Icons.check_rounded, size: 20, color: PlayColors.grass)
+            : null,
       ),
     );
   }
@@ -811,4 +1011,79 @@ String _contentTypeFor(String extension) {
     'heic' => 'image/heic',
     _ => 'image/jpeg',
   };
+}
+
+/// Camera or gallery, as a chunky row rather than a [ListTile].
+class _SourceOption extends StatelessWidget {
+  const _SourceOption({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Squishy(
+      semanticLabel: title,
+      onTap: onTap,
+      scale: 0.97,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: PlayColors.cream,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: Colors.white, width: 3),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(
+                icon,
+                size: 28,
+                color: PlayColors.onGround(color),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 19,
+                      height: 1.15,
+                      fontWeight: FontWeight.w600,
+                      color: PlayColors.ink,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.3,
+                      fontWeight: FontWeight.w600,
+                      color: PlayColors.ink.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

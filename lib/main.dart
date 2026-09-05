@@ -18,6 +18,10 @@ Future<void> main() async {
   // Channels and the timezone database have to exist before any reminder can
   // be scheduled, and scheduling happens as soon as a parent opens the list.
   await localNotificationService.initialize();
+  // Read the parent's mute and volume choices before the first frame, so a
+  // family who silenced the app last night does not get a burst of music
+  // while the setting loads.
+  await loadSoundSettings();
   runApp(const LittleLearnersApp());
 }
 

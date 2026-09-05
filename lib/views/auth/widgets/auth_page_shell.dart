@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
+import '../../../widgets/play/play.dart';
 
-const _woodLight = Color(0xFFE4AD68);
-const _woodDark = Color(0xFF6F3D20);
-const _woodMid = Color(0xFFA96637);
-
+/// The frame every parent auth screen sits in.
+///
+/// This used to be a photographic background with carved wooden text fields
+/// and a honey `FilledButton` — its own little design system, shared with
+/// nothing. Arriving here from the child screens felt like leaving the app,
+/// which is exactly the complaint.
+///
+/// It is now built from the play kit: a solid colour ground, the koala, a
+/// white slab for the form, and the same chunky button a child taps. Each
+/// screen gets its own [ground] colour so the three of them are still
+/// distinguishable at a glance.
 class AuthPageShell extends StatelessWidget {
   const AuthPageShell({
     required this.titleLeading,
     required this.titleTrailing,
     required this.child,
+    this.ground = PlayColors.blueberry,
+    this.accent = PlayColors.sunshine,
     super.key,
   });
 
@@ -18,94 +27,128 @@ class AuthPageShell extends StatelessWidget {
   final String titleTrailing;
   final Widget child;
 
+  /// The screen's colour.
+  final Color ground;
+
+  /// The second word of the title, and the colour the form's fields carry.
+  final Color accent;
+
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/images/splash/little_learners_splash.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-          ),
-          ColoredBox(color: Colors.white.withValues(alpha: 0.04)),
-          SafeArea(
-            child: Stack(
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final topSpace = (constraints.maxHeight * 0.24)
-                        .clamp(126.0, 216.0)
-                        .toDouble();
-
-                    return SingleChildScrollView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: EdgeInsets.fromLTRB(24, topSpace, 24, 32),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 410),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _AuthTitle(
-                                leading: titleLeading,
-                                trailing: titleTrailing,
-                              ),
-                              const SizedBox(height: 20),
-                              child,
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+      body: PlayGround(
+        color: ground,
+        safeArea: false,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (canPop)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                  child: PlayIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    semanticLabel: 'Go back',
+                    onPressed: () => Navigator.of(context).pop(),
+                    size: 58,
+                  ),
                 ),
-                if (Navigator.of(context).canPop())
-                  Positioned(
-                    left: 12,
-                    top: 10,
-                    child: IconButton.filled(
-                      tooltip: 'Back',
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.honey,
-                        foregroundColor: AppColors.coral,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: Colors.white, width: 2),
-                        ),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(20, canPop ? 10 : 20, 20, 28),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 430),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const _AuthKoala(),
+                          const SizedBox(height: 10),
+                          _AuthTitle(
+                            leading: titleLeading,
+                            trailing: titleTrailing,
+                            accent: accent,
+                          ),
+                          const SizedBox(height: 18),
+                          PlayPanel(
+                            padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                            child: child,
+                          ),
+                        ],
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.arrow_back_rounded),
                     ),
                   ),
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
+/// The guide, so the parent screens carry the same character the child screens
+/// do rather than being the one part of the app with nobody in it.
+class _AuthKoala extends StatelessWidget {
+  const _AuthKoala();
+
+  @override
+  Widget build(BuildContext context) {
+    final koala = Container(
+      width: 96,
+      height: 96,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: PlayColors.ink.withValues(alpha: 0.22),
+            offset: const Offset(0, 6),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Image.asset(
+        'assets/images/koala/koala_guide_portrait.png',
+        height: 84,
+        fit: BoxFit.contain,
+      ),
+    );
+
+    return Center(child: PopIn(index: 0, child: koala));
+  }
+}
+
+/// Two words, two colours, deliberately enormous.
 class _AuthTitle extends StatelessWidget {
-  const _AuthTitle({required this.leading, required this.trailing});
+  const _AuthTitle({
+    required this.leading,
+    required this.trailing,
+    required this.accent,
+  });
 
   final String leading;
   final String trailing;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     const baseStyle = TextStyle(
       fontFamily: 'Fredoka',
-      fontSize: 38,
-      fontWeight: FontWeight.w800,
-      height: 0.98,
+      fontSize: 40,
+      fontWeight: FontWeight.w700,
+      height: 1,
       shadows: [
-        Shadow(color: Color(0x556F3D20), blurRadius: 1, offset: Offset(0, 2)),
+        Shadow(color: Color(0x33000000), blurRadius: 0, offset: Offset(0, 3)),
       ],
     );
 
@@ -116,17 +159,16 @@ class _AuthTitle extends StatelessWidget {
         child: Wrap(
           alignment: WrapAlignment.center,
           spacing: 10,
-          runSpacing: 2,
           children: [
             Text(
               leading,
               textAlign: TextAlign.center,
-              style: baseStyle.copyWith(color: AppColors.honey),
+              style: baseStyle.copyWith(color: Colors.white),
             ),
             Text(
               trailing,
               textAlign: TextAlign.center,
-              style: baseStyle.copyWith(color: AppColors.coral),
+              style: baseStyle.copyWith(color: accent),
             ),
           ],
         ),
@@ -135,197 +177,7 @@ class _AuthTitle extends StatelessWidget {
   }
 }
 
-class AuthWoodenTextField extends StatelessWidget {
-  const AuthWoodenTextField({
-    required this.controller,
-    required this.label,
-    required this.prefixIcon,
-    this.hint,
-    this.suffixIcon,
-    this.keyboardType,
-    this.textInputAction,
-    this.autofillHints,
-    this.obscureText = false,
-    this.autocorrect = true,
-    this.enableSuggestions = true,
-    this.onSubmitted,
-    super.key,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final String? hint;
-  final IconData prefixIcon;
-  final Widget? suffixIcon;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final Iterable<String>? autofillHints;
-  final bool obscureText;
-  final bool autocorrect;
-  final bool enableSuggestions;
-  final ValueChanged<String>? onSubmitted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _woodLight,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x406F3D20),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          const Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(painter: _WoodGrainPainter()),
-            ),
-          ),
-          TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            textInputAction: textInputAction,
-            autofillHints: autofillHints,
-            obscureText: obscureText,
-            autocorrect: autocorrect,
-            enableSuggestions: enableSuggestions,
-            onSubmitted: onSubmitted,
-            cursorColor: AppColors.coral,
-            style: const TextStyle(
-              color: _woodDark,
-              fontFamily: 'Fredoka',
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              labelText: label,
-              hintText: hint,
-              filled: false,
-              labelStyle: const TextStyle(
-                color: _woodDark,
-                fontFamily: 'Fredoka',
-                fontWeight: FontWeight.w700,
-              ),
-              floatingLabelStyle: const TextStyle(
-                color: AppColors.coral,
-                fontFamily: 'Fredoka',
-                fontWeight: FontWeight.w800,
-              ),
-              hintStyle: TextStyle(
-                color: _woodDark.withValues(alpha: 0.58),
-                fontFamily: 'Fredoka',
-              ),
-              prefixIcon: Icon(prefixIcon, color: _woodDark),
-              suffixIcon: suffixIcon,
-              suffixIconColor: _woodDark,
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: _woodDark, width: 2),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.coral, width: 3),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class AuthActionButton extends StatelessWidget {
-  const AuthActionButton({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-    super.key,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 54,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.honey,
-          foregroundColor: AppColors.coral,
-          disabledBackgroundColor: AppColors.honey.withValues(alpha: 0.62),
-          disabledForegroundColor: AppColors.coral.withValues(alpha: 0.62),
-          elevation: 4,
-          shadowColor: _woodDark.withValues(alpha: 0.28),
-          textStyle: const TextStyle(
-            fontFamily: 'Fredoka',
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        onPressed: onPressed,
-        icon: Icon(icon),
-        label: Text(label),
-      ),
-    );
-  }
-}
-
-class AuthMessageBanner extends StatelessWidget {
-  const AuthMessageBanner({
-    required this.message,
-    this.isError = true,
-    super.key,
-  });
-
-  final String message;
-  final bool isError;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = isError ? AppColors.coral : AppColors.leaf;
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isError ? const Color(0xE6FFF3B0) : const Color(0xE6DDF7E8),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: accent.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            isError
-                ? Icons.error_outline_rounded
-                : Icons.check_circle_outline_rounded,
-            color: accent,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: _woodDark,
-                fontFamily: 'Fredoka',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// "Continue with Google", styled to read as a second-class action next to the
-/// honey-coloured primary button.
+/// "Continue with Google", a white slab next to the coloured primary one.
 class AuthGoogleButton extends StatelessWidget {
   const AuthGoogleButton({
     required this.onPressed,
@@ -338,26 +190,51 @@ class AuthGoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 54,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: _woodDark,
-          disabledBackgroundColor: Colors.white.withValues(alpha: 0.7),
-          disabledForegroundColor: _woodDark.withValues(alpha: 0.5),
-          elevation: 3,
-          shadowColor: _woodDark.withValues(alpha: 0.28),
-          side: const BorderSide(color: _woodDark, width: 2),
-          textStyle: const TextStyle(
-            fontFamily: 'Fredoka',
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
+    final enabled = onPressed != null;
+
+    return Squishy(
+      semanticLabel: label,
+      onTap: onPressed,
+      child: Container(
+        height: PlayMotion.minTouchTarget,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: enabled ? PlayColors.card : PlayColors.cream,
+          borderRadius: BorderRadius.circular(PlayMotion.radiusLarge),
+          border: Border.all(
+            color: PlayColors.ink.withValues(alpha: 0.12),
+            width: 3,
           ),
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: PlayColors.ink.withValues(alpha: 0.18),
+                    offset: const Offset(0, 5),
+                    blurRadius: 0,
+                  ),
+                ]
+              : null,
         ),
-        onPressed: onPressed,
-        icon: const _GoogleGlyph(),
-        label: Text(label),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const _GoogleGlyph(),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: PlayColors.ink.withValues(alpha: enabled ? 1 : 0.45),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -368,9 +245,11 @@ class _GoogleGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The one sweep of gradient left in the app, because it is Google's mark
+    // rather than ours.
     return Container(
-      width: 26,
-      height: 26,
+      width: 30,
+      height: 30,
       alignment: Alignment.center,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
@@ -385,8 +264,8 @@ class _GoogleGlyph extends StatelessWidget {
         ),
       ),
       child: Container(
-        width: 20,
-        height: 20,
+        width: 23,
+        height: 23,
         alignment: Alignment.center,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
@@ -397,9 +276,9 @@ class _GoogleGlyph extends StatelessWidget {
           style: TextStyle(
             color: Color(0xFF4285F4),
             fontFamily: 'Fredoka',
-            fontSize: 15,
+            fontSize: 17,
             height: 1.1,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -407,8 +286,7 @@ class _GoogleGlyph extends StatelessWidget {
   }
 }
 
-/// A hairline with a word in the middle, used to separate the password form
-/// from the Google button.
+/// A word between two rules, separating the password form from Google.
 class AuthOrDivider extends StatelessWidget {
   const AuthOrDivider({this.label = 'or', super.key});
 
@@ -416,21 +294,28 @@ class AuthOrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const line = Expanded(
-      child: Divider(color: _woodDark, thickness: 1.4),
+    final line = Expanded(
+      child: Container(
+        height: 3,
+        decoration: BoxDecoration(
+          color: PlayColors.ink.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
     );
 
     return Row(
       children: [
         line,
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             label,
-            style: const TextStyle(
-              color: _woodDark,
+            style: TextStyle(
               fontFamily: 'Fredoka',
-              fontWeight: FontWeight.w800,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: PlayColors.ink.withValues(alpha: 0.45),
             ),
           ),
         ),
@@ -440,45 +325,125 @@ class AuthOrDivider extends StatelessWidget {
   }
 }
 
-class _WoodGrainPainter extends CustomPainter {
-  const _WoodGrainPainter();
+/// A quiet action under the form: "Create account", "Forgot password?".
+///
+/// Replaces the Material [TextButton]s, whose 14px label and rectangular
+/// ripple were the last untouched thing on these screens. Deliberately below
+/// the 72px a child gets — these are grown-up actions, and sizing every one of
+/// them like the primary button would leave nothing to say which is which.
+class AuthTextLink extends StatelessWidget {
+  const AuthTextLink({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.color = PlayColors.blueberry,
+    this.icon,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final Color color;
+  final IconData? icon;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final grainPaint = Paint()
-      ..color = _woodMid.withValues(alpha: 0.28)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final foreground = color.withValues(alpha: enabled ? 1 : 0.4);
 
-    for (final fraction in <double>[0.18, 0.42, 0.7, 0.86]) {
-      final y = size.height * fraction;
-      final path = Path()
-        ..moveTo(-8, y)
-        ..cubicTo(
-          size.width * 0.24,
-          y - 4,
-          size.width * 0.55,
-          y + 5,
-          size.width + 8,
-          y - 2,
-        );
-      canvas.drawPath(path, grainPaint);
-    }
-
-    final knotPaint = Paint()
-      ..color = _woodDark.withValues(alpha: 0.12)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.3;
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.78, size.height * 0.3),
-        width: 24,
-        height: 8,
+    return Squishy(
+      semanticLabel: label,
+      onTap: onPressed,
+      scale: 0.94,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 20, color: foreground),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: foreground,
+                  decoration: TextDecoration.underline,
+                  decorationColor: foreground.withValues(alpha: 0.4),
+                  decorationThickness: 2,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-      knotPaint,
     );
   }
+}
+
+/// The show/hide password control, as a round button instead of a bare glyph.
+class AuthPeekButton extends StatelessWidget {
+  const AuthPeekButton({
+    super.key,
+    required this.hidden,
+    required this.onPressed,
+  });
+
+  final bool hidden;
+  final VoidCallback onPressed;
 
   @override
-  bool shouldRepaint(covariant _WoodGrainPainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    return PlayIconButton(
+      icon: hidden ? Icons.visibility : Icons.visibility_off,
+      semanticLabel: hidden ? 'Show password' : 'Hide password',
+      onPressed: onPressed,
+      color: PlayColors.cream,
+      iconColor: PlayColors.grape,
+      size: 44,
+    );
+  }
+}
+
+/// "New here? Create account" — a question and the way to answer it.
+class AuthFooterPrompt extends StatelessWidget {
+  const AuthFooterPrompt({
+    super.key,
+    required this.question,
+    required this.action,
+    required this.onPressed,
+    this.color = PlayColors.blueberry,
+  });
+
+  final String question;
+  final String action;
+  final VoidCallback? onPressed;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          question,
+          style: TextStyle(
+            fontFamily: 'Fredoka',
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: PlayColors.ink.withValues(alpha: 0.6),
+          ),
+        ),
+        AuthTextLink(label: action, color: color, onPressed: onPressed),
+      ],
+    );
+  }
 }

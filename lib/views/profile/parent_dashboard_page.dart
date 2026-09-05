@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/routing/route_names.dart';
 import '../../core/utils/age_stage_helper.dart';
@@ -14,11 +13,24 @@ import '../../viewmodels/leaderboard_viewmodel.dart';
 import '../../viewmodels/learning_viewmodel.dart';
 import '../../viewmodels/notification_viewmodel.dart';
 import '../../viewmodels/parent_report_viewmodel.dart';
+import '../../services/audio/sound_controller.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../widgets/child_avatar.dart';
+import '../../widgets/play/play.dart';
 import '../leaderboard/leaderboard_page.dart';
 import '../reminders/parent_reminders_page.dart';
 
+/// The parent's own area, reached on purpose from the child screens.
+///
+/// It used to be a purple gradient `AppBar`, a Material `NavigationBar` and a
+/// column of white panels with hairline borders — the one screen that still
+/// looked like the app this used to be. A parent arriving here from their
+/// child's screens felt like they had left the app, which is the whole
+/// complaint.
+///
+/// Same information, same order, same actions. It is now built from the play
+/// kit, on a coloured ground, so the parent area reads as the grown-up room in
+/// a child's house rather than as a different building.
 class ParentDashboardPage extends StatefulWidget {
   const ParentDashboardPage({super.key});
 
@@ -29,6 +41,29 @@ class ParentDashboardPage extends StatefulWidget {
 class _ParentDashboardPageState extends State<ParentDashboardPage> {
   int _selectedTab = 0;
   String? _loadedParentId;
+
+  static const _tabs = <_DashboardTab>[
+    _DashboardTab(
+      label: 'Home',
+      icon: Icons.home_rounded,
+      color: PlayColors.sunshine,
+    ),
+    _DashboardTab(
+      label: 'Leaderboard',
+      icon: Icons.emoji_events_rounded,
+      color: PlayColors.tangerine,
+    ),
+    _DashboardTab(
+      label: 'Profiles',
+      icon: Icons.group_rounded,
+      color: PlayColors.mint,
+    ),
+    _DashboardTab(
+      label: 'Reminders',
+      icon: Icons.notifications_active_rounded,
+      color: PlayColors.sky,
+    ),
+  ];
 
   @override
   void didChangeDependencies() {
@@ -52,130 +87,62 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 72,
-        backgroundColor: AppColors.grape,
-        foregroundColor: Colors.white,
-        // A childless `DecoratedBox` collapses to zero height here — the
-        // Scaffold hands the app bar loose height constraints — which left the
-        // gradient invisible and white-on-white icons in a bare header.
-        // `Container` expands into those constraints instead.
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.grape, AppColors.violet],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+      body: PlayGround(
+        color: PlayColors.grape,
+        safeArea: false,
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _DashboardHeader(
+                name: _parentLabel(parent.email),
+                unread: context.watch<NotificationViewModel>().unreadCount,
+                canManageAdmin: parent.canManageAdminContent,
+                onNotifications: () => Navigator.of(context).pushNamed(
+                  RouteNames.parentNotifications,
+                ),
+                onAdmin: () => _openAdminLogin(context),
+                onLogout: () => _showLogoutSheet(context),
+              ),
+              Expanded(
+                child: IndexedStack(
+                  index: _selectedTab,
+                  children: [
+                    _ActiveChildDashboardTab(
+                      parentId: parent.id,
+                      onCreateProfile: () => _openLockedCreate(context),
+                      onEditProfile: (profile) =>
+                          _openLockedEdit(context, profile.id),
+                      onDeleteProfile: (profile) =>
+                          _confirmDelete(context, profile),
+                      onOpenReports: () => _openLockedReports(context),
+                      onStartLearning: (profile) =>
+                          _startLearning(context, profile),
+                    ),
+                    _LeaderboardDashboardTab(parentId: parent.id),
+                    _ProfilesDashboardTab(
+                      parentId: parent.id,
+                      onCreateProfile: () => _openLockedCreate(context),
+                      onEditProfile: (profile) =>
+                          _openLockedEdit(context, profile.id),
+                      onDeleteProfile: (profile) =>
+                          _confirmDelete(context, profile),
+                    ),
+                    const LearningRemindersPanel(
+                      showGuide: false,
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    ),
+                  ],
+                ),
+              ),
+              _PlayNavBar(
+                tabs: _tabs,
+                selectedIndex: _selectedTab,
+                onSelected: (index) => setState(() => _selectedTab = index),
+              ),
+            ],
           ),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome back, ${_parentLabel(parent.email)} 👋',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 21,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 2),
-            const Text(
-              'Parent Dashboard',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          _NotificationBell(
-            unread: context.watch<NotificationViewModel>().unreadCount,
-            onPressed: () => Navigator.of(context).pushNamed(
-              RouteNames.parentNotifications,
-            ),
-          ),
-          const SizedBox(width: 4),
-          if (parent.canManageAdminContent)
-            IconButton.filled(
-              tooltip: 'Admin dashboard',
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.honey,
-                foregroundColor: AppColors.ink,
-              ),
-              onPressed: () => _openAdminLogin(context),
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-            ),
-          const SizedBox(width: 8),
-          // Filled rather than a bare icon: a plain white glyph disappears the
-          // moment the header behind it is light.
-          IconButton.filled(
-            tooltip: 'Log out',
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.coral,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => _showLogoutSheet(context),
-            icon: const Icon(Icons.logout),
-          ),
-          const SizedBox(width: 12),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedTab,
-        children: [
-          _ActiveChildDashboardTab(
-            parentId: parent.id,
-            onCreateProfile: () => _openLockedCreate(context),
-            onEditProfile: (profile) => _openLockedEdit(context, profile.id),
-            onDeleteProfile: (profile) => _confirmDelete(context, profile),
-            onOpenReports: () => _openLockedReports(context),
-            onStartLearning: (profile) => _startLearning(context, profile),
-          ),
-          _LeaderboardDashboardTab(parentId: parent.id),
-          _ProfilesDashboardTab(
-            parentId: parent.id,
-            onCreateProfile: () => _openLockedCreate(context),
-            onEditProfile: (profile) => _openLockedEdit(context, profile.id),
-            onDeleteProfile: (profile) => _confirmDelete(context, profile),
-          ),
-          const LearningRemindersPanel(
-            showGuide: false,
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedTab,
-        onDestinationSelected: (index) => setState(() => _selectedTab = index),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events),
-            label: 'Leaderboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            selectedIcon: Icon(Icons.group),
-            label: 'Profiles',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.notifications_none),
-            selectedIcon: Icon(Icons.notifications_active),
-            label: 'Reminders',
-          ),
-        ],
       ),
     );
   }
@@ -245,23 +212,24 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete child profile?'),
-          content: Text(
-            'This removes ${profile.name} from this device. Progress already '
-            'synced to the backend can be restored when the API is connected.',
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: PlayDialog(
+              icon: Icons.delete_outline_rounded,
+              accent: PlayColors.strawberry,
+              title: 'Delete child profile?',
+              message:
+              'This removes ${profile.name} from this device. Progress already '
+              'synced to the backend can be restored when the API is '
+              'connected.',
+              cancelLabel: 'Cancel',
+              confirmLabel: 'Delete',
+              confirmIcon: Icons.delete_outline_rounded,
+              onCancel: () => Navigator.of(dialogContext).pop(false),
+              onConfirm: () => Navigator.of(dialogContext).pop(true),
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton.icon(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              icon: const Icon(Icons.delete_outline),
-              label: const Text('Delete'),
-            ),
-          ],
         );
       },
     );
@@ -288,72 +256,128 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
   Future<void> _showLogoutSheet(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.coral.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.logout, color: AppColors.coral),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Log out of Parent Area?',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Your session will end and progress remains saved.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(),
-                        child: const Text('Stay'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.coral,
-                        ),
-                        onPressed: () async {
-                          Navigator.of(sheetContext).pop();
-                          context.read<ActiveChildSession>().clear();
-                          await context.read<AuthViewModel>().signOut();
-                          if (!context.mounted) return;
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                            RouteNames.login,
-                            (route) => false,
-                          );
-                        },
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Log out'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: PlayDialog(
+              icon: Icons.logout_rounded,
+              accent: PlayColors.tangerine,
+              title: 'Log out of Parent Area?',
+              message: 'Your session will end and progress remains saved.',
+              cancelLabel: 'Stay',
+              confirmLabel: 'Log out',
+              confirmIcon: Icons.logout_rounded,
+              onCancel: () => Navigator.of(sheetContext).pop(),
+              onConfirm: () async {
+                Navigator.of(sheetContext).pop();
+                context.read<ActiveChildSession>().clear();
+                await context.read<AuthViewModel>().signOut();
+                if (!context.mounted) return;
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  RouteNames.login,
+                  (route) => false,
+                );
+              },
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _DashboardTab {
+  const _DashboardTab({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+}
+
+/// The greeting and the three things a parent reaches for, painted straight
+/// onto the ground instead of into an app bar.
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({
+    required this.name,
+    required this.unread,
+    required this.canManageAdmin,
+    required this.onNotifications,
+    required this.onAdmin,
+    required this.onLogout,
+  });
+
+  final String name;
+  final int unread;
+  final bool canManageAdmin;
+  final VoidCallback onNotifications;
+  final VoidCallback onAdmin;
+  final VoidCallback onLogout;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hi, $name 👋',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 30,
+                    height: 1.1,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Parent Dashboard',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.78),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _NotificationBell(unread: unread, onPressed: onNotifications),
+          if (canManageAdmin) ...[
+            const SizedBox(width: 8),
+            PlayIconButton(
+              icon: Icons.admin_panel_settings_outlined,
+              semanticLabel: 'Admin dashboard',
+              onPressed: onAdmin,
+              color: PlayColors.sunshine,
+              iconColor: PlayColors.ink,
+              size: 54,
+            ),
+          ],
+          const SizedBox(width: 8),
+          PlayIconButton(
+            icon: Icons.logout_rounded,
+            semanticLabel: 'Log out',
+            onPressed: onLogout,
+            color: PlayColors.strawberry,
+            iconColor: Colors.white,
+            size: 54,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -373,39 +397,142 @@ class _NotificationBell extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            IconButton.filled(
-              tooltip: 'Notifications',
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.16),
-                foregroundColor: Colors.white,
-              ),
+            PlayIconButton(
+              icon: Icons.notifications_rounded,
+              semanticLabel: 'Notifications',
               onPressed: onPressed,
-              icon: const Icon(Icons.notifications_none_rounded),
+              color: PlayColors.card,
+              iconColor: PlayColors.grape,
+              size: 54,
             ),
             if (unread > 0)
               Positioned(
-                right: 2,
-                top: 2,
+                right: -2,
+                top: -2,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  constraints: const BoxConstraints(minWidth: 18),
-                  height: 18,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  constraints: const BoxConstraints(minWidth: 24),
+                  height: 24,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppColors.coral,
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: Colors.white, width: 1.5),
+                    color: PlayColors.strawberry,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white, width: 3),
                   ),
                   child: Text(
                     unread > 9 ? '9+' : '$unread',
                     style: const TextStyle(
+                      fontFamily: 'Fredoka',
                       color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                      height: 1,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The bottom bar, as four chunky buttons rather than a Material
+/// [NavigationBar].
+///
+/// The selected tab fills with its own colour and grows a label; the others
+/// are quiet discs. That is the same "chosen things go solid" rule the quiz
+/// answers and the language picker use.
+class _PlayNavBar extends StatelessWidget {
+  const _PlayNavBar({
+    required this.tabs,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final List<_DashboardTab> tabs;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: PlayColors.card,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(34)),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            for (var index = 0; index < tabs.length; index++)
+              Expanded(
+                child: _NavItem(
+                  tab: tabs[index],
+                  selected: index == selectedIndex,
+                  onTap: () => onSelected(index),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _DashboardTab tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Squishy(
+      semanticLabel: tab.label,
+      onTap: onTap,
+      scale: 0.9,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: PlayMotion.settleCurve,
+        height: 66,
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        decoration: BoxDecoration(
+          color: selected ? tab.color : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              tab.icon,
+              size: 30,
+              color: selected
+                  ? PlayColors.onGround(tab.color)
+                  : PlayColors.ink.withValues(alpha: 0.42),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              tab.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 12,
+                height: 1,
+                fontWeight: FontWeight.w600,
+                color: selected
+                    ? PlayColors.onGround(tab.color)
+                    : PlayColors.ink.withValues(alpha: 0.42),
+              ),
+            ),
           ],
         ),
       ),
@@ -437,7 +564,9 @@ class _ActiveChildDashboardTab extends StatelessWidget {
     final session = context.watch<ActiveChildSession>();
 
     if (profiles.isLoading && profiles.profiles.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
 
     if (profiles.profiles.isEmpty) {
@@ -459,47 +588,54 @@ class _ActiveChildDashboardTab extends StatelessWidget {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          const _SectionLabel('Active child'),
-          _ActiveChildCard(
-            profile: activeProfile,
-            report: childReport,
-            onEdit: () => onEditProfile(activeProfile),
-            onDelete: () => onDeleteProfile(activeProfile),
-            onStart: () => onStartLearning(activeProfile),
+          const PlaySectionLabel('Active child'),
+          PopIn(
+            index: 0,
+            child: _ActiveChildCard(
+              profile: activeProfile,
+              report: childReport,
+              onEdit: () => onEditProfile(activeProfile),
+              onDelete: () => onDeleteProfile(activeProfile),
+              onStart: () => onStartLearning(activeProfile),
+            ),
           ),
-          const SizedBox(height: 16),
-          const _SectionLabel('Switch child'),
+          const SizedBox(height: 20),
+          const PlaySectionLabel('Switch child'),
           _ChildSwitchChips(
             profiles: profiles.profiles,
             activeProfile: activeProfile,
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Expanded(child: _SectionLabel('Stage progress')),
-              TextButton.icon(
-                onPressed: onOpenReports,
-                icon: const Icon(Icons.insights, size: 18),
-                label: const Text('Reports'),
-              ),
-            ],
+          const SizedBox(height: 20),
+          PlaySectionLabel(
+            'Stage progress',
+            trailing: PlayIconButton(
+              icon: Icons.insights_rounded,
+              semanticLabel: 'Reports',
+              onPressed: onOpenReports,
+              color: PlayColors.sunshine,
+              iconColor: PlayColors.ink,
+              size: 50,
+            ),
           ),
           if (reports.isLoading && childReport == null)
-            const _SoftLoadingCard()
+            const _LoadingCard()
           else
             _StageProgressList(report: childReport),
-          const SizedBox(height: 16),
-          const _SectionLabel('Rewards'),
+          const SizedBox(height: 20),
+          const PlaySectionLabel('Rewards'),
           _RewardSummaryRow(report: childReport),
+          const SizedBox(height: 20),
+          const PlaySectionLabel('Sound'),
+          const _SoundCard(),
           if (profiles.errorMessage != null) ...[
-            const SizedBox(height: 12),
-            _InlineError(message: profiles.errorMessage!),
+            const SizedBox(height: 14),
+            PlayBanner(message: profiles.errorMessage!),
           ],
           if (reports.errorMessage != null) ...[
-            const SizedBox(height: 12),
-            _InlineError(message: reports.errorMessage!),
+            const SizedBox(height: 14),
+            PlayBanner(message: reports.errorMessage!),
           ],
         ],
       ),
@@ -525,50 +661,52 @@ class _ProfilesDashboardTab extends StatelessWidget {
     final profiles = context.watch<ProfileViewModel>();
 
     if (profiles.isLoading && profiles.profiles.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
 
     return RefreshIndicator(
       onRefresh: () => context.read<ProfileViewModel>().loadProfiles(parentId),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          const _SectionLabel('Your children'),
+          const PlaySectionLabel('Your children'),
           if (profiles.profiles.isEmpty)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 14),
               child: _EmptyChildProfilesCard(onCreateProfile: onCreateProfile),
             )
           else
             for (var index = 0; index < profiles.profiles.length; index++)
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _ProfileManagementCard(
-                  profile: profiles.profiles[index],
-                  accentColor: _profileAccent(index),
-                  onEdit: () => onEditProfile(profiles.profiles[index]),
-                  onDelete: () => onDeleteProfile(profiles.profiles[index]),
+                padding: const EdgeInsets.only(bottom: 14),
+                child: PopIn(
+                  index: index,
+                  child: _ProfileManagementCard(
+                    profile: profiles.profiles[index],
+                    accentColor: _profileAccent(index),
+                    onEdit: () => onEditProfile(profiles.profiles[index]),
+                    onDelete: () => onDeleteProfile(profiles.profiles[index]),
+                  ),
                 ),
               ),
-          SizedBox(
-            height: 52,
-            child: OutlinedButton.icon(
-              onPressed: profiles.canCreateProfile ? onCreateProfile : null,
-              icon: const Icon(Icons.add),
-              label: const Text('Add a child profile'),
-            ),
+          PlayButton(
+            icon: Icons.add_rounded,
+            label: 'Add a child profile',
+            color: PlayColors.sunshine,
+            onPressed: profiles.canCreateProfile ? onCreateProfile : null,
           ),
           if (!profiles.canCreateProfile) ...[
-            const SizedBox(height: 8),
-            const Text(
+            const SizedBox(height: 10),
+            const PlayNote(
               'You can manage up to 3 child profiles in this parent account.',
-              textAlign: TextAlign.center,
             ),
           ],
           if (profiles.errorMessage != null) ...[
-            const SizedBox(height: 12),
-            _InlineError(message: profiles.errorMessage!),
+            const SizedBox(height: 14),
+            PlayBanner(message: profiles.errorMessage!),
           ],
         ],
       ),
@@ -586,7 +724,9 @@ class _LeaderboardDashboardTab extends StatelessWidget {
     final leaderboard = context.watch<LeaderboardViewModel>();
 
     if (leaderboard.isLoading && leaderboard.entries.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
 
     return RefreshIndicator(
@@ -611,6 +751,8 @@ class _LeaderboardDashboardTab extends StatelessWidget {
   }
 }
 
+/// The child a parent is looking at: their face, their numbers, and the one
+/// button that hands the phone over.
 class _ActiveChildCard extends StatelessWidget {
   const _ActiveChildCard({
     required this.profile,
@@ -629,118 +771,176 @@ class _ActiveChildCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stage = AgeStageHelper.stageForAge(profile.age);
+    // The child's own colour, the same one their tile carries on the selection
+    // screen, so a parent recognises whose card this is before reading it.
+    final tint = PlayColors.byIndex(profile.id.hashCode);
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.grape, AppColors.violet],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.grape.withValues(alpha: 0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 9),
+    return PlayPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              ChildAvatar(
+                name: profile.name,
+                avatarValue: profile.avatarAsset,
+                backgroundColor: tint,
+                borderColor: Colors.white,
+                radius: 32,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Fredoka',
+                        fontSize: 26,
+                        height: 1.1,
+                        fontWeight: FontWeight.w600,
+                        color: PlayColors.ink,
+                      ),
+                    ),
+                    Text(
+                      'Age ${profile.age} · Stage $stage learner',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: PlayColors.ink.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PlayIconButton(
+                icon: Icons.edit_rounded,
+                semanticLabel: 'Edit profile',
+                onPressed: onEdit,
+                color: PlayColors.cream,
+                iconColor: PlayColors.grape,
+                size: 48,
+              ),
+              const SizedBox(width: 8),
+              PlayIconButton(
+                icon: Icons.delete_outline_rounded,
+                semanticLabel: 'Delete profile',
+                onPressed: onDelete,
+                color: PlayColors.cream,
+                iconColor: PlayColors.strawberry,
+                size: 48,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _StatTile(
+                  value: (report?.completedLevels ?? 0).toString(),
+                  label: 'Levels done',
+                  color: PlayColors.blueberry,
+                  icon: Icons.check_circle_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatTile(
+                  value: (report?.starsEarned ?? 0).toString(),
+                  label: 'Stars',
+                  color: PlayColors.sunshine,
+                  icon: Icons.star_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatTile(
+                  value: stage.toString(),
+                  label: 'Stage',
+                  color: PlayColors.mint,
+                  icon: Icons.stairs_rounded,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          PlayButton(
+            icon: Icons.play_arrow_rounded,
+            label: 'Start learning',
+            color: PlayColors.grass,
+            big: true,
+            onPressed: onStart,
           ),
         ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                ChildAvatar(
-                  name: profile.name,
-                  avatarValue: profile.avatarAsset,
-                  backgroundColor: AppColors.honey,
-                  borderColor: Colors.white.withValues(alpha: 0.7),
-                  radius: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Age ${profile.age} - Stage $stage learner',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-                _CompactIconButton(
-                  tooltip: 'Edit profile',
-                  icon: Icons.edit,
-                  onPressed: onEdit,
-                ),
-                const SizedBox(width: 8),
-                _CompactIconButton(
-                  tooltip: 'Delete profile',
-                  icon: Icons.delete_outline,
-                  onPressed: onDelete,
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _DarkStatTile(
-                    value: (report?.completedLevels ?? 0).toString(),
-                    label: 'Levels done',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _DarkStatTile(
-                    value: (report?.starsEarned ?? 0).toString(),
-                    label: 'Stars earned',
-                    icon: Icons.star,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _DarkStatTile(
-                    value: stage.toString(),
-                    label: 'Stage',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.honey,
-                foregroundColor: AppColors.coral,
-              ),
-              onPressed: onStart,
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Start learning'),
-            ),
-          ],
-        ),
       ),
     );
   }
 }
 
+/// One number and what it counts.
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+
+  final String value;
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white, width: 3),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 22, color: PlayColors.onGround(color)),
+          const SizedBox(height: 4),
+          FittedBox(
+            child: Text(
+              value,
+              maxLines: 1,
+              style: TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 26,
+                height: 1,
+                fontWeight: FontWeight.w700,
+                color: PlayColors.onGround(color),
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: PlayColors.onGround(color).withValues(alpha: 0.78),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The other children, as faces rather than as Material [ChoiceChip]s.
 class _ChildSwitchChips extends StatelessWidget {
   const _ChildSwitchChips({
     required this.profiles,
@@ -752,30 +952,72 @@ class _ChildSwitchChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final profile in profiles)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                selected: profile.id == activeProfile.id,
-                label: Text(profile.name),
-                labelStyle: TextStyle(
-                  color: profile.id == activeProfile.id
-                      ? Colors.white
-                      : AppColors.ink,
-                  fontWeight: FontWeight.w800,
-                ),
-                selectedColor: AppColors.violet,
-                backgroundColor: AppColors.lavender,
-                onSelected: (_) {
-                  context.read<ActiveChildSession>().selectProfile(profile);
-                },
+    return SizedBox(
+      height: 104,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: profiles.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final profile = profiles[index];
+          final selected = profile.id == activeProfile.id;
+          final tint = PlayColors.byIndex(profile.id.hashCode);
+
+          return Squishy(
+            semanticLabel: 'Switch to ${profile.name}',
+            onTap: () {
+              context.read<ActiveChildSession>().selectProfile(profile);
+            },
+            scale: 0.92,
+            child: AnimatedContainer(
+              duration: PlayMotion.pressDown,
+              width: 88,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? tint : PlayColors.card,
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: Colors.white, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: PlayColors.ink.withValues(alpha: 0.18),
+                    offset: const Offset(0, 5),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ChildAvatar(
+                    name: profile.name,
+                    avatarValue: profile.avatarAsset,
+                    backgroundColor: selected ? Colors.white : tint,
+                    borderColor: Colors.white,
+                    radius: 22,
+                  ),
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      profile.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Fredoka',
+                        fontSize: 14,
+                        height: 1,
+                        fontWeight: FontWeight.w600,
+                        color: selected
+                            ? PlayColors.onGround(tint)
+                            : PlayColors.ink,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -791,8 +1033,8 @@ class _StageProgressList extends StatelessWidget {
     final summaries = _moduleProgressSummaries(report);
 
     if (summaries.isEmpty) {
-      return const _SoftInfoCard(
-        icon: Icons.auto_stories_outlined,
+      return const _InfoCard(
+        icon: Icons.auto_stories_rounded,
         title: 'No stage activity yet',
         message: 'Start a level and this area will show module progress.',
       );
@@ -803,7 +1045,7 @@ class _StageProgressList extends StatelessWidget {
         for (var index = 0; index < summaries.length; index++)
           Padding(
             padding:
-                EdgeInsets.only(bottom: index == summaries.length - 1 ? 0 : 8),
+                EdgeInsets.only(bottom: index == summaries.length - 1 ? 0 : 10),
             child: _StageProgressTile(
               summary: summaries[index],
               color: _progressColor(index),
@@ -815,10 +1057,7 @@ class _StageProgressList extends StatelessWidget {
 }
 
 class _StageProgressTile extends StatelessWidget {
-  const _StageProgressTile({
-    required this.summary,
-    required this.color,
-  });
+  const _StageProgressTile({required this.summary, required this.color});
 
   final _ModuleProgressSummary summary;
   final Color color;
@@ -827,23 +1066,19 @@ class _StageProgressTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = (summary.progress * 100).round();
 
-    return Container(
+    return PlayPanel(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.panel,
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.46)),
-        borderRadius: BorderRadius.circular(18),
-      ),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(
+              summary.icon,
+              color: PlayColors.onGround(color),
+              size: 28,
             ),
-            child: Icon(summary.icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -854,16 +1089,30 @@ class _StageProgressTile extends StatelessWidget {
                   summary.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    minHeight: 5,
-                    value: summary.progress,
-                    color: color,
-                    backgroundColor: AppColors.lavender,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: summary.progress),
+                    duration: PlayMotion.enter,
+                    curve: PlayMotion.settleCurve,
+                    builder: (context, value, _) {
+                      return LinearProgressIndicator(
+                        // 12px rather than 5: this is the one number a parent
+                        // actually reads off this screen.
+                        minHeight: 12,
+                        value: value,
+                        color: color,
+                        backgroundColor: color.withValues(alpha: 0.16),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -871,13 +1120,16 @@ class _StageProgressTile extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           SizedBox(
-            width: 42,
+            width: 52,
             child: Text(
               '$percent%',
               textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: const TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: PlayColors.ink,
+              ),
             ),
           ),
         ],
@@ -897,28 +1149,28 @@ class _RewardSummaryRow extends StatelessWidget {
       children: [
         Expanded(
           child: _RewardTile(
-            icon: Icons.star,
+            icon: Icons.star_rounded,
             value: (report?.starsEarned ?? 0).toString(),
             label: 'Stars',
-            color: AppColors.honey,
+            color: PlayColors.sunshine,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: _RewardTile(
-            icon: Icons.emoji_events,
+            icon: Icons.emoji_events_rounded,
             value: (report?.rewardsEarned ?? 0).toString(),
             label: 'Rewards',
-            color: AppColors.sky,
+            color: PlayColors.sky,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: _RewardTile(
-            icon: Icons.local_fire_department,
+            icon: Icons.play_circle_fill_rounded,
             value: (report?.watchedVideoLessons ?? 0).toString(),
             label: 'Videos',
-            color: AppColors.coral,
+            color: PlayColors.bubblegum,
           ),
         ),
       ],
@@ -941,36 +1193,49 @@ class _RewardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foreground = PlayColors.onGround(color);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-        borderRadius: BorderRadius.circular(18),
+        color: color,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: PlayColors.ink.withValues(alpha: 0.18),
+            offset: const Offset(0, 5),
+            blurRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 18),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
+          Icon(icon, color: foreground, size: 30),
+          const SizedBox(height: 6),
+          FittedBox(
+            child: Text(
+              value,
+              maxLines: 1,
+              style: TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 30,
+                height: 1,
+                fontWeight: FontWeight.w700,
+                color: foreground,
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: foreground.withValues(alpha: 0.8),
+            ),
           ),
         ],
       ),
@@ -993,198 +1258,96 @@ class _ProfileManagementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor =
-        accentColor.computeLuminance() < 0.45 ? Colors.white : AppColors.ink;
+    final textColor = PlayColors.onGround(accentColor);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.panel,
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.48)),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [accentColor, AppColors.violet],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                ChildAvatar(
-                  name: profile.name,
-                  avatarValue: profile.avatarAsset,
-                  backgroundColor: Colors.white.withValues(alpha: 0.9),
-                  textColor: AppColors.ink,
-                  borderColor: Colors.white.withValues(alpha: 0.62),
-                  radius: 23,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.w900,
+    return PlayPanel(
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(26),
+        child: Column(
+          children: [
+            Container(
+              // Solid, not a gradient. Every card in the app is one colour.
+              color: accentColor,
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  ChildAvatar(
+                    name: profile.name,
+                    avatarValue: profile.avatarAsset,
+                    backgroundColor: Colors.white,
+                    textColor: PlayColors.ink,
+                    borderColor: Colors.white,
+                    radius: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Fredoka',
+                            fontSize: 22,
+                            height: 1.1,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Age ${profile.age} - Stage '
-                        '${AgeStageHelper.stageForAge(profile.age)} learner',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            TextStyle(color: textColor.withValues(alpha: 0.72)),
-                      ),
-                    ],
+                        Text(
+                          'Age ${profile.age} · Stage '
+                          '${AgeStageHelper.stageForAge(profile.age)} learner',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: textColor.withValues(alpha: 0.76),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Icon(
-                  profile.isSynced
-                      ? Icons.cloud_done_outlined
-                      : Icons.cloud_upload_outlined,
-                  color: textColor.withValues(alpha: 0.72),
-                ),
-              ],
+                  Icon(
+                    profile.isSynced
+                        ? Icons.cloud_done_rounded
+                        : Icons.cloud_upload_rounded,
+                    color: textColor.withValues(alpha: 0.8),
+                    size: 26,
+                  ),
+                ],
+              ),
             ),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Edit'),
-                ),
-              ),
-              Container(width: 1, height: 38, color: AppColors.line),
-              Expanded(
-                child: TextButton.icon(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Delete'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DarkStatTile extends StatelessWidget {
-  const _DarkStatTile({
-    required this.value,
-    required this.label,
-    this.icon,
-  });
-
-  final String value;
-  final String label;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 16, color: AppColors.honey),
-                const SizedBox(width: 4),
-              ],
-              Flexible(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: PlayButton(
+                      icon: Icons.edit_rounded,
+                      label: 'Edit',
+                      color: PlayColors.cream,
+                      textColor: PlayColors.ink,
+                      onPressed: onEdit,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PlayButton(
+                      icon: Icons.delete_outline_rounded,
+                      label: 'Delete',
+                      color: PlayColors.strawberry,
+                      onPressed: onDelete,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CompactIconButton extends StatelessWidget {
-  const _CompactIconButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: Colors.white, size: 18),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppColors.ink.withValues(alpha: 0.72),
-              fontWeight: FontWeight.w800,
-            ),
       ),
     );
   }
@@ -1201,7 +1364,7 @@ class _EmptyProfilesState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
-        const SizedBox(height: 48),
+        const SizedBox(height: 32),
         _EmptyChildProfilesCard(onCreateProfile: onCreateProfile),
       ],
     );
@@ -1215,47 +1378,54 @@ class _EmptyChildProfilesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.lavender,
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.58)),
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return PlayPanel(
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: AppColors.honey.withValues(alpha: 0.74),
-              borderRadius: BorderRadius.circular(18),
+            width: 86,
+            height: 86,
+            decoration: const BoxDecoration(
+              color: PlayColors.bubblegum,
+              shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.child_care, color: AppColors.violet),
+            child: const Icon(
+              Icons.child_care_rounded,
+              color: Colors.white,
+              size: 48,
+            ),
           ),
-          const SizedBox(height: 14),
-          Text(
+          const SizedBox(height: 16),
+          const Text(
             'Create your first child profile',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: TextStyle(
+              fontFamily: 'Fredoka',
+              fontSize: 25,
+              height: 1.15,
+              fontWeight: FontWeight.w600,
+              color: PlayColors.ink,
+            ),
           ),
-          const SizedBox(height: 6),
-          const Text(
+          const SizedBox(height: 8),
+          Text(
             'Profiles unlock age-based learning, progress sync, reminders, '
             'and leaderboard sharing.',
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.honey,
-              foregroundColor: AppColors.coral,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+              color: PlayColors.ink.withValues(alpha: 0.62),
             ),
+          ),
+          const SizedBox(height: 18),
+          PlayButton(
+            icon: Icons.add_rounded,
+            label: 'Add a child profile',
+            color: PlayColors.sunshine,
+            big: true,
             onPressed: onCreateProfile,
-            icon: const Icon(Icons.add),
-            label: const Text('Add a child profile'),
           ),
         ],
       ),
@@ -1263,35 +1433,42 @@ class _EmptyChildProfilesCard extends StatelessWidget {
   }
 }
 
-class _SoftLoadingCard extends StatelessWidget {
-  const _SoftLoadingCard();
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.panel,
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.48)),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: const Row(
+    return const PlayPanel(
+      child: Row(
         children: [
           SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: PlayColors.grape,
+            ),
           ),
-          SizedBox(width: 12),
-          Expanded(child: Text('Loading progress...')),
+          SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              'Loading progress...',
+              style: TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: PlayColors.ink,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SoftInfoCard extends StatelessWidget {
-  const _SoftInfoCard({
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({
     required this.icon,
     required this.title,
     required this.message,
@@ -1303,16 +1480,18 @@ class _SoftInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.panel,
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.48)),
-        borderRadius: BorderRadius.circular(18),
-      ),
+    return PlayPanel(
       child: Row(
         children: [
-          Icon(icon, color: AppColors.sky),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              color: PlayColors.sky,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1320,10 +1499,23 @@ class _SoftInfoCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 2),
-                Text(message),
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.3,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink.withValues(alpha: 0.62),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1333,25 +1525,164 @@ class _SoftInfoCard extends StatelessWidget {
   }
 }
 
-class _InlineError extends StatelessWidget {
-  const _InlineError({required this.message});
-
-  final String message;
+/// The parent's control over what the app is allowed to make noise about.
+///
+/// This lives behind the parental check on purpose. A mute switch on the
+/// child's own screens is a switch a two-year-old will find, and a parent will
+/// then spend an afternoon wondering why the app went quiet.
+class _SoundCard extends StatelessWidget {
+  const _SoundCard();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.coral.withValues(alpha: 0.1),
-        border: Border.all(color: AppColors.coral.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(14),
+    final sound = context.watch<SoundController>();
+
+    return PlayPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Squishy(
+            semanticLabel: sound.muted ? 'Turn sound on' : 'Turn sound off',
+            onTap: () => sound.setMuted(!sound.muted),
+            scale: 0.98,
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: sound.muted
+                        ? PlayColors.ink.withValues(alpha: 0.12)
+                        : PlayColors.grass,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    sound.muted
+                        ? Icons.volume_off_rounded
+                        : Icons.volume_up_rounded,
+                    color: sound.muted
+                        ? PlayColors.ink.withValues(alpha: 0.5)
+                        : Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        sound.muted ? 'Sound is off' : 'Sound is on',
+                        style: const TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 19,
+                          height: 1.2,
+                          fontWeight: FontWeight.w600,
+                          color: PlayColors.ink,
+                        ),
+                      ),
+                      Text(
+                        'Music and effects across the whole app.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: PlayColors.ink.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          _VolumeRow(
+            icon: Icons.music_note_rounded,
+            label: 'Music',
+            value: sound.musicVolume,
+            enabled: !sound.muted,
+            onChanged: sound.setMusicVolume,
+          ),
+          _VolumeRow(
+            icon: Icons.graphic_eq_rounded,
+            label: 'Effects',
+            value: sound.sfxVolume,
+            enabled: !sound.muted,
+            onChanged: sound.setSfxVolume,
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _VolumeRow extends StatelessWidget {
+  const _VolumeRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String label;
+  final double value;
+  final bool enabled;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.4,
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: AppColors.coral),
-          const SizedBox(width: 10),
-          Expanded(child: Text(message)),
+          Icon(icon, size: 24, color: PlayColors.grape),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 62,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: PlayColors.ink,
+              ),
+            ),
+          ),
+          Expanded(
+            child: SliderTheme(
+              data: SliderThemeData(
+                trackHeight: 10,
+                activeTrackColor: PlayColors.grape,
+                inactiveTrackColor: PlayColors.ink.withValues(alpha: 0.12),
+                thumbColor: Colors.white,
+                overlayColor: PlayColors.grape.withValues(alpha: 0.12),
+                thumbShape: const RoundSliderThumbShape(
+                  enabledThumbRadius: 13,
+                  elevation: 2,
+                ),
+              ),
+              child: Slider(
+                value: value,
+                onChanged: enabled ? onChanged : null,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 44,
+            child: Text(
+              '${(value * 100).round()}%',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: PlayColors.ink.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1439,18 +1770,18 @@ String _parentLabel(String email) {
 
 Color _profileAccent(int index) {
   const colors = [
-    AppColors.grape,
-    AppColors.coral,
-    AppColors.sky,
+    PlayColors.grape,
+    PlayColors.strawberry,
+    PlayColors.sky,
   ];
   return colors[index % colors.length];
 }
 
 Color _progressColor(int index) {
   const colors = [
-    AppColors.plum,
-    AppColors.sky,
-    AppColors.coral,
+    PlayColors.grape,
+    PlayColors.sky,
+    PlayColors.tangerine,
   ];
   return colors[index % colors.length];
 }

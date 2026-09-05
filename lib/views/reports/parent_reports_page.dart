@@ -8,6 +8,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/parent_report_viewmodel.dart';
 import '../../widgets/koala_guide.dart';
 import '../../widgets/star_rating.dart';
+import '../../widgets/play/play.dart';
 
 class ParentReportsPage extends StatefulWidget {
   const ParentReportsPage({super.key});
@@ -41,7 +42,17 @@ class _ParentReportsPageState extends State<ParentReportsPage> {
     }
 
     return Scaffold(
+      backgroundColor: PlayColors.cream,
       appBar: AppBar(
+        toolbarHeight: 68,
+        backgroundColor: PlayColors.grape,
+        foregroundColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Fredoka',
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
         title: const Text('Parent Reports'),
         actions: [
           IconButton(

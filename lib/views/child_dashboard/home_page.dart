@@ -10,10 +10,13 @@ import '../../models/child_profile.dart';
 import '../../models/learning_module.dart';
 import '../../viewmodels/active_child_session.dart';
 import '../../viewmodels/learning_viewmodel.dart';
-import '../../widgets/child_avatar.dart';
 import '../../widgets/child_action_bar.dart';
+import '../../widgets/child_avatar.dart';
 import '../../widgets/module_card.dart';
 import '../../widgets/parent_area_button.dart';
+import '../../services/audio/app_sounds.dart';
+import '../../services/audio/sound_controller.dart';
+import '../../widgets/play/play.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -27,42 +30,47 @@ class HomePage extends StatelessWidget {
     if (child == null) return const _NoProfileChosen();
 
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        // A Column rather than a ListView: the hero and the heading stay put
-        // while only the modules move, so the child never loses sight of whose
-        // dashboard this is or what the grid below is for.
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: _ChildHero(
-                child: child,
-                starsEarned: learning.totalStarsEarned,
-                levelsCompleted: learning.completedLevelCount,
+      // The screen is a colour, not a white page. See PlayGround.
+      body: PlayGround(
+        color: PlayColors.blueberry,
+        safeArea: false,
+        child: SafeArea(
+          bottom: false,
+          // A Column rather than a ListView: the hero and the heading stay put
+          // while only the modules move, so the child never loses sight of whose
+          // dashboard this is or what the grid below is for.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: _ChildHero(
+                  child: child,
+                  starsEarned: learning.totalStarsEarned,
+                  levelsCompleted: learning.completedLevelCount,
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _ModuleSectionHeading(count: learning.modules.length),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: learning.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : learning.modules.isEmpty
-                      ? const SingleChildScrollView(
-                          padding: EdgeInsets.fromLTRB(16, 4, 16, 24),
-                          child: _NoModulesYet(),
-                        )
-                      : _ModuleGrid(
-                          modules: learning.modules,
-                          onOpen: (module) => _openModule(context, module),
-                        ),
-            ),
-          ],
+              const SizedBox(height: 18),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _ModuleSectionHeading(count: learning.modules.length),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: learning.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : learning.modules.isEmpty
+                        ? const SingleChildScrollView(
+                            padding: EdgeInsets.fromLTRB(16, 4, 16, 24),
+                            child: _NoModulesYet(),
+                          )
+                        : _ModuleGrid(
+                            modules: learning.modules,
+                            onOpen: (module) => _openModule(context, module),
+                          ),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _ChildActionBar(
@@ -113,17 +121,14 @@ class _ChildHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.grape, AppColors.violet],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
+        color: PlayColors.card,
+        borderRadius: BorderRadius.circular(PlayMotion.radiusLarge),
+        border: Border.all(color: Colors.white, width: 4),
         boxShadow: [
           BoxShadow(
-            color: AppColors.grape.withValues(alpha: 0.28),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+            color: PlayColors.ink.withValues(alpha: 0.20),
+            offset: const Offset(0, 7),
+            blurRadius: 0,
           ),
         ],
       ),
@@ -134,8 +139,8 @@ class _ChildHero extends StatelessWidget {
               ChildAvatar(
                 name: child.name,
                 avatarValue: child.avatarAsset,
-                radius: 27,
-                borderColor: AppColors.honey,
+                radius: 34,
+                borderColor: PlayColors.sunshine,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -147,18 +152,19 @@ class _ChildHero extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Fredoka',
+                        color: PlayColors.ink,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Ready for a learning adventure?',
+                      'What shall we play today?',
                       style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        color: PlayColors.grape,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -172,7 +178,7 @@ class _ChildHero extends StatelessWidget {
               Expanded(
                 child: _HeroStat(
                   icon: Icons.star_rounded,
-                  iconColor: AppColors.honey,
+                  iconColor: PlayColors.tangerine,
                   value: '$starsEarned',
                   label: starsEarned == 1 ? 'star' : 'stars',
                 ),
@@ -181,7 +187,7 @@ class _ChildHero extends StatelessWidget {
               Expanded(
                 child: _HeroStat(
                   icon: Icons.check_circle_rounded,
-                  iconColor: AppColors.lime,
+                  iconColor: PlayColors.grass,
                   value: '$levelsCompleted',
                   label: levelsCompleted == 1 ? 'level done' : 'levels done',
                 ),
@@ -212,13 +218,13 @@ class _HeroStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+        color: iconColor.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: iconColor, width: 2.5),
       ),
       child: Row(
         children: [
-          Icon(icon, color: iconColor, size: 22),
+          Icon(icon, color: iconColor, size: 28),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -227,20 +233,21 @@ class _HeroStat extends StatelessWidget {
                 Text(
                   value,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
+                    fontFamily: 'Fredoka',
+                    color: PlayColors.ink,
+                    fontSize: 24,
                     height: 1.1,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    color: PlayColors.ink.withValues(alpha: 0.62),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -270,12 +277,14 @@ class _ChildActionBar extends StatelessWidget {
       actions: [
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.violet,
-            side: const BorderSide(color: AppColors.lilac, width: 1.6),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            foregroundColor: PlayColors.grape,
+            side: const BorderSide(color: PlayColors.grape, width: 2.5),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            minimumSize: const Size(0, PlayMotion.minTouchTarget),
             textStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
+              fontFamily: 'Fredoka',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
           onPressed: onSwitchChild,
@@ -304,6 +313,14 @@ class _ModuleGrid extends StatefulWidget {
 
 class _ModuleGridState extends State<_ModuleGrid> {
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Reached directly from the celebration screen's Home button, which is
+    // playing a different track by then.
+    AppSound.instance.playMusic(MusicTrack.home);
+  }
 
   /// Cards the grid has already introduced. A tile scrolled far enough out of
   /// view is disposed and rebuilt on the way back, and replaying its arrival
@@ -350,7 +367,8 @@ class _ModuleGridState extends State<_ModuleGrid> {
               scrollController: _scrollController,
               // Everything the tile needs to know where it sits in the scroll
               // without measuring itself: the grid geometry is fixed here.
-              rowTop: padding.top + (index ~/ columnCount) * (tileHeight + spacing),
+              rowTop:
+                  padding.top + (index ~/ columnCount) * (tileHeight + spacing),
               tileHeight: tileHeight,
               viewportHeight: constraints.maxHeight,
               index: index,

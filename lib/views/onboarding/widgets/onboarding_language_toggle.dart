@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/onboarding_strings.dart';
 import '../../../models/onboarding.dart';
 import '../../../viewmodels/onboarding_viewmodel.dart';
+import '../../../widgets/play/play.dart';
 
-/// App bar control that swaps the onboarding flow between English and Urdu.
+/// Header control that swaps the onboarding flow between English and Urdu.
 ///
 /// Each option is labelled in its own script so a parent who reads only one of
 /// the two can still find it.
+///
+/// Now a white pill on the screen's colour rather than a lilac one on white —
+/// it sits in the play header, where the old lavender chips disappeared.
 class OnboardingLanguageToggle extends StatelessWidget {
   const OnboardingLanguageToggle({super.key});
 
@@ -21,11 +24,18 @@ class OnboardingLanguageToggle extends StatelessWidget {
     return Tooltip(
       message: OnboardingStrings.of(selected).changeLanguage,
       child: Container(
-        padding: const EdgeInsets.all(3),
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: AppColors.lavender,
+          color: PlayColors.card,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: AppColors.lilac.withValues(alpha: 0.6)),
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: [
+            BoxShadow(
+              color: PlayColors.ink.withValues(alpha: 0.18),
+              offset: const Offset(0, 4),
+              blurRadius: 0,
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -34,9 +44,8 @@ class OnboardingLanguageToggle extends StatelessWidget {
               _ToggleChip(
                 language: language,
                 selected: language == selected,
-                onTap: () => context
-                    .read<OnboardingViewModel>()
-                    .setLanguage(language),
+                onTap: () =>
+                    context.read<OnboardingViewModel>().setLanguage(language),
               ),
           ],
         ),
@@ -58,32 +67,30 @@ class _ToggleChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: language.englishLabel,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.violet : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Directionality(
-            textDirection: language.textDirection,
-            child: Text(
-              language.nativeLabel,
-              style: language.styleFor(
-                TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: selected
-                      ? Colors.white
-                      : AppColors.ink.withValues(alpha: 0.7),
-                ),
+    return Squishy(
+      semanticLabel: language.englishLabel,
+      onTap: onTap,
+      scale: 0.9,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: PlayMotion.settleCurve,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? PlayColors.grape : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Directionality(
+          textDirection: language.textDirection,
+          child: Text(
+            language.nativeLabel,
+            style: language.styleFor(
+              TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: selected
+                    ? Colors.white
+                    : PlayColors.ink.withValues(alpha: 0.6),
               ),
             ),
           ),

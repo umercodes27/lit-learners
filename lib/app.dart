@@ -49,7 +49,10 @@ import 'services/local/db_helper.dart';
 import 'services/local/progress_dao.dart';
 import 'services/local/sync_outbox_dao.dart';
 import 'services/notifications/local_notification_service.dart';
+import 'services/audio/audioplayers_sound_controller.dart';
 import 'services/audio/koala_audio_player.dart';
+import 'services/audio/sound_controller.dart';
+import 'services/audio/sound_settings_store.dart';
 import 'services/remote/child_profile_remote_data_source.dart';
 import 'services/remote/content_remote_data_source.dart';
 import 'services/remote/koala_guide_remote_data_source.dart';
@@ -269,6 +272,34 @@ final _parentReportRepository = CachedParentReportRepository(
 );
 final _koalaAudioPlayer = AudioplayersKoalaAudioPlayer();
 
+/// The app's one speaker, built once and handed to [AppSound] so widgets as
+/// deep as `Squishy` can reach it without a provider lookup.
+///
+/// Settings are read asynchronously; until they arrive the defaults apply,
+/// which is the right way round — a parent who muted the app last night gets
+/// silence a frame later, not a burst of music first. `load()` is called
+/// before the first frame in `main.dart`.
+final SoundController _soundController = _buildSoundController();
+
+SoundController _buildSoundController() {
+  final controller = AudioplayersSoundController(
+    store: LocalSoundSettingsStore(
+      dbHelper: _localDbHelper,
+      defaults: const SoundSettings(
+        muted: false,
+        musicVolume: 0.28,
+        sfxVolume: 0.75,
+      ),
+    ),
+  );
+  AppSound.instance = controller;
+  return controller;
+}
+
+/// Loads the stored sound settings. Called from `main()` before the first
+/// frame.
+Future<void> loadSoundSettings() => _soundController.load();
+
 class LittleLearnersApp extends StatelessWidget {
   const LittleLearnersApp({super.key});
 
@@ -302,6 +333,9 @@ class LittleLearnersApp extends StatelessWidget {
         Provider<ProgressRepository>.value(value: _progressRepository),
         Provider<KoalaGuideRepository>.value(value: _koalaGuideRepository),
         Provider<KoalaAudioPlayer>.value(value: _koalaAudioPlayer),
+        ChangeNotifierProvider<SoundController>.value(
+          value: _soundController,
+        ),
         Provider<SyncService>.value(value: _syncService),
         Provider<ProgressSyncService>.value(value: _progressSyncService),
         Provider<ContentSyncService>.value(value: _contentSyncService),
@@ -378,7 +412,7 @@ class LittleLearnersApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         scrollBehavior: const AppScrollBehavior(),
-        initialRoute: RouteNames.splash,
+        initialRoute: RouteNames.intro,
         onGenerateRoute: AppRouter.generateRoute,
       ),
     );

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
 import '../../models/koala_guide_message.dart';
 import '../../models/learning_reminder.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/learning_reminder_viewmodel.dart';
 import '../../viewmodels/notification_viewmodel.dart';
-import '../../widgets/app_primary_button.dart';
 import '../../widgets/koala_guide.dart';
+import '../../widgets/play/play.dart';
 
 class ParentRemindersPage extends StatefulWidget {
   const ParentRemindersPage({super.key});
@@ -29,22 +28,34 @@ class _ParentRemindersPageState extends State<ParentRemindersPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Learning Reminders'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh reminders',
-            onPressed: reminders.isLoading
-                ? null
-                : () => context
-                    .read<LearningReminderViewModel>()
-                    .loadReminders(parent.id),
-            icon: const Icon(Icons.refresh),
+      body: PlayGround(
+        color: PlayColors.sky,
+        safeArea: false,
+        child: SafeArea(
+          child: Column(
+            children: [
+              PlayHeader(
+                title: 'Learning Reminders',
+                onBack: Navigator.of(context).canPop()
+                    ? () => Navigator.of(context).maybePop()
+                    : null,
+                trailing: PlayIconButton(
+                  icon: Icons.refresh_rounded,
+                  semanticLabel: 'Refresh reminders',
+                  onPressed: reminders.isLoading
+                      ? null
+                      : () => context
+                          .read<LearningReminderViewModel>()
+                          .loadReminders(parent.id),
+                  color: PlayColors.card,
+                  iconColor: PlayColors.sky,
+                  size: 54,
+                ),
+              ),
+              const Expanded(child: LearningRemindersPanel()),
+            ],
           ),
-        ],
-      ),
-      body: const SafeArea(
-        child: LearningRemindersPanel(),
+        ),
       ),
     );
   }
@@ -116,7 +127,7 @@ class _LearningRemindersPanelState extends State<LearningRemindersPanel> {
           const SizedBox(height: 16),
         ],
         if (reminders.isLoading)
-          const Center(child: CircularProgressIndicator())
+          const Center(child: CircularProgressIndicator(color: Colors.white))
         else if (reminders.reminders.isEmpty)
           const _EmptyReminderCard()
         else
@@ -126,15 +137,12 @@ class _LearningRemindersPanelState extends State<LearningRemindersPanel> {
               child: _ReminderCard(reminder: reminder),
             ),
         if (reminders.errorMessage != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            reminders.errorMessage!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
+          const SizedBox(height: 12),
+          PlayBanner(message: reminders.errorMessage!),
         ],
         if (reminders.infoMessage != null) ...[
-          const SizedBox(height: 8),
-          Text(reminders.infoMessage!),
+          const SizedBox(height: 12),
+          PlayBanner(message: reminders.infoMessage!, isError: false),
         ],
         const SizedBox(height: 16),
         _CreateReminderCard(
@@ -193,82 +201,88 @@ class _DeliveryStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final notifications = context.watch<NotificationViewModel>();
     final granted = notifications.permissionGranted;
+    final accent = granted ? PlayColors.grass : PlayColors.tangerine;
 
-    return Container(
+    return PlayPanel(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: granted
-            ? AppColors.mint
-            : AppColors.lemon.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: granted ? AppColors.leaf : AppColors.honey),
-      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(
-                granted
-                    ? Icons.notifications_active_rounded
-                    : Icons.notifications_off_rounded,
-                color: granted ? AppColors.forest : AppColors.coral,
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                child: Icon(
+                  granted
+                      ? Icons.notifications_active_rounded
+                      : Icons.notifications_off_rounded,
+                  color: PlayColors.onGround(accent),
+                  size: 30,
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   granted
                       ? 'This phone will show your reminders'
                       : 'Notifications are switched off on this phone',
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 19,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Text(
             granted
                 ? 'Reminders are scheduled on the device, so they arrive even '
                     'when the app is closed.'
                 : 'Schedules below are saved, but nothing will pop up until '
                     'you allow notifications.',
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+              color: PlayColors.ink.withValues(alpha: 0.62),
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (!granted)
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () async {
-                      final model = context.read<NotificationViewModel>();
-                      final allowed = await model.requestPermission();
-                      if (allowed) await model.sendTestNotification();
-                    },
-                    icon: const Icon(Icons.notifications_active_outlined),
-                    label: const Text('Allow notifications'),
-                  ),
-                )
-              else
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => context
-                        .read<NotificationViewModel>()
-                        .sendTestNotification(),
-                    icon: const Icon(Icons.send_outlined),
-                    label: const Text('Send a test'),
-                  ),
-                ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pushNamed(
-                    RouteNames.parentNotifications,
-                  ),
-                  icon: const Icon(Icons.inbox_outlined),
-                  label: const Text('History'),
-                ),
-              ),
-            ],
+          const SizedBox(height: 14),
+          if (!granted)
+            PlayButton(
+              icon: Icons.notifications_active_rounded,
+              label: 'Allow notifications',
+              color: PlayColors.grass,
+              onPressed: () async {
+                final model = context.read<NotificationViewModel>();
+                final allowed = await model.requestPermission();
+                if (allowed) await model.sendTestNotification();
+              },
+            )
+          else
+            PlayButton(
+              icon: Icons.send_rounded,
+              label: 'Send a test',
+              color: PlayColors.cream,
+              textColor: PlayColors.ink,
+              onPressed: () =>
+                  context.read<NotificationViewModel>().sendTestNotification(),
+            ),
+          const SizedBox(height: 10),
+          PlayButton(
+            icon: Icons.inbox_rounded,
+            label: 'History',
+            color: PlayColors.cream,
+            textColor: PlayColors.ink,
+            onPressed: () => Navigator.of(context).pushNamed(
+              RouteNames.parentNotifications,
+            ),
           ),
         ],
       ),
@@ -281,18 +295,35 @@ class _EmptyReminderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return PlayPanel(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.lavender,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.58)),
-      ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.notifications_none, color: AppColors.violet),
-          SizedBox(width: 12),
-          Expanded(child: Text('No learning reminders yet.')),
+          Container(
+            width: 56,
+            height: 56,
+            decoration: const BoxDecoration(
+              color: PlayColors.grape,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_none_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'No learning reminders yet.',
+              style: TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: PlayColors.ink,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -306,28 +337,21 @@ class _RemindersHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return PlayPanel(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.grape, AppColors.violet],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.honey,
-              borderRadius: BorderRadius.circular(16),
+            width: 62,
+            height: 62,
+            decoration: const BoxDecoration(
+              color: PlayColors.sunshine,
+              shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.notifications_active_rounded,
-              color: AppColors.ink,
+              color: PlayColors.ink,
+              size: 34,
             ),
           ),
           const SizedBox(width: 12),
@@ -335,99 +359,28 @@ class _RemindersHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Learning reminders',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
+                  style: TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 23,
+                    height: 1.15,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink,
+                  ),
                 ),
-                const SizedBox(height: 2),
                 Text(
                   count == 1 ? '1 active schedule' : '$count saved schedules',
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
+                    color: PlayColors.ink.withValues(alpha: 0.6),
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ReminderIconBox extends StatelessWidget {
-  const _ReminderIconBox({required this.enabled});
-
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: enabled ? AppColors.honey : AppColors.lavender,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Icon(
-        enabled ? Icons.notifications_active : Icons.notifications_off,
-        color: enabled ? AppColors.ink : AppColors.violet,
-      ),
-    );
-  }
-}
-
-class _ReminderShell extends StatelessWidget {
-  const _ReminderShell({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.panel,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.48)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.grape.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class _ReminderTitleField extends StatelessWidget {
-  const _ReminderTitleField({required this.controller});
-
-  final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cloud,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: TextField(
-        controller: controller,
-        decoration: const InputDecoration(
-          labelText: 'Title',
-          prefixIcon: Icon(Icons.edit_notifications),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-        ),
       ),
     );
   }
@@ -444,18 +397,17 @@ class _ReminderTimeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        backgroundColor: AppColors.lemon.withValues(alpha: 0.52),
-        side: BorderSide(color: AppColors.honey.withValues(alpha: 0.8)),
-      ),
+    return PlayButton(
+      icon: Icons.schedule_rounded,
+      label: selectedTime.format(context),
+      color: PlayColors.sunshine,
       onPressed: onPressed,
-      icon: const Icon(Icons.schedule, color: AppColors.coral),
-      label: Text(selectedTime.format(context)),
     );
   }
 }
 
+/// One day of the week. Chunky enough to hit, and it goes solid when picked
+/// like every other choice in the app.
 class _ReminderWeekdayChip extends StatelessWidget {
   const _ReminderWeekdayChip({
     required this.option,
@@ -469,44 +421,40 @@ class _ReminderWeekdayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(option.label),
-      selected: selected,
-      selectedColor: AppColors.honey,
-      checkmarkColor: AppColors.coral,
-      labelStyle: TextStyle(
-        color: selected ? AppColors.coral : AppColors.ink,
-        fontWeight: FontWeight.w900,
-      ),
-      onSelected: onSelected,
-    );
-  }
-}
-
-class _CreateReminderHeader extends StatelessWidget {
-  const _CreateReminderHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.coral.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(14),
+    return Squishy(
+      semanticLabel: option.label,
+      onTap: () => onSelected(!selected),
+      scale: 0.9,
+      child: AnimatedContainer(
+        duration: PlayMotion.pressDown,
+        width: 58,
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? PlayColors.grape : PlayColors.cream,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: [
+            BoxShadow(
+              color: PlayColors.ink.withValues(alpha: selected ? 0.2 : 0.1),
+              offset: const Offset(0, 4),
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Text(
+          option.label,
+          style: TextStyle(
+            fontFamily: 'Fredoka',
+            fontSize: 15,
+            height: 1,
+            fontWeight: FontWeight.w600,
+            color: selected
+                ? Colors.white
+                : PlayColors.ink.withValues(alpha: 0.6),
           ),
-          child: const Icon(Icons.add_alert, color: AppColors.coral),
         ),
-        const SizedBox(width: 10),
-        Text(
-          'Add reminder',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -519,61 +467,22 @@ class _ReminderStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: enabled
-            ? AppColors.honey.withValues(alpha: 0.34)
-            : AppColors.line.withValues(alpha: 0.72),
+        color: enabled ? PlayColors.grass : PlayColors.ink.withValues(
+          alpha: 0.12,
+        ),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         enabled ? 'On' : 'Off',
         style: TextStyle(
-          color: enabled ? AppColors.coral : AppColors.ink,
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
+          fontFamily: 'Fredoka',
+          fontSize: 12,
+          height: 1.1,
+          fontWeight: FontWeight.w700,
+          color: enabled ? Colors.white : PlayColors.ink.withValues(alpha: 0.6),
         ),
-      ),
-    );
-  }
-}
-
-class _ReminderDetails extends StatelessWidget {
-  const _ReminderDetails({required this.reminder});
-
-  final LearningReminder reminder;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Flexible(
-                child: Text(
-                  reminder.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _ReminderStatusPill(enabled: reminder.enabled),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(
-            '${_formatReminderTime(reminder.hour, reminder.minute)} - '
-            '${_weekdaySummary(reminder.weekdays)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.ink.withValues(alpha: 0.62),
-                ),
-          ),
-        ],
       ),
     );
   }
@@ -587,34 +496,121 @@ class _ReminderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.read<LearningReminderViewModel>();
+    final accent = reminder.enabled ? PlayColors.sunshine : PlayColors.cream;
 
-    return _ReminderShell(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            _ReminderIconBox(enabled: reminder.enabled),
-            const SizedBox(width: 12),
-            _ReminderDetails(reminder: reminder),
-            Switch(
-              value: reminder.enabled,
-              activeThumbColor: AppColors.honey,
-              activeTrackColor: AppColors.violet,
-              onChanged: (enabled) {
-                viewModel.toggleReminder(reminder, enabled);
-              },
+    return PlayPanel(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+            child: Icon(
+              reminder.enabled
+                  ? Icons.notifications_active_rounded
+                  : Icons.notifications_off_rounded,
+              color: PlayColors.ink.withValues(
+                alpha: reminder.enabled ? 1 : 0.45,
+              ),
+              size: 28,
             ),
-            IconButton(
-              tooltip: 'Delete reminder',
-              onPressed: () {
-                viewModel.deleteReminder(
-                  parentId: reminder.parentId,
-                  reminderId: reminder.id,
-                );
-              },
-              icon: const Icon(Icons.delete_outline, color: AppColors.coral),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        reminder.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 18,
+                          height: 1.15,
+                          fontWeight: FontWeight.w600,
+                          color: PlayColors.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _ReminderStatusPill(enabled: reminder.enabled),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_formatReminderTime(reminder.hour, reminder.minute)} · '
+                  '${_weekdaySummary(reminder.weekdays)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: PlayColors.ink.withValues(alpha: 0.55),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+          const SizedBox(width: 6),
+          Squishy(
+            semanticLabel: reminder.enabled
+                ? 'Turn off ${reminder.title}'
+                : 'Turn on ${reminder.title}',
+            onTap: () => viewModel.toggleReminder(reminder, !reminder.enabled),
+            scale: 0.9,
+            child: _ReminderSwitch(value: reminder.enabled),
+          ),
+          const SizedBox(width: 4),
+          PlayIconButton(
+            icon: Icons.delete_outline_rounded,
+            semanticLabel: 'Delete reminder',
+            onPressed: () => viewModel.deleteReminder(
+              parentId: reminder.parentId,
+              reminderId: reminder.id,
+            ),
+            color: PlayColors.cream,
+            iconColor: PlayColors.strawberry,
+            size: 44,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The same chunky toggle the profile form uses, kept small enough to sit in
+/// a row next to the delete button.
+class _ReminderSwitch extends StatelessWidget {
+  const _ReminderSwitch({required this.value});
+
+  final bool value;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: PlayMotion.settleCurve,
+      width: 58,
+      height: 34,
+      padding: const EdgeInsets.all(3),
+      alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+      decoration: BoxDecoration(
+        color:
+            value ? PlayColors.grass : PlayColors.ink.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white, width: 3),
+      ),
+      child: Container(
+        width: 22,
+        height: 22,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
         ),
       ),
     );
@@ -640,43 +636,78 @@ class _CreateReminderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _ReminderShell(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _CreateReminderHeader(),
-            const SizedBox(height: 12),
-            _ReminderTitleField(controller: titleController),
-            const SizedBox(height: 12),
-            _ReminderTimeButton(
-              selectedTime: selectedTime,
-              onPressed: onPickTime,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final option in _weekdayOptions)
-                  _ReminderWeekdayChip(
-                    option: option,
-                    selected: selectedWeekdays.contains(option.weekday),
-                    onSelected: (selected) {
-                      onToggleDay(option.weekday, selected);
-                    },
+    return PlayPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: const BoxDecoration(
+                  color: PlayColors.strawberry,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.add_alert_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Add reminder',
+                  style: TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 21,
+                    height: 1.15,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink,
                   ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            AppPrimaryButton(
-              icon: Icons.add_alert,
-              label: 'Save reminder',
-              onPressed: onSubmit,
-            ),
-          ],
-        ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          PlayField(
+            controller: titleController,
+            label: 'Title',
+            icon: Icons.edit_notifications_rounded,
+            color: PlayColors.grape,
+            labelColor: PlayColors.ink,
+          ),
+          const SizedBox(height: 16),
+          _ReminderTimeButton(
+            selectedTime: selectedTime,
+            onPressed: onPickTime,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in _weekdayOptions)
+                _ReminderWeekdayChip(
+                  option: option,
+                  selected: selectedWeekdays.contains(option.weekday),
+                  onSelected: (selected) {
+                    onToggleDay(option.weekday, selected);
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          PlayButton(
+            icon: Icons.add_alert_rounded,
+            label: 'Save reminder',
+            color: PlayColors.sunshine,
+            big: true,
+            onPressed: onSubmit,
+          ),
+        ],
       ),
     );
   }

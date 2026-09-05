@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/routing/route_names.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../../widgets/play/play.dart';
 import 'widgets/auth_page_shell.dart';
 
 /// One step: take the email and ask Firebase to mail a reset link. The rest of
@@ -43,19 +44,28 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return AuthPageShell(
       titleLeading: 'RESET',
       titleTrailing: 'PASSWORD',
+      ground: PlayColors.tangerine,
+      accent: PlayColors.ink,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _StepCaption(
+          PlayNote(
             'Type the email on your account and we will send you a link to '
             'set a new password.',
+            color: PlayColors.ink,
+            style: TextStyle(
+              fontSize: 15,
+              color: PlayColors.ink.withValues(alpha: 0.66),
+            ),
           ),
-          const SizedBox(height: 14),
-          AuthWoodenTextField(
+          const SizedBox(height: 16),
+          PlayField(
             controller: _emailController,
             label: 'Email address',
             hint: 'parent@example.com',
-            prefixIcon: Icons.mail_outline_rounded,
+            icon: Icons.mail_rounded,
+            color: PlayColors.tangerine,
+            labelColor: PlayColors.ink,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.email],
@@ -63,28 +73,33 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             onSubmitted: (_) => _submit(context),
           ),
           if (auth.errorMessage != null) ...[
-            const SizedBox(height: 12),
-            AuthMessageBanner(message: auth.errorMessage!),
+            const SizedBox(height: 14),
+            PlayBanner(message: auth.errorMessage!),
           ],
           if (sent) ...[
-            const SizedBox(height: 12),
-            AuthMessageBanner(message: auth.infoMessage!, isError: false),
+            const SizedBox(height: 14),
+            PlayBanner(message: auth.infoMessage!, isError: false),
           ],
-          const SizedBox(height: 16),
-          AuthActionButton(
+          const SizedBox(height: 18),
+          PlayButton(
             icon: sent ? Icons.refresh_rounded : Icons.mark_email_read_rounded,
             label: auth.isLoading
                 ? 'Sending...'
                 : sent
                     ? 'Send it again'
                     : 'Send reset link',
+            color: PlayColors.sunshine,
+            big: true,
             onPressed: auth.isLoading ? null : () => _submit(context),
           ),
           if (sent) ...[
             const SizedBox(height: 6),
-            TextButton(
-              onPressed: () => _openLogin(context),
-              child: const Text('Back to sign in'),
+            Center(
+              child: AuthTextLink(
+                label: 'Back to sign in',
+                color: PlayColors.grape,
+                onPressed: () => _openLogin(context),
+              ),
             ),
           ],
         ],
@@ -105,25 +120,5 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return context.read<AuthViewModel>().sendPasswordReset(
           _emailController.text,
         );
-  }
-}
-
-class _StepCaption extends StatelessWidget {
-  const _StepCaption(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: Color(0xFF6F3D20),
-        fontFamily: 'Fredoka',
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-      ),
-    );
   }
 }

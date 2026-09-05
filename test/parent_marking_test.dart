@@ -10,6 +10,7 @@ import 'package:little_learners/models/learning_level.dart';
 import 'package:little_learners/models/parent_mark.dart';
 import 'package:little_learners/viewmodels/active_child_session.dart';
 import 'package:little_learners/views/marking/parent_marking_page.dart';
+import 'package:little_learners/widgets/play/play.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -178,11 +179,11 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-FilledButton _saveButton(WidgetTester tester) {
-  return tester.widget<FilledButton>(
+PlayButton _saveButton(WidgetTester tester) {
+  return tester.widget<PlayButton>(
     find.ancestor(
       of: find.text('Save this mark'),
-      matching: find.byType(FilledButton),
+      matching: find.byType(PlayButton),
     ),
   );
 }

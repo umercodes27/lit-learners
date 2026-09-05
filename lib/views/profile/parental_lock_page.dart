@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/routing/app_router.dart';
 import '../../viewmodels/parental_lock_viewmodel.dart';
+import '../../services/audio/sound_controller.dart';
+import '../../widgets/play/play.dart';
 
+/// The sum a grown-up has to solve before the parent area opens.
+///
+/// Rebuilt on the play kit so the door between the child screens and the
+/// parent area does not look like a different app on either side of it. The
+/// challenge, the attempt limit and the routing are untouched.
 class ParentalLockPage extends StatefulWidget {
   const ParentalLockPage({
     required this.args,
@@ -23,6 +29,7 @@ class _ParentalLockPageState extends State<ParentalLockPage> {
   @override
   void initState() {
     super.initState();
+    AppSound.instance.stopMusic();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ParentalLockViewModel>().loadChallenge();
     });
@@ -32,112 +39,54 @@ class _ParentalLockPageState extends State<ParentalLockPage> {
   Widget build(BuildContext context) {
     final lock = context.watch<ParentalLockViewModel>();
     final challenge = lock.challenge;
+    final hasError = lock.errorMessage != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Parent Check')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          children: [
-            const _ParentCheckHeader(),
-            const SizedBox(height: 20),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.grape, AppColors.violet],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
+      body: PlayGround(
+        color: PlayColors.tangerine,
+        safeArea: false,
+        child: SafeArea(
+          child: Column(
+            children: [
+              PlayHeader(
+                title: 'Parent Check',
+                onBack: Navigator.of(context).canPop()
+                    ? () => Navigator.of(context).maybePop()
+                    : null,
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 28),
-                child: Column(
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                   children: [
-                    Text(
-                      'Verification Equation'.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.6,
-                      ),
+                    const _ParentCheckHeader(),
+                    const SizedBox(height: 18),
+                    _EquationCard(
+                      prompt: challenge?.prompt ?? 'Preparing challenge...',
+                    ),
+                    const SizedBox(height: 16),
+                    _AnswerBox(answer: _typedAnswer, hasError: hasError),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 26,
+                      child: hasError
+                          ? PlayNote(
+                              lock.errorMessage!,
+                              style: const TextStyle(fontSize: 15),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      challenge?.prompt ?? 'Preparing challenge...',
-                      textAlign: TextAlign.center,
-                      style:
-                          Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                              ),
+                    _NumberPad(
+                      enabled: challenge != null && !lock.isLocked,
+                      onDigit: _appendDigit,
+                      onDelete: _deleteDigit,
+                      onSubmit: () => _submit(context),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: lock.errorMessage == null
-                    ? AppColors.panel
-                    : AppColors.coral.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: lock.errorMessage == null
-                      ? AppColors.lilac
-                      : AppColors.coral,
-                ),
-              ),
-              child: SizedBox(
-                height: 62,
-                child: Center(
-                  child: Text(
-                    _typedAnswer.isEmpty ? '-' : _typedAnswer,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: lock.errorMessage == null
-                              ? AppColors.ink
-                              : AppColors.coral,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: _typedAnswer.isEmpty ? 0 : 3,
-                        ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 24,
-              child: lock.errorMessage == null
-                  ? const SizedBox.shrink()
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: AppColors.coral,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            lock.errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: AppColors.coral),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-            const SizedBox(height: 10),
-            _NumberPad(
-              enabled: challenge != null && !lock.isLocked,
-              onDigit: _appendDigit,
-              onDelete: _deleteDigit,
-              onSubmit: () => _submit(context),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -184,26 +133,21 @@ class _ParentCheckHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.lavender,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.lilac.withValues(alpha: 0.58)),
-      ),
+    return PlayPanel(
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.honey,
-              borderRadius: BorderRadius.circular(18),
+            width: 68,
+            height: 68,
+            decoration: const BoxDecoration(
+              color: PlayColors.grape,
+              shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.lock_person_rounded,
-              color: AppColors.ink,
-              size: 30,
+              color: Colors.white,
+              size: 36,
             ),
           ),
           const SizedBox(width: 14),
@@ -211,23 +155,129 @@ class _ParentCheckHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Solve the parent check',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
+                  style: TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 22,
+                    height: 1.15,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'This keeps profile settings and reports in grown-up hands.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.ink.withValues(alpha: 0.68),
-                      ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.3,
+                    fontWeight: FontWeight.w600,
+                    color: PlayColors.ink.withValues(alpha: 0.62),
+                  ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The sum itself, as big as it will go.
+class _EquationCard extends StatelessWidget {
+  const _EquationCard({required this.prompt});
+
+  final String prompt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+      decoration: BoxDecoration(
+        color: PlayColors.grape,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: PlayColors.ink.withValues(alpha: 0.24),
+            offset: const Offset(0, 6),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'VERIFICATION EQUATION',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.6,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 12),
+          FittedBox(
+            child: Text(
+              prompt,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 40,
+                height: 1.1,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// What has been typed so far.
+class _AnswerBox extends StatelessWidget {
+  const _AnswerBox({required this.answer, required this.hasError});
+
+  final String answer;
+  final bool hasError;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = hasError ? PlayColors.strawberry : Colors.white;
+
+    return AnimatedContainer(
+      duration: PlayMotion.pressDown,
+      height: 84,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: PlayColors.card,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: accent, width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: PlayColors.ink.withValues(alpha: 0.20),
+            offset: const Offset(0, 6),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: Text(
+        answer.isEmpty ? '?' : answer,
+        style: TextStyle(
+          fontFamily: 'Fredoka',
+          fontSize: 40,
+          height: 1,
+          fontWeight: FontWeight.w700,
+          letterSpacing: answer.isEmpty ? 0 : 4,
+          color: hasError
+              ? PlayColors.strawberry
+              : answer.isEmpty
+                  ? PlayColors.ink.withValues(alpha: 0.28)
+                  : PlayColors.ink,
+        ),
       ),
     );
   }
@@ -249,39 +299,28 @@ class _NumberPad extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    return Column(
+
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.4,
       children: [
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1.5,
-          children: [
-            for (final key in keys)
-              _KeyButton(
-                label: key,
-                enabled: enabled,
-                onTap: () => onDigit(key),
-              ),
-            _KeyButton(
-              icon: Icons.backspace_outlined,
-              enabled: enabled,
-              onTap: onDelete,
-            ),
-            _KeyButton(
-              label: '0',
-              enabled: enabled,
-              onTap: () => onDigit('0'),
-            ),
-            _KeyButton(
-              icon: Icons.arrow_forward_rounded,
-              isSubmit: true,
-              enabled: enabled,
-              onTap: onSubmit,
-            ),
-          ],
+        for (final key in keys)
+          _KeyButton(label: key, enabled: enabled, onTap: () => onDigit(key)),
+        _KeyButton(
+          icon: Icons.backspace_rounded,
+          enabled: enabled,
+          onTap: onDelete,
+        ),
+        _KeyButton(label: '0', enabled: enabled, onTap: () => onDigit('0')),
+        _KeyButton(
+          icon: Icons.arrow_forward_rounded,
+          isSubmit: true,
+          enabled: enabled,
+          onTap: onSubmit,
         ),
       ],
     );
@@ -305,29 +344,42 @@ class _KeyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = isSubmit ? Colors.white : AppColors.ink;
-    return FilledButton(
-      onPressed: enabled ? onTap : null,
-      style: FilledButton.styleFrom(
-        backgroundColor: isSubmit ? AppColors.coral : AppColors.lavender,
-        foregroundColor: foreground,
-        disabledBackgroundColor: AppColors.line,
-        disabledForegroundColor: AppColors.ink.withValues(alpha: 0.38),
-        side: BorderSide(
-          color: isSubmit ? AppColors.coral : AppColors.lilac,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      ),
-      child: icon == null
-          ? Text(
-              label!,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: foreground,
+    final surface = isSubmit ? PlayColors.grass : PlayColors.card;
+    final foreground = PlayColors.onGround(surface);
+
+    return Squishy(
+      semanticLabel: label ?? (isSubmit ? 'Check answer' : 'Delete'),
+      onTap: enabled ? onTap : null,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.5,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: PlayColors.ink.withValues(alpha: 0.18),
+                offset: const Offset(0, 5),
+                blurRadius: 0,
               ),
-            )
-          : Icon(icon, color: foreground),
+            ],
+          ),
+          child: icon == null
+              ? Text(
+                  label!,
+                  style: TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontSize: 30,
+                    height: 1,
+                    fontWeight: FontWeight.w700,
+                    color: foreground,
+                  ),
+                )
+              : Icon(icon, color: foreground, size: 30),
+        ),
+      ),
     );
   }
 }

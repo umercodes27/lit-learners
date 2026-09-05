@@ -7,7 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
 import '../../viewmodels/admin_auth_viewmodel.dart';
 import '../../viewmodels/admin_stats_viewmodel.dart';
-import '../auth/widgets/auth_page_shell.dart';
+import 'widgets/admin_wooden_shell.dart';
 
 /// UC-18: dedicated admin entry point with its own session.
 class AdminLoginPage extends StatefulWidget {
@@ -33,14 +33,14 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   Widget build(BuildContext context) {
     final adminAuth = context.watch<AdminAuthViewModel>();
 
-    return AuthPageShell(
+    return AdminAuthShell(
       titleLeading: 'ADMIN',
       titleTrailing: 'LOGIN',
       child: AutofillGroup(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthWoodenTextField(
+            AdminWoodenField(
               controller: _emailController,
               label: 'Admin email',
               hint: 'admin@example.com',
@@ -51,7 +51,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               autocorrect: false,
             ),
             const SizedBox(height: 14),
-            AuthWoodenTextField(
+            AdminWoodenField(
               controller: _passwordController,
               label: 'Password',
               prefixIcon: Icons.lock_outline_rounded,
@@ -77,10 +77,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
             ],
             if (adminAuth.errorMessage != null) ...[
               const SizedBox(height: 12),
-              AuthMessageBanner(message: adminAuth.errorMessage!),
+              AdminAuthBanner(message: adminAuth.errorMessage!),
             ],
             const SizedBox(height: 16),
-            AuthActionButton(
+            AdminAuthButton(
               icon: Icons.login_rounded,
               label: adminAuth.isLoading ? 'Signing in...' : 'Sign in as admin',
               onPressed: adminAuth.isLoading ? null : () => _submit(context),
@@ -125,7 +125,7 @@ class _LocalDataNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Shaped like AuthMessageBanner — 8px corners, wood-brown Fredoka text —
+    // Shaped like AdminAuthBanner — 8px corners, wood-brown Fredoka text —
     // so it sits with the sign-in banners rather than beside them.
     return DecoratedBox(
       decoration: BoxDecoration(

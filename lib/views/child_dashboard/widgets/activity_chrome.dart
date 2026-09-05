@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/utils/learning_text_direction.dart';
 import '../../../services/audio/koala_audio_player.dart';
+import '../../../widgets/play/play.dart';
 
 /// Plays the audio cue attached to a content card, if the level ships one.
 class ContentAudioButton extends StatefulWidget {
@@ -27,15 +28,13 @@ class _ContentAudioButtonState extends State<ContentAudioButton> {
       return const SizedBox.shrink();
     }
 
-    return IconButton(
-      tooltip: 'Play card audio',
+    return PlayIconButton(
+      icon: Icons.volume_up,
+      semanticLabel: 'Play card audio',
       onPressed: _isPlaying ? null : () => _playCue(player, cueKey),
-      iconSize: 20,
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-      icon: Icon(
-        _isPlaying ? Icons.volume_up : Icons.volume_up_outlined,
-      ),
+      color: _isPlaying ? PlayColors.sunshine : PlayColors.sky,
+      iconColor: Colors.white,
+      size: 56,
     );
   }
 
@@ -78,12 +77,13 @@ class ActivityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textDirection = LearningTextDirection.forText(text);
-    final color = accent ?? Theme.of(context).colorScheme.primary;
-    final baseStyle = size >= 72
-        ? Theme.of(context).textTheme.headlineMedium
-        : Theme.of(context).textTheme.titleLarge;
+    final color = accent ?? PlayColors.blueberry;
     final badgeStyle = LearningTextDirection.styleForText(
-      baseStyle?.copyWith(fontWeight: FontWeight.w900, color: color),
+      const TextStyle(
+        fontSize: 56,
+        fontWeight: FontWeight.w800,
+        color: Colors.white,
+      ),
       text,
     );
 
@@ -92,12 +92,20 @@ class ActivityBadge extends StatelessWidget {
       height: size,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          color: color,
+          borderRadius: BorderRadius.circular(PlayMotion.radius),
+          border: Border.all(color: Colors.white, width: 4),
+          boxShadow: [
+            BoxShadow(
+              color: PlayColors.ink.withValues(alpha: 0.2),
+              offset: const Offset(0, 5),
+              blurRadius: 0,
+            ),
+          ],
         ),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(10),
             child: FittedBox(
               child: Directionality(
                 textDirection: textDirection,
