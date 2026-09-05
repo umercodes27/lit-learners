@@ -18,6 +18,7 @@ class LevelStopData {
     required this.canOpen,
     required this.canDownload,
     required this.lockReason,
+    this.caption,
   });
 
   final LearningLevel level;
@@ -26,6 +27,15 @@ class LevelStopData {
   final bool canOpen;
   final bool canDownload;
   final String lockReason;
+
+  /// What to print under the title instead of the portion-and-steps line.
+  ///
+  /// The seeded ladder leaves this null and gets `A - F  -  6 steps`, counted
+  /// off the level's own content. An age-pack stop has neither a portion nor a
+  /// list of content items to count, so it passes what the child will actually
+  /// be doing - `Trace the shape` - which is the useful half of that line
+  /// anyway.
+  final String? caption;
 
   bool get locked => !canOpen;
 }
@@ -224,6 +234,8 @@ class LevelMap extends StatelessWidget {
     required this.onDownload,
     required this.onLocked,
     this.badgeFor,
+    this.onGoalTap,
+    this.goalLabel,
   });
 
   final List<LevelStopData> stops;
@@ -241,6 +253,17 @@ class LevelMap extends StatelessWidget {
   final ValueChanged<LearningLevel> onOpen;
   final ValueChanged<LearningLevel> onDownload;
   final ValueChanged<String> onLocked;
+
+  /// Makes the trophy at the end of the road something a child can tap.
+  ///
+  /// The age packs close each subject with a quiz drawn from its own
+  /// activities, and the end of the road is where it belongs - a child walks
+  /// the stops and the trophy is what is waiting. Null leaves the marker as
+  /// the decoration it has always been.
+  final VoidCallback? onGoalTap;
+
+  /// Read out in place of the default when the goal is tappable.
+  final String? goalLabel;
 
   static const _discBox = 96.0;
   static const _cardAllowance = 132.0;
@@ -314,6 +337,8 @@ class LevelMap extends StatelessWidget {
                   child: _GoalMarker(
                     reached: completed >= stops.length,
                     accent: accent,
+                    onTap: onGoalTap,
+                    label: goalLabel,
                   ),
                 ),
               ),
@@ -366,8 +391,10 @@ class _MapStop extends StatelessWidget {
         : '${level.contentItems.length} steps';
     // Modules that are not a sequence (Story, Drawing) carry no portion, so
     // this falls back to how much there is to work through.
-    final portion =
-        level.portionLabel == null ? steps : '${level.portionLabel}  ·  $steps';
+    final portion = stop.caption ??
+        (level.portionLabel == null
+            ? steps
+            : '${level.portionLabel}  ·  $steps');
 
     final column = Column(
       mainAxisSize: MainAxisSize.min,
@@ -562,15 +589,23 @@ class _StopDisc extends StatelessWidget {
 /// A road with nothing at the end of it is a queue. This is the reason the
 /// last stop is worth reaching.
 class _GoalMarker extends StatelessWidget {
-  const _GoalMarker({required this.reached, required this.accent});
+  const _GoalMarker({
+    required this.reached,
+    required this.accent,
+    this.onTap,
+    this.label,
+  });
 
   final bool reached;
   final Color accent;
+  final VoidCallback? onTap;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: reached ? 'Module finished' : 'The end of this map',
+    final marker = Semantics(
+      button: onTap != null,
+      label: label ?? (reached ? 'Module finished' : 'The end of this map'),
       child: ExcludeSemantics(
         child: Container(
           width: 92,
@@ -598,6 +633,12 @@ class _GoalMarker extends StatelessWidget {
         ),
       ),
     );
+
+    if (onTap == null) return marker;
+    // Squishy rather than a bare GestureDetector: it is what every other
+    // tappable in the play kit uses, so the trophy answers a finger the same
+    // way the stops above it do - and it is where the tap sound comes from.
+    return Squishy(onTap: onTap, child: marker);
   }
 }
 

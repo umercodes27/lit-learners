@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/config/firebase_status.dart';
 import '../../core/routing/auth_flow_router.dart';
 import '../../core/routing/route_names.dart';
 import '../../viewmodels/auth_viewmodel.dart';
@@ -17,10 +18,36 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocus = FocusNode();
   bool _obscurePassword = true;
+
+  /// True once the remembered address has been put in the field, so a parent
+  /// correcting it is not overwritten by a later rebuild.
+  bool _prefilled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final auth = context.read<AuthViewModel>();
+      await auth.loadRememberedEmail();
+      if (!mounted) return;
+
+      final remembered = auth.rememberedEmail;
+      if (remembered == null || _prefilled) return;
+      setState(() {
+        _emailController.text = remembered;
+        _prefilled = true;
+      });
+      // The address is settled, so the only thing left to ask for is the
+      // password. Landing there saves a returning parent a tap.
+      _passwordFocus.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
+    _passwordFocus.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -39,6 +66,10 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (!FirebaseStatus.isLive) ...[
+              const PlayBanner(message: FirebaseStatus.localOnlyNotice),
+              const SizedBox(height: 14),
+            ],
             PlayField(
               controller: _emailController,
               label: 'Email address',
@@ -51,9 +82,20 @@ class _LoginPageState extends State<LoginPage> {
               autofillHints: const [AutofillHints.email],
               autocorrect: false,
             ),
-            const SizedBox(height: 14),
+            if (_prefilled) ...[
+              Align(
+                alignment: Alignment.centerRight,
+                child: AuthTextLink(
+                  label: 'Not you?',
+                  color: PlayColors.blueberry,
+                  onPressed: auth.isLoading ? null : _forgetEmail,
+                ),
+              ),
+            ] else
+              const SizedBox(height: 14),
             PlayField(
               controller: _passwordController,
+              focusNode: _passwordFocus,
               label: 'Password',
               icon: Icons.lock_rounded,
               color: PlayColors.grape,
@@ -134,6 +176,16 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  /// Drops the remembered address and hands the field back to the parent.
+  Future<void> _forgetEmail() async {
+    await context.read<AuthViewModel>().forgetEmail();
+    if (!mounted) return;
+    setState(() {
+      _emailController.clear();
+      _prefilled = false;
+    });
   }
 
   Future<void> _submit(BuildContext context) async {

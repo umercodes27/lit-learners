@@ -21,6 +21,7 @@ class PlayField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.icon,
+    this.focusNode,
     this.color = PlayColors.blueberry,
     this.labelColor = Colors.white,
     this.hint,
@@ -35,6 +36,11 @@ class PlayField extends StatelessWidget {
   });
 
   final TextEditingController controller;
+
+  /// Let a screen move the cursor here itself — the sign-in page jumps
+  /// straight to the password when it already knows the email address.
+  final FocusNode? focusNode;
+
   final String label;
   final IconData icon;
 
@@ -105,6 +111,7 @@ class PlayField extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
+                  focusNode: focusNode,
                   keyboardType: keyboardType,
                   textInputAction: textInputAction,
                   autofillHints: autofillHints,
