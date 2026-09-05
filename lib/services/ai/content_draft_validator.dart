@@ -18,6 +18,8 @@ enum DraftSeverity {
 /// One value per rule so tests can assert on the rule rather than on prose,
 /// and so the review screen can group issues without parsing messages.
 enum DraftRule {
+  /// Not a content problem: the model's reply could not be parsed at all.
+  unreadableReply,
   wrongLevelCount,
   levelTitleEmpty,
   levelSubtitleEmpty,
