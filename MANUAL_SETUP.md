@@ -65,8 +65,40 @@ flutter run --dart-define=GOOGLE_SERVER_CLIENT_ID=<web client id>.apps.googleuse
 * or `--dart-define=GOOGLE_IOS_CLIENT_ID=<ios client id>` if you prefer to keep
   it out of the plist.
 
+**Web** needs no fingerprints, but it does need two things passed in, because a
+browser build has no `google-services.json` or plist to read:
+
+1. Firebase console → **Project settings → Your apps → Add app → Web**. Register
+   one if there is not one already; this is also where the Firebase web config
+   in item 0c comes from.
+2. Google Cloud console → **APIs & Services → Credentials → the Web client** →
+   add your dev origin (`http://localhost:<port>`) to **Authorised JavaScript
+   origins**. Flutter picks a random port unless told otherwise, so pin it:
+
+   ```bash
+   flutter run -d chrome --web-port=5000 \
+     --dart-define=GOOGLE_WEB_CLIENT_ID=<web client id>.apps.googleusercontent.com \
+     --dart-define=FIREBASE_API_KEY=... # and the rest of item 0c
+   ```
+
+Without `GOOGLE_WEB_CLIENT_ID` the chooser never opens in a browser: there is
+nothing for the plugin to identify the app with. Without the Firebase config,
+Google sign-in is not reached at all — the app runs on local data, and the
+button says so rather than signing anyone in.
+
 Note the package name is still `com.example.little_learners`. Fingerprints are
 registered per package name, so change it *before* doing this, not after.
+
+### What it looks like when this is not done
+
+The app does not fail; it falls back. `main.dart` treats a failed
+`Firebase.initializeApp` as non-fatal, `app.dart` checks `Firebase.apps` and
+uses the in-memory repositories instead, and every auth screen then shows the
+*Not connected to Firebase* banner. In that state "Continue with Google"
+refuses with a message pointing here, rather than signing in — it used to mint
+a `google.parent@littlelearners.local` account and report success, which looked
+exactly like a broken Google integration: no chooser, a different parent id on
+every run, and the children created under the previous one gone.
 
 ---
 

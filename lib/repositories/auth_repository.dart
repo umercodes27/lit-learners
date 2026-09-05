@@ -1,3 +1,4 @@
+import '../core/config/firebase_status.dart';
 import '../models/parent_account.dart';
 
 abstract class AuthRepository {
@@ -109,27 +110,17 @@ class InMemoryAuthRepository implements AuthRepository, ParentDirectory {
     return account;
   }
 
+  /// Local mode has no Google to sign in to.
+  ///
+  /// This used to mint a `google.parent@littlelearners.local` account and
+  /// report success, which made a missing Firebase config look like a broken
+  /// Google integration: no account chooser ever appeared, every run produced
+  /// a different parent id, and the children created under the last one were
+  /// gone. Refusing is the honest answer - the button cannot do what it says
+  /// here, and saying so points at the thing that actually needs fixing.
   @override
   Future<ParentAccount> signInWithGoogle() async {
-    const normalizedEmail = 'google.parent@littlelearners.local';
-    final stored = _parentsByEmail[normalizedEmail];
-    if (stored != null) {
-      _currentParent = stored.account;
-      return stored.account;
-    }
-
-    final account = ParentAccount(
-      id: 'parent-google-${DateTime.now().microsecondsSinceEpoch}',
-      email: normalizedEmail,
-      createdAt: DateTime.now(),
-      role: _roleFor(normalizedEmail),
-    );
-    _parentsByEmail[normalizedEmail] = _StoredParent(
-      account: account,
-      password: '',
-    );
-    _currentParent = account;
-    return account;
+    throw const AuthException(FirebaseStatus.googleUnavailable);
   }
 
   @override

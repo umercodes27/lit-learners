@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/config/app_config.dart';
@@ -60,13 +61,24 @@ class PluginGoogleIdentityService implements GoogleIdentityService {
     // `initialize` is documented as a once-per-process call, so the future is
     // cached rather than re-run on every button press.
     return _initialization ??= _googleSignIn.initialize(
-      clientId: AppConfig.googleIosClientId.isEmpty
-          ? null
-          : AppConfig.googleIosClientId,
+      clientId: _clientId,
       serverClientId: AppConfig.googleServerClientId.isEmpty
           ? null
           : AppConfig.googleServerClientId,
     );
+  }
+
+  /// Which client id this platform identifies itself with.
+  ///
+  /// Android is the one platform that needs none: the Gradle plugin bakes it
+  /// into a resource from `google-services.json`. iOS reads its own from
+  /// `GoogleService-Info.plist`, and web has no file to read at all, so in a
+  /// browser this has to be passed in or the chooser never opens.
+  String? get _clientId {
+    const id = kIsWeb
+        ? AppConfig.googleWebClientId
+        : AppConfig.googleIosClientId;
+    return id.isEmpty ? null : id;
   }
 }
 
