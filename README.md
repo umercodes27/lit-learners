@@ -1,6 +1,6 @@
 # Little Learners
 
-Little Learners is a Flutter e-learning app for toddlers ages 1 to 4. This repository is being built from scratch, using the evaluated Edutainment project only as product inspiration.
+Little Learners is a Flutter e-learning app for toddlers ages 2 to 4. This repository is being built from scratch, using the evaluated Edutainment project only as product inspiration.
 
 ## Current Build Slice
 

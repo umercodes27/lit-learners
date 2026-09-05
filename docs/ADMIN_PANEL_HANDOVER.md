@@ -383,7 +383,7 @@ Deferred by the project owner, explicitly *not* now:
 - Overall UI/UX enhancement pass.
 
 Also outstanding from an earlier analysis, unrelated to the admin panel: the app
-targets ages 1–4 but is almost entirely text-driven — `ContentItem` has **no
+targets ages 2–4 but is almost entirely text-driven — `ContentItem` has **no
 image field** (`visualLabel` is a string like `'Three apples'` rendered as
 text), and **88 referenced audio cue keys have no audio files**. There is no
 localization infrastructure despite a full Urdu module.

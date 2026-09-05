@@ -47,14 +47,14 @@ void main() {
       (tester) async {
     await _pumpForm(tester);
 
-    expect(find.text('Choose an age from 1 to 4.'), findsOneWidget);
+    expect(find.text('Choose an age from 2 to 4.'), findsOneWidget);
     // Squishy rather than ChoiceChip: the age options are play-kit tiles now.
     // The assertion is unchanged — each age in range is offered as something
-    // tappable, and nothing outside the range is.
-    for (final age in ['1', '2', '3', '4']) {
+    // tappable, and nothing outside the range is. Age 1 is on the outside now.
+    for (final age in ['2', '3', '4']) {
       expect(find.widgetWithText(Squishy, age), findsOneWidget);
     }
-    for (final age in ['5', '6', '7', '8']) {
+    for (final age in ['1', '5', '6', '7', '8']) {
       expect(find.widgetWithText(Squishy, age), findsNothing);
     }
   });

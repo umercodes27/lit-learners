@@ -7,7 +7,7 @@
 /// import '../../widgets/play/play.dart';
 /// ```
 ///
-/// Built for ages 1-4, which drives every decision in here: touch targets far
+/// Built for ages 2-4, which drives every decision in here: touch targets far
 /// above the adult Material minimum, corners far rounder than the grown-up
 /// screens, saturated flat colour, and a physical reaction to every touch.
 ///
