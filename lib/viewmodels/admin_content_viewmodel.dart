@@ -305,6 +305,67 @@ class AdminContentViewModel extends ChangeNotifier {
     }
   }
 
+  /// Saves generated levels as drafts, in one atomic write.
+  ///
+  /// Deliberately not a loop over [createLevel]. A stage is a ladder and
+  /// unlocking walks levelNumber from 1, so a connection that drops after
+  /// level 3 of 5 would not leave three useful levels — it would leave a gap
+  /// that locks levels 4 and 5 permanently. The batch either lands whole or
+  /// not at all.
+  ///
+  /// Validation is also all-or-nothing: every level is checked before any of
+  /// them is written, so a bad fifth level cannot result in four saved ones.
+  ///
+  /// Note what this does NOT do: it never runs [_slug] on the id. The ids are
+  /// already '<moduleId>-stage<n>-<m>', and slugging is ASCII-only, so an
+  /// Urdu title would slug to the empty string and be rejected as missing.
+  Future<bool> createLevelsFromDrafts(List<LearningLevel> levels) async {
+    if (levels.isEmpty) {
+      _setError('Approve at least one level before saving.');
+      return false;
+    }
+
+    for (final level in levels) {
+      final validationError = _validateLevel(
+        id: level.id,
+        moduleId: level.moduleId,
+        stage: level.stage,
+        levelNumber: level.levelNumber,
+        title: level.title,
+        passingScore: level.passingScore,
+      );
+      if (validationError != null) {
+        _setError('${level.id}: $validationError');
+        return false;
+      }
+    }
+
+    final now = DateTime.now();
+    final drafts = [
+      for (final level in levels)
+        AdminContentLevel(
+          level: level,
+          isPublished: false,
+          createdAt: now,
+          updatedAt: now,
+          publishStatus: AdminPublishStatus.draft,
+        ),
+    ];
+
+    try {
+      await _adminContentRepository.upsertLevels(drafts);
+      await _syncPublishedContent();
+      _infoMessage = drafts.length == 1
+          ? 'Saved 1 level as a draft.'
+          : 'Saved ${drafts.length} levels as drafts.';
+      await loadContent();
+      return true;
+    } catch (error) {
+      _setError(_messageFor(error, fallback: 'Levels could not be saved.'));
+      return false;
+    }
+  }
+
   Future<bool> _saveModule(
     AdminContentModule module,
     String successMessage,

@@ -192,6 +192,47 @@ class AiContentGenerator {
     );
   }
 
+  /// Re-checks drafts after the admin has edited one by hand.
+  ///
+  /// Runs the same whole-batch validation as generation rather than checking
+  /// the edited level alone, because some problems only exist between levels:
+  /// renaming a level can collide with another title, and fixing one glyph
+  /// does not change whether the numbering still runs unbroken.
+  ///
+  /// Repairs are carried over untouched and the repairer is deliberately not
+  /// run again — it exists to clean up what a model produced, and re-running
+  /// it over an admin's typing would argue with them mid-edit.
+  AiGenerationResult revalidate(
+    List<AiLevelDraft> drafts, {
+    required AiGenerationRequest request,
+    Set<String> existingLevelIds = const {},
+    Set<String> existingQuizIds = const {},
+    Set<String> existingTitles = const {},
+  }) {
+    final validation = validator.validateStage(
+      [for (final draft in drafts) draft.level],
+      expectedLevelCount: request.levelCount,
+      expectedFirstLevelNumber: request.firstLevelNumber,
+      existingLevelIds: existingLevelIds,
+      existingQuizIds: existingQuizIds,
+      existingTitles: existingTitles,
+    );
+
+    return AiGenerationResult(
+      drafts: [
+        for (var i = 0; i < drafts.length; i++)
+          drafts[i].copyWith(
+            issues: [
+              for (final issue in validation.issues)
+                if (_belongsTo(issue, i)) issue,
+            ],
+          ),
+      ],
+      attempts: 0,
+      batchIssues: _batchIssues(validation.issues),
+    );
+  }
+
   /// Fills in everything the model was never asked for.
   LearningLevel _assemble(
     AiLevelPayload payload,

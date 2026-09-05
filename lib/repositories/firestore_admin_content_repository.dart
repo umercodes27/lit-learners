@@ -80,6 +80,44 @@ class FirestoreAdminContentRepository implements AdminContentRepository {
     return updated;
   }
 
+  /// Commits every level in one [WriteBatch].
+  ///
+  /// Firestore applies a batch atomically on the server: all the documents
+  /// land or none of them do. That is the whole point here — a connection
+  /// that drops halfway through a five-level stage must not leave a ladder
+  /// with a hole in it, because a missing levelNumber locks everything after
+  /// it permanently rather than merely being absent.
+  @override
+  Future<List<AdminContentLevel>> upsertLevels(
+    List<AdminContentLevel> levels,
+  ) async {
+    if (levels.isEmpty) return const [];
+    if (levels.length > _batchWriteLimit) {
+      throw ArgumentError(
+        'A batch can hold at most $_batchWriteLimit levels, '
+        'got ${levels.length}.',
+      );
+    }
+
+    final now = DateTime.now();
+    final updated = [for (final level in levels) level.copyWith(updatedAt: now)];
+
+    final batch = _firestore.batch();
+    for (final level in updated) {
+      batch.set(
+        _levelsRef.doc(level.level.id),
+        _levelToRemoteMap(level),
+        SetOptions(merge: true),
+      );
+    }
+    await batch.commit();
+
+    return updated;
+  }
+
+  /// Firestore's own ceiling on operations in one batch.
+  static const _batchWriteLimit = 500;
+
   @override
   Future<AdminContentModule> upsertModule(AdminContentModule module) async {
     final now = DateTime.now();
