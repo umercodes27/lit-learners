@@ -17,6 +17,7 @@ class RouteNames {
   static const adminParentAccounts = '/admin/parent-accounts';
   static const adminProgressStatistics = '/admin/progress-statistics';
   static const adminMedia = '/admin/media';
+  static const adminAiAuthoring = '/admin/content/ai';
   static const profileEdit = '/profiles/edit';
   static const parentDashboard = '/parent/dashboard';
   static const parentReports = '/parent/reports';

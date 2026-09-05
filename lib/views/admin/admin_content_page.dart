@@ -98,6 +98,13 @@ class _AdminContentPageState extends State<AdminContentPage> {
       subtitle: 'Modules, levels and quizzes',
       actions: [
         AdminHeaderAction(
+          tooltip: 'Generate levels with AI',
+          icon: Icons.auto_awesome_rounded,
+          onPressed: () =>
+              Navigator.of(context).pushNamed(RouteNames.adminAiAuthoring),
+        ),
+        const SizedBox(width: 4),
+        AdminHeaderAction(
           tooltip: 'Media library',
           icon: Icons.perm_media_rounded,
           onPressed: () =>

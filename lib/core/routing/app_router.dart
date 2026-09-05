@@ -4,6 +4,7 @@ import '../../models/canvas_work.dart';
 import '../../models/learning_level.dart';
 import '../../models/parent_mark.dart';
 import '../../models/video_lesson.dart';
+import '../../views/admin/admin_ai_authoring_page.dart';
 import '../../views/admin/admin_content_page.dart';
 import '../../views/admin/admin_dashboard_page.dart';
 import '../../views/admin/admin_login_page.dart';
@@ -155,6 +156,7 @@ class AppRouter {
         RouteNames.adminProgressStatistics =>
           const AdminProgressStatisticsPage(),
         RouteNames.adminMedia => const AdminMediaPage(),
+        RouteNames.adminAiAuthoring => const AdminAiAuthoringPage(),
         RouteNames.parentDashboard => const ParentDashboardPage(),
         RouteNames.childSelection => const ChildSelectionPage(),
         RouteNames.profileEdit => ProfileCreateEditPage(
