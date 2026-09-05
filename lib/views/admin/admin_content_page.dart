@@ -11,6 +11,7 @@ import '../../viewmodels/admin_auth_viewmodel.dart';
 import '../../viewmodels/admin_content_viewmodel.dart';
 import '../../widgets/app_primary_button.dart';
 import '../../widgets/koala_guide.dart';
+import 'widgets/admin_form_fields.dart';
 import 'widgets/admin_scaffold.dart';
 
 class AdminContentPage extends StatefulWidget {
@@ -621,27 +622,27 @@ class _ModuleForm extends StatelessWidget {
             icon: Icons.add_box_rounded,
             accent: AppColors.sky,
           ),
-          _TextField(controller: idController, label: 'Module ID'),
-          _TextField(controller: titleController, label: 'Title'),
-          _TextField(controller: descriptionController, label: 'Description'),
-          _TextField(
+          AdminTextField(controller: idController, label: 'Module ID'),
+          AdminTextField(controller: titleController, label: 'Title'),
+          AdminTextField(controller: descriptionController, label: 'Description'),
+          AdminTextField(
             controller: orderController,
             label: 'Sort order',
             keyboardType: TextInputType.number,
           ),
-          _EnumDropdown<ModuleCategory>(
+          AdminEnumDropdown<ModuleCategory>(
             label: 'Category',
             value: category,
             values: ModuleCategory.values,
             onChanged: onCategoryChanged,
           ),
-          _IntDropdown(
+          AdminIntDropdown(
             label: 'Min stage',
             value: minStage,
             values: const [1, 2, 3, 4],
             onChanged: onMinStageChanged,
           ),
-          _IntDropdown(
+          AdminIntDropdown(
             label: 'Max stage',
             value: maxStage,
             values: const [1, 2, 3, 4],
@@ -740,26 +741,26 @@ class _LevelForm extends StatelessWidget {
             ],
             onChanged: onModuleChanged,
           ),
-          _TextField(controller: idController, label: 'Level ID'),
-          _TextField(controller: titleController, label: 'Title'),
-          _TextField(controller: subtitleController, label: 'Subtitle'),
-          _TextField(
+          AdminTextField(controller: idController, label: 'Level ID'),
+          AdminTextField(controller: titleController, label: 'Title'),
+          AdminTextField(controller: subtitleController, label: 'Subtitle'),
+          AdminTextField(
             controller: levelNumberController,
             label: 'Level number',
             keyboardType: TextInputType.number,
           ),
-          _TextField(
+          AdminTextField(
             controller: passingScoreController,
             label: 'Passing score',
             keyboardType: TextInputType.number,
           ),
-          _IntDropdown(
+          AdminIntDropdown(
             label: 'Stage',
             value: stage,
             values: const [1, 2, 3, 4],
             onChanged: onStageChanged,
           ),
-          _EnumDropdown<LevelType>(
+          AdminEnumDropdown<LevelType>(
             label: 'Level type',
             value: type,
             values: LevelType.values,
@@ -767,9 +768,9 @@ class _LevelForm extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const _FormTitle(title: 'Activity card'),
-          _TextField(controller: contentTitleController, label: 'Card title'),
-          _TextField(controller: contentPromptController, label: 'Prompt'),
-          _TextField(
+          AdminTextField(controller: contentTitleController, label: 'Card title'),
+          AdminTextField(controller: contentPromptController, label: 'Prompt'),
+          AdminTextField(
             controller: contentDisplayController,
             label: 'Display text',
             helperText: type == LevelType.tracing
@@ -777,23 +778,23 @@ class _LevelForm extends StatelessWidget {
                     'letter or digit to trace, such as A or ا or 5.'
                 : null,
           ),
-          _TextField(controller: contentVisualController, label: 'Visual'),
+          AdminTextField(controller: contentVisualController, label: 'Visual'),
           const SizedBox(height: 8),
           const _FormTitle(title: 'Quiz'),
-          _TextField(controller: quizPromptController, label: 'Question'),
-          _TextField(
+          AdminTextField(controller: quizPromptController, label: 'Question'),
+          AdminTextField(
             controller: quizOptionsController,
             label: 'Options comma separated',
           ),
-          _TextField(
+          AdminTextField(
             controller: quizCorrectIndexController,
             label: 'Correct option index',
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 8),
           const _FormTitle(title: 'Video'),
-          _TextField(controller: videoTitleController, label: 'Video title'),
-          _TextField(controller: videoUrlController, label: 'Video URL'),
+          AdminTextField(controller: videoTitleController, label: 'Video title'),
+          AdminTextField(controller: videoUrlController, label: 'Video URL'),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Published'),
@@ -850,107 +851,6 @@ class _FormTitle extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: label),
         ],
-      ),
-    );
-  }
-}
-
-class _TextField extends StatelessWidget {
-  const _TextField({
-    required this.controller,
-    required this.label,
-    this.keyboardType,
-    this.helperText,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final TextInputType? keyboardType;
-  final String? helperText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          helperText: helperText,
-          helperMaxLines: 3,
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
-}
-
-class _EnumDropdown<T extends Enum> extends StatelessWidget {
-  const _EnumDropdown({
-    required this.label,
-    required this.value,
-    required this.values,
-    required this.onChanged,
-  });
-
-  final String label;
-  final T value;
-  final List<T> values;
-  final ValueChanged<T> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<T>(
-        initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        items: [
-          for (final item in values)
-            DropdownMenuItem(value: item, child: Text(item.name)),
-        ],
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
-      ),
-    );
-  }
-}
-
-class _IntDropdown extends StatelessWidget {
-  const _IntDropdown({
-    required this.label,
-    required this.value,
-    required this.values,
-    required this.onChanged,
-  });
-
-  final String label;
-  final int value;
-  final List<int> values;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<int>(
-        initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        items: [
-          for (final item in values)
-            DropdownMenuItem(value: item, child: Text(item.toString())),
-        ],
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
       ),
     );
   }

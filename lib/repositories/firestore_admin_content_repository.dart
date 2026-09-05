@@ -143,6 +143,9 @@ class FirestoreAdminContentRepository implements AdminContentRepository {
         ),
         passingScore: (data['passingScore'] as num?)?.toInt() ?? 70,
         isBundled: (data['isBundled'] as bool?) ?? false,
+        // Written by _levelToRemoteMap but, until this line, never read back —
+        // so a portion label survived the save and vanished on the next load.
+        portionLabel: data['portionLabel'] as String?,
         contentItems: _contentItemsFromRemoteValue(data['contentItems']),
         quizQuestions: _quizQuestionsFromRemoteValue(data['quizQuestions']),
         videoLessons: _videoLessonsFromRemoteValue(data['videoLessons']),
