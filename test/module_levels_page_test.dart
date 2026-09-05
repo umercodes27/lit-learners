@@ -8,8 +8,12 @@ import 'package:little_learners/services/local/content_dao.dart';
 import 'package:little_learners/viewmodels/active_child_session.dart';
 import 'package:little_learners/viewmodels/learning_viewmodel.dart';
 import 'package:little_learners/views/child_dashboard/module_levels_page.dart';
+import 'package:little_learners/views/child_dashboard/widgets/level_map.dart';
 import 'package:provider/provider.dart';
 
+// The seeded ladder now only shows for subjects with no age-pack counterpart,
+// so these exercise it through Tracing. Subjects that do have a pack are
+// covered by the last test here.
 void main() {
   testWidgets('the levels screen names the portion each level covers',
       (tester) async {
@@ -20,10 +24,8 @@ void main() {
     errors.restore();
 
     // The ladder a child climbs, visible without opening anything.
-    expect(find.text('Letters A – F'), findsOneWidget);
-    expect(find.text('Letters G – L'), findsOneWidget);
-    expect(find.text('Letters M – R'), findsOneWidget);
-    expect(find.text('Letters S – Z'), findsOneWidget);
+    expect(find.text('Trace a b c'), findsOneWidget);
+    expect(find.text('Trace 4 5 6'), findsOneWidget);
     expect(errors.details, isEmpty);
   });
 
@@ -31,26 +33,65 @@ void main() {
       (tester) async {
     await _pump(tester);
 
-    // A – F is six letters, walked one at a time.
-    expect(find.textContaining('A – F  ·  6 steps'), findsOneWidget);
-    expect(find.textContaining('S – Z  ·  8 steps'), findsOneWidget);
+    // Note the first level is labelled `a – c` but seeds four letters, a – d.
+    // The chip reports what the level actually holds.
+    expect(find.textContaining('a – c  ·  4 steps'), findsOneWidget);
+    expect(find.textContaining('4 – 6  ·  3 steps'), findsOneWidget);
   });
 
   testWidgets('only the first level is open until it is finished',
       (tester) async {
     await _pump(tester);
 
-    // Level 1 is open; the other three portions are covered by a lock whose
+    // Level 1 is open; the levels above it are covered by a lock whose
     // tooltip says why.
-    expect(find.byIcon(Icons.lock), findsNWidgets(3));
+    expect(find.byIcon(Icons.lock), findsNWidgets(2));
     expect(
       find.byTooltip('Finish the previous level first.'),
-      findsNWidgets(3),
+      findsNWidgets(2),
     );
+  });
+
+  testWidgets('a subject with pack activities shows no seeded ladder',
+      (tester) async {
+    await _pump(tester, moduleId: 'english');
+
+    // English is served by the age pack, so the ladder - portion chips, locks
+    // and all - stays out of the way rather than repeating the subject in a
+    // second, slower form.
+    expect(find.textContaining('steps'), findsNothing);
+    expect(find.byIcon(Icons.lock), findsNothing);
+    expect(find.text('Download'), findsNothing);
+
+    // What replaces it: the pack's own activities, walked as stops on the same
+    // map the seeded ladder uses. The profile is three, so this is the age-3
+    // pack rather than age 2.
+    expect(find.text('Tracing Letters A-M'), findsOneWidget);
+    expect(find.text('Drag & Match'), findsOneWidget);
+
+    // A pack stop says what the child will be doing where a seeded one says
+    // its portion and step count.
+    expect(find.text('Trace the shape'), findsNWidgets(2));
+    expect(find.text('Drag to match'), findsOneWidget);
+
+    // The module quiz is the trophy at the end of the road.
+    expect(find.bySemanticsLabel('Finish with a quiz'), findsOneWidget);
+  });
+
+  testWidgets('the pack road offers no progress bar it cannot fill',
+      (tester) async {
+    await _pump(tester, moduleId: 'english');
+
+    // Nothing records a finished pack activity, so a `0 of 3` that never moves
+    // would tell a parent their child had done nothing. See [ModuleLevelsPage].
+    expect(find.byType(MapProgressBar), findsNothing);
   });
 }
 
-Future<void> _pump(WidgetTester tester) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  String moduleId = 'tracing',
+}) async {
   tester.view.physicalSize = const Size(390, 900);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
@@ -74,7 +115,7 @@ Future<void> _pump(WidgetTester tester) async {
       ],
       child: MaterialApp(
         theme: AppTheme.light(),
-        home: const ModuleLevelsPage(moduleId: 'english'),
+        home: ModuleLevelsPage(moduleId: moduleId),
       ),
     ),
   );
