@@ -15,7 +15,7 @@ const manualPages = <ManualPageContent>[
   ),
   ManualPageContent(
     title: 'Short Sessions',
-    body: 'For ages 1 to 4, keep learning playful and brief. A few calm '
+    body: 'For ages 2 to 4, keep learning playful and brief. A few calm '
         'minutes are more useful than a long forced session.',
     iconName: 'timer',
   ),
@@ -87,7 +87,7 @@ const readinessQuestions = <ReadinessQuestion>[
   ),
   ReadinessQuestion(
     id: 'rq-2',
-    prompt: 'What is a healthy session style for ages 1 to 4?',
+    prompt: 'What is a healthy session style for ages 2 to 4?',
     options: [
       'Short and playful',
       'As long as possible',

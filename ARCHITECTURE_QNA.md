@@ -48,7 +48,7 @@ Every answer points at the file that proves it, so a claim can be checked live.
 
 ### Q1.1 — In one paragraph, what is Little Learners?
 
-An offline-first Flutter e-learning app for toddlers aged 1–4. A parent signs up,
+An offline-first Flutter e-learning app for toddlers aged 2–4. A parent signs up,
 reads a short manual, passes a readiness test, and creates up to three child
 profiles. Each child gets an age-appropriate dashboard of learning modules
 (Math, English, Urdu, Video, Logic, Stories, Drawing, Tracing). Levels unlock in
@@ -1061,7 +1061,7 @@ Why a maths challenge rather than a PIN or a password:
   already happened — the parent is signed in with Firebase Auth. This gate only
   answers "is an adult holding the device *right now*", which is a different and
   much weaker question. The threat model is a 3-year-old, not an attacker.
-- Sums up to 12 are beyond a 1–4-year-old and trivial for an adult, which is
+- Sums up to 12 are beyond a 2–4-year-old and trivial for an adult, which is
   exactly the discrimination required.
 
 Abuse resistance is still present: **3 wrong answers → a 30-second lockout**,
@@ -1110,7 +1110,7 @@ dashboard, and canvas marking.
 
 | Mechanism | Where |
 | --- | --- |
-| Age → stage (1–4) | `AgeStageHelper.stageForAge` |
+| Age → stage (2–4) | `AgeStageHelper.stageForAge` |
 | Modules filtered by stage | `CachedContentRepository.getModulesForStage` → `module.supportsStage(stage)` |
 | Levels filtered by stage, with graceful fallback | `_levelsForStage` — exact stage; else the highest lower stage; else everything |
 | **Quizzes only from age 3** | `AgeStageHelper.shouldShowQuiz(age) => age >= 3`, checked in `LevelPlayerPage._complete` |
@@ -1517,7 +1517,7 @@ rather than an oversight. Each is a documented, bounded gap, not a design flaw.
 | 8 | **Firestore rules are written but must be deployed.** | Both `firestore.rules` and `storage.rules` are in the repo. | `firebase deploy --only firestore:rules,storage` — blocked on a broken local CLI, documented in §4. |
 | 9 | **`ChangeNotifier` broadcasts coarse updates.** | Mitigated by keeping view models small and single-purpose. | `Selector`/`context.select` at the hot spots if profiling shows it matters. |
 | 10 | **Bundled content needs a manual revision bump.** | The mechanism exists, is tested, and the requirement is documented in three places including a bold line in `MANUAL_SETUP.md`. | A build-time hash of `seed_content.dart` would remove the human step. |
-| 11 | **Parental-lock challenges use a fixed RNG seed** (`Random(7)`). | Irrelevant against a 1–4-year-old, and it keeps the lock deterministic under test. | `Random()` in production; inject the seed for tests. |
+| 11 | **Parental-lock challenges use a fixed RNG seed** (`Random(7)`). | Irrelevant against a 2–4-year-old, and it keeps the lock deterministic under test. | `Random()` in production; inject the seed for tests. |
 
 ---
 

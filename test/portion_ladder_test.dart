@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:little_learners/core/utils/age_stage_helper.dart';
 import 'package:little_learners/data/seed_content.dart';
 import 'package:little_learners/models/learning_level.dart';
 
@@ -8,7 +9,7 @@ import 'package:little_learners/models/learning_level.dart';
 void main() {
   group('English alphabet ladder', () {
     test('covers A to Z exactly once per stage, in order', () {
-      for (var stage = 1; stage <= 4; stage++) {
+      for (var stage = AgeStageHelper.minStage; stage <= 4; stage++) {
         final letters = _englishLevels(stage)
             .expand((level) => level.contentItems.map((item) => item.title))
             .toList();
@@ -22,7 +23,7 @@ void main() {
     });
 
     test('numbers its levels consecutively from one', () {
-      for (var stage = 1; stage <= 4; stage++) {
+      for (var stage = AgeStageHelper.minStage; stage <= 4; stage++) {
         final levels = _englishLevels(stage);
 
         expect(
@@ -46,7 +47,7 @@ void main() {
     });
 
     test('asks quizzes only from stage three, about letters it taught', () {
-      for (var stage = 1; stage <= 4; stage++) {
+      for (var stage = AgeStageHelper.minStage; stage <= 4; stage++) {
         for (final level in _englishLevels(stage)) {
           if (stage < 3) {
             expect(level.quizQuestions, isEmpty, reason: level.id);
@@ -79,7 +80,7 @@ void main() {
     });
 
     test('every level is playable offline out of the box', () {
-      for (var stage = 1; stage <= 4; stage++) {
+      for (var stage = AgeStageHelper.minStage; stage <= 4; stage++) {
         for (final level in _englishLevels(stage)) {
           expect(level.isAvailableOffline, isTrue, reason: level.id);
         }

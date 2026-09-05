@@ -1,4 +1,5 @@
 import '../models/content_item.dart';
+import '../core/utils/age_stage_helper.dart';
 import '../models/learning_level.dart';
 import '../models/learning_module.dart';
 import '../models/quiz_question.dart';
@@ -12,7 +13,7 @@ import '../models/video_lesson.dart';
 /// progress and downloaded flags intact.
 ///
 /// **Bump this whenever you add, remove or edit anything in this file.**
-const bundledContentRevision = '2026-08-23-portion-ladder';
+const bundledContentRevision = '2026-09-05-ages-two-to-four';
 
 const seedModules = <LearningModule>[
   LearningModule(
@@ -20,7 +21,7 @@ const seedModules = <LearningModule>[
     title: 'Math',
     description: 'Numbers, counting, and shapes.',
     category: ModuleCategory.math,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 1,
   ),
@@ -29,7 +30,7 @@ const seedModules = <LearningModule>[
     title: 'English',
     description: 'Letters, sounds, and simple words.',
     category: ModuleCategory.english,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 2,
   ),
@@ -38,7 +39,7 @@ const seedModules = <LearningModule>[
     title: 'اردو',
     description: 'حروف، آوازیں، اور آسان الفاظ۔',
     category: ModuleCategory.urdu,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 3,
   ),
@@ -47,7 +48,7 @@ const seedModules = <LearningModule>[
     title: 'Video Learning',
     description: 'Short guided lessons with parent-friendly pacing.',
     category: ModuleCategory.video,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 4,
   ),
@@ -56,7 +57,7 @@ const seedModules = <LearningModule>[
     title: 'Logic',
     description: 'Patterns, sorting, and tiny thinking puzzles.',
     category: ModuleCategory.logic,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 5,
   ),
@@ -65,7 +66,7 @@ const seedModules = <LearningModule>[
     title: 'Stories',
     description: 'Picture stories with gentle narration.',
     category: ModuleCategory.story,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 6,
   ),
@@ -74,7 +75,7 @@ const seedModules = <LearningModule>[
     title: 'Drawing',
     description: 'Free drawing and coloring activities.',
     category: ModuleCategory.drawing,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 7,
   ),
@@ -105,32 +106,6 @@ final seedLevels = <LearningLevel>[
 ];
 
 const _authoredLevels = <LearningLevel>[
-  LearningLevel(
-    id: 'math-stage1-1',
-    portionLabel: '1 – 2',
-    moduleId: 'math',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Meet 1 and 2',
-    subtitle: 'Tap, count, and say the numbers aloud.',
-    type: LevelType.counting,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'One',
-        prompt: 'Point to one bright block.',
-        displayText: '1',
-        visualLabel: 'One block',
-      ),
-      ContentItem(
-        title: 'Two',
-        prompt: 'Count two friendly blocks.',
-        displayText: '2',
-        visualLabel: 'Two blocks',
-      ),
-    ],
-  ),
   LearningLevel(
     id: 'math-stage3-1',
     portionLabel: '1 – 5',
@@ -204,34 +179,6 @@ const _authoredLevels = <LearningLevel>[
         prompt: 'Which shape has three sides?',
         options: ['Circle', 'Square', 'Triangle'],
         correctIndex: 2,
-      ),
-    ],
-  ),
-  LearningLevel(
-    id: 'urdu-stage1-1',
-    portionLabel: 'ا',
-    moduleId: 'urdu',
-    stage: 1,
-    levelNumber: 1,
-    title: 'حرف ا',
-    subtitle: 'حرف کو دیکھیں، سنیں، اور دہرائیں۔',
-    type: LevelType.flashcards,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'ا',
-        prompt: 'آواز سنیں: ا۔ پھر آہستہ سے دہرائیں۔',
-        displayText: 'ا',
-        visualLabel: 'حرف ا',
-        audioCueKey: 'urdu_alif',
-      ),
-      ContentItem(
-        title: 'انار',
-        prompt: 'ا سے انار۔ لفظ کو دیکھیں اور بولیں۔',
-        displayText: 'انار',
-        visualLabel: 'انار کا لفظی کارڈ',
-        audioCueKey: 'urdu_anaar',
       ),
     ],
   ),
@@ -408,33 +355,6 @@ const _authoredLevels = <LearningLevel>[
         prompt: 'پانی کس حرف سے شروع ہوتا ہے؟',
         options: ['ب', 'پ', 'ا'],
         correctIndex: 1,
-      ),
-    ],
-  ),
-  LearningLevel(
-    id: 'logic-stage1-1',
-    moduleId: 'logic',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Same Shapes',
-    subtitle: 'Notice shapes that look alike.',
-    type: LevelType.flashcards,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'Circle',
-        prompt: 'Look for another round circle.',
-        displayText: 'O',
-        visualLabel: 'Two matching circles',
-        audioCueKey: 'logic_circle',
-      ),
-      ContentItem(
-        title: 'Star',
-        prompt: 'Find the star that looks the same.',
-        displayText: '★',
-        visualLabel: 'Two matching stars',
-        audioCueKey: 'logic_star',
       ),
     ],
   ),
@@ -666,33 +586,6 @@ const _authoredLevels = <LearningLevel>[
     ],
   ),
   LearningLevel(
-    id: 'story-stage1-1',
-    moduleId: 'story',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Picture Talk',
-    subtitle: 'Point, name, and tell one tiny page at a time.',
-    type: LevelType.story,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'Hello',
-        prompt: 'Look at the sunny room. Say hello to the picture.',
-        displayText: 'Hi',
-        visualLabel: 'Sunny room picture',
-        audioCueKey: 'story_hello',
-      ),
-      ContentItem(
-        title: 'Snack',
-        prompt: 'Point to the snack. Tell what you see.',
-        displayText: 'Yum',
-        visualLabel: 'Snack table picture',
-        audioCueKey: 'story_snack',
-      ),
-    ],
-  ),
-  LearningLevel(
     id: 'story-stage2-1',
     moduleId: 'story',
     stage: 2,
@@ -916,33 +809,6 @@ const _authoredLevels = <LearningLevel>[
         prompt: 'What comes between beginning and end?',
         options: ['Middle', 'Title', 'Cover'],
         correctIndex: 0,
-      ),
-    ],
-  ),
-  LearningLevel(
-    id: 'drawing-stage1-1',
-    moduleId: 'drawing',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Color Marks',
-    subtitle: 'Choose a color and make simple marks.',
-    type: LevelType.drawing,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'Red Line',
-        prompt: 'Pick red and draw one long line.',
-        displayText: 'Red',
-        visualLabel: 'Long red line prompt',
-        audioCueKey: 'drawing_red_line',
-      ),
-      ContentItem(
-        title: 'Blue Dot',
-        prompt: 'Pick blue and make a dot.',
-        displayText: 'Blue',
-        visualLabel: 'Blue dot prompt',
-        audioCueKey: 'drawing_blue_dot',
       ),
     ],
   ),
@@ -1648,7 +1514,7 @@ const _englishPortionBounds = <List<int>>[
 List<LearningLevel> _englishAlphabetLevels() {
   final levels = <LearningLevel>[];
 
-  for (var stage = 1; stage <= 4; stage++) {
+  for (var stage = AgeStageHelper.minStage; stage <= 4; stage++) {
     for (var index = 0; index < _englishPortionBounds.length; index++) {
       final bounds = _englishPortionBounds[index];
       final entries = _englishAlphabet.sublist(bounds.first, bounds.last);
@@ -1693,7 +1559,6 @@ List<LearningLevel> _englishAlphabetLevels() {
 
 String _englishSubtitle(int stage) {
   return switch (stage) {
-    1 => 'Look and listen to each letter.',
     2 => 'Hear each letter and copy the sound.',
     3 => 'Say each letter, then the word it starts.',
     _ => 'Match every letter to a word that starts with it.',
@@ -1703,7 +1568,6 @@ String _englishSubtitle(int stage) {
 String _englishPrompt(int stage, _AlphabetEntry entry) {
   final glyph = entry.glyph;
   return switch (stage) {
-    1 => 'This is $glyph. Look at it and listen.',
     2 => '$glyph is for ${entry.word}. Say $glyph.',
     3 => '$glyph is for ${entry.word}. Say the letter, then say the word.',
     _ => '$glyph is for ${entry.word}. Can you think of another word that '

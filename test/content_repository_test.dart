@@ -62,9 +62,9 @@ void main() {
 
       final modules = await repository.getModulesForStage(3);
       final urduModule = modules.singleWhere((module) => module.id == 'urdu');
-      final stageOneLevels = await repository.getLevelsForModule(
+      final stageTwoLevels = await repository.getLevelsForModule(
         moduleId: 'urdu',
-        stage: 1,
+        stage: 2,
       );
       final stageThreeLevels = await repository.getLevelsForModule(
         moduleId: 'urdu',
@@ -88,7 +88,7 @@ void main() {
         )?.fontFamily,
         LearningTextDirection.urduFontFamily,
       );
-      expect(stageOneLevels.map((level) => level.id), ['urdu-stage1-1']);
+      expect(stageTwoLevels.map((level) => level.id), ['urdu-stage2-1']);
       expect(
         stageThreeLevels.map((level) => level.id),
         ['urdu-stage3-1', 'urdu-stage3-2'],
@@ -114,9 +114,9 @@ void main() {
       final logicModule = modules.singleWhere(
         (module) => module.id == 'logic',
       );
-      final stageOneLevels = await repository.getLevelsForModule(
+      final stageTwoLevels = await repository.getLevelsForModule(
         moduleId: 'logic',
-        stage: 1,
+        stage: 2,
       );
       final stageThreeLevels = await repository.getLevelsForModule(
         moduleId: 'logic',
@@ -129,7 +129,7 @@ void main() {
 
       expect(logicModule.category, ModuleCategory.logic);
       expect(logicModule.title, 'Logic');
-      expect(stageOneLevels.map((level) => level.id), ['logic-stage1-1']);
+      expect(stageTwoLevels.map((level) => level.id), ['logic-stage2-1']);
       expect(
         stageThreeLevels.map((level) => level.id),
         ['logic-stage3-1', 'logic-stage3-2'],
@@ -161,9 +161,9 @@ void main() {
       final storyModule = modules.singleWhere(
         (module) => module.id == 'story',
       );
-      final stageOneLevels = await repository.getLevelsForModule(
+      final stageTwoLevels = await repository.getLevelsForModule(
         moduleId: 'story',
-        stage: 1,
+        stage: 2,
       );
       final stageThreeLevels = await repository.getLevelsForModule(
         moduleId: 'story',
@@ -176,7 +176,7 @@ void main() {
 
       expect(storyModule.category, ModuleCategory.story);
       expect(storyModule.title, 'Stories');
-      expect(stageOneLevels.map((level) => level.id), ['story-stage1-1']);
+      expect(stageTwoLevels.map((level) => level.id), ['story-stage2-1']);
       expect(
         stageThreeLevels.map((level) => level.id),
         ['story-stage3-1', 'story-stage3-2'],
@@ -208,9 +208,9 @@ void main() {
       final drawingModule = modules.singleWhere(
         (module) => module.id == 'drawing',
       );
-      final stageOneLevels = await repository.getLevelsForModule(
+      final stageTwoLevels = await repository.getLevelsForModule(
         moduleId: 'drawing',
-        stage: 1,
+        stage: 2,
       );
       final stageThreeLevels = await repository.getLevelsForModule(
         moduleId: 'drawing',
@@ -223,7 +223,7 @@ void main() {
 
       expect(drawingModule.category, ModuleCategory.drawing);
       expect(drawingModule.title, 'Drawing');
-      expect(stageOneLevels.map((level) => level.id), ['drawing-stage1-1']);
+      expect(stageTwoLevels.map((level) => level.id), ['drawing-stage2-1']);
       expect(
         stageThreeLevels.map((level) => level.id),
         ['drawing-stage3-1', 'drawing-stage3-2'],
@@ -254,9 +254,9 @@ void main() {
       final englishModule = modules.singleWhere(
         (module) => module.id == 'english',
       );
-      final stageOneLevels = await repository.getLevelsForModule(
+      final stageTwoLevels = await repository.getLevelsForModule(
         moduleId: 'english',
-        stage: 1,
+        stage: 2,
       );
       final stageThreeLevels = await repository.getLevelsForModule(
         moduleId: 'english',
@@ -275,25 +275,36 @@ void main() {
 
       // Every stage walks the same four portions; only the activity changes.
       expect(
-        stageOneLevels.map((level) => level.portionLabel),
+        stageTwoLevels.map((level) => level.portionLabel),
         ['A – F', 'G – L', 'M – R', 'S – Z'],
       );
       expect(
         stageFourLevels.map((level) => level.portionLabel),
         ['A – F', 'G – L', 'M – R', 'S – Z'],
       );
-      expect(stageOneLevels.map((level) => level.id), [
-        'english-stage1-1',
-        'english-stage1-2',
-        'english-stage1-3',
-        'english-stage1-4',
+      expect(stageTwoLevels.map((level) => level.id), [
+        'english-stage2-1',
+        'english-stage2-2',
+        'english-stage2-3',
+        'english-stage2-4',
       ]);
 
+      // Stage 2 is the youngest the app serves, so nothing is authored below
+      // it. A stage-1 request cannot happen from a profile any more, but the
+      // repository still answers it the way it answers any gap - with the
+      // whole module rather than an empty screen.
+      final belowFloor = await repository.getLevelsForModule(
+        moduleId: 'english',
+        stage: 1,
+      );
+      expect(belowFloor.every((level) => level.stage >= 2), isTrue);
+      expect(belowFloor, isNotEmpty);
+
       // Quizzes only start once a child is old enough for them.
-      expect(stageOneLevels.first.quizQuestions, isEmpty);
+      expect(stageTwoLevels.first.quizQuestions, isEmpty);
       expect(stageThreeLevels.first.quizQuestions, hasLength(2));
       expect(stageFourLevels.first.type, LevelType.matching);
-      expect(stageOneLevels.first.type, LevelType.flashcards);
+      expect(stageTwoLevels.first.type, LevelType.flashcards);
     });
 
     test('marks a cached level downloaded', () async {

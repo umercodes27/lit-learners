@@ -19,7 +19,7 @@ import '../../widgets/play/play.dart';
 /// The ages the learning content is authored for. `AgeStageHelper` turns each
 /// one into its own stage, so anything outside this range has no content of
 /// its own to serve.
-const _minAge = 1;
+const _minAge = 2;
 const _maxAge = 4;
 
 class ProfileCreateEditPage extends StatefulWidget {
@@ -619,7 +619,7 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
-/// The four ages, as tiles big enough to hit rather than as Material chips.
+/// The three ages, as tiles big enough to hit rather than as Material chips.
 class _AgeSelector extends StatelessWidget {
   const _AgeSelector({
     required this.age,

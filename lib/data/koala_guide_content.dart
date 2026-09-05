@@ -2,18 +2,6 @@ import '../models/koala_guide_message.dart';
 
 const seedKoalaGuideMessages = <KoalaGuideMessage>[
   KoalaGuideMessage(
-    id: 'child-dashboard-welcome-stage1',
-    trigger: KoalaGuideTrigger.dashboardWelcome,
-    audience: KoalaGuideAudience.child,
-    minStage: 1,
-    maxStage: 1,
-    message: 'Choose one tiny lesson. We will learn slowly together.',
-    parentTip: 'For age 1, keep sessions short and repeat the same module.',
-    audioCueKey: 'koala_dashboard_stage1',
-    mood: KoalaGuideMood.encouraging,
-    priority: 20,
-  ),
-  KoalaGuideMessage(
     id: 'child-dashboard-welcome-stage2',
     trigger: KoalaGuideTrigger.dashboardWelcome,
     audience: KoalaGuideAudience.child,
