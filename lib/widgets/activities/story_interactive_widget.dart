@@ -70,7 +70,18 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
   }
 
   List<StoryIllustration> get _frames => widget.data.illustrations;
-  StoryChoicePoint? get _choice => widget.data.choicePoint;
+  /// The question this story stops to ask, or null when it has none.
+  ///
+  /// A choice point with nothing to tap is treated as no choice point at all.
+  /// The screen used to open the panel regardless, so a pack that named a
+  /// prompt but no answers left the child looking at a question with no
+  /// buttons and no way on — the story could not be finished or left except
+  /// by backing out. Whatever a malformed pack says, the story has to end.
+  StoryChoicePoint? get _choice {
+    final choice = widget.data.choicePoint;
+    if (choice == null || choice.options.isEmpty) return null;
+    return choice;
+  }
 
   Future<void> _start() async {
     final narration = widget.data.audioNarration;

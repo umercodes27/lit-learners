@@ -1003,12 +1003,29 @@ class StoryChoicePoint {
       options = [ActivityOption(image: correctImage, isCorrect: true)];
     }
 
+    // Age 4 names the answer as a slug and nothing else —
+    // `"correct_answer": "please_and_thank_you"`. Read literally that is a
+    // question with no answers, which is a story a child cannot get out of.
+    // The slug is the answer, so it becomes the option, spelled the way it
+    // would be said.
+    final correctAnswer = json['correct_answer'] as String?;
+    if (options.isEmpty && correctAnswer != null && correctAnswer.isNotEmpty) {
+      options = [ActivityOption(label: _spellOut(correctAnswer), isCorrect: true)];
+    }
+
     return StoryChoicePoint(
       options: options,
       atMs: (json['at_ms'] as num?)?.toInt() ?? 0,
       promptText: json['prompt_text'] as String? ?? json['prompt'] as String?,
       audioPrompt: json['audio_prompt'] as String?,
     );
+  }
+
+  /// `please_and_thank_you` -> `Please and thank you`.
+  static String _spellOut(String slug) {
+    final words = slug.replaceAll('_', ' ').trim();
+    if (words.isEmpty) return words;
+    return '${words[0].toUpperCase()}${words.substring(1)}';
   }
 
   final List<ActivityOption> options;
