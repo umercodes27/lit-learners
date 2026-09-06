@@ -73,6 +73,8 @@ import 'services/ai/ai_content_generator.dart';
 import 'services/ai/llm_client.dart';
 import 'services/ai/llm_credential_store.dart';
 import 'services/ai/openai_compatible_llm_client.dart';
+import 'services/insights/progress_summary_service.dart';
+import 'services/insights/progress_summary_store.dart';
 import 'viewmodels/admin_content_viewmodel.dart';
 import 'viewmodels/ai_content_viewmodel.dart';
 import 'viewmodels/admin_media_viewmodel.dart';
@@ -415,7 +417,18 @@ class LittleLearnersApp extends StatelessWidget {
           create: (_) => ParentalLockViewModel(_parentalLockRepository),
         ),
         ChangeNotifierProvider(
-          create: (_) => ParentReportViewModel(_parentReportRepository),
+          create: (_) => ParentReportViewModel(
+            _parentReportRepository,
+            contentRepository: _contentRepository,
+            // Reuses the admin's stored key. Summaries are cached against a
+            // fingerprint of the child's progress, so opening the report
+            // again costs nothing until the child has actually done
+            // something new.
+            summaryService: ProgressSummaryService(
+              client: _llmClient,
+              store: LocalProgressSummaryStore(dbHelper: _localDbHelper),
+            ),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => LeaderboardViewModel(
