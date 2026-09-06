@@ -32,9 +32,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     // The bed drops to a whisper rather than stopping: a lesson that ends
     // into silence feels like the app died.
     AppSound.instance.duck();
-    _controller = VideoPlayerController.networkUrl(
-      Uri.parse(widget.args.lesson.videoUrl),
-    );
+    // A lesson either names a file bundled with the app or a remote URL. The
+    // bundled ones are what ships today, and they are the only ones that play
+    // with no connection; the network branch stays for lessons an admin
+    // publishes through Firestore.
+    final source = widget.args.lesson.videoUrl;
+    _controller = source.startsWith('assets/')
+        ? VideoPlayerController.asset(source)
+        : VideoPlayerController.networkUrl(Uri.parse(source));
     _initialize = _controller.initialize();
     _controller.setLooping(false);
   }
@@ -72,8 +77,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         aspectRatio: 16 / 9,
                         child: Center(
                           child: Text(
-                            'Video could not load. Cached video playback will '
-                            'be added with the sync module.',
+                            'This lesson would not open. Try it again in a '
+                            'moment.',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
@@ -81,9 +86,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                       );
                     }
 
-                    return AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
+                    // The bundled lessons are shot portrait. Left to fill the
+                    // width, a 9:16 frame is taller than the phone and pushes
+                    // play and "Mark watched" below the fold, so the height is
+                    // capped and the aspect ratio picks the width from there.
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.sizeOf(context).height * 0.55,
+                        ),
+                        child: AspectRatio(
+                          aspectRatio: _controller.value.aspectRatio,
+                          child: VideoPlayer(_controller),
+                        ),
+                      ),
                     );
                   },
                 ),
