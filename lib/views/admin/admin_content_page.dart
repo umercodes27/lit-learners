@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
+import '../../core/utils/module_visuals.dart';
 import '../../models/admin_content.dart';
 import '../../models/koala_guide_message.dart';
 import '../../models/learning_level.dart';
@@ -51,6 +52,19 @@ class _AdminContentPageState extends State<AdminContentPage> {
   var _levelPublished = false;
   var _didRequestLoad = false;
 
+  /// Which module is being looked at. Null means none picked, and the page
+  /// shows the modules rather than every level in the app at once.
+  String? _browseModuleId;
+
+  final _searchController = TextEditingController();
+  var _showCreateForms = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() => setState(() {}));
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -84,6 +98,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
     _quizCorrectIndexController.dispose();
     _videoTitleController.dispose();
     _videoUrlController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -132,10 +147,40 @@ class _AdminContentPageState extends State<AdminContentPage> {
             const Center(child: CircularProgressIndicator())
           else ...[
             _AdminStatus(admin: admin),
-            _ModuleList(modules: modules),
+            AdminTextField(
+              controller: _searchController,
+              label: 'Search modules and levels',
+            ),
+            _ModuleBrowser(
+              modules: modules,
+              levels: admin.levels,
+              selectedModuleId: _browseModuleId,
+              query: _searchController.text,
+              onSelect: (moduleId) => setState(
+                () => _browseModuleId =
+                    _browseModuleId == moduleId ? null : moduleId,
+              ),
+            ),
             const SizedBox(height: 12),
-            _LevelList(levels: admin.levels),
+            if (_browseModuleId != null) ...[
+              _ModuleList(
+                modules: [
+                  for (final module in modules)
+                    if (module.module.id == _browseModuleId) module,
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+            _LevelList(
+              levels: _visibleLevels(admin.levels),
+              subtitle: _levelListSubtitle(admin.levels),
+            ),
             const SizedBox(height: 16),
+            _CreateSection(
+              expanded: _showCreateForms,
+              onExpandedChanged: (value) =>
+                  setState(() => _showCreateForms = value),
+              children: [
             _ModuleForm(
               idController: _moduleIdController,
               titleController: _moduleTitleController,
@@ -194,10 +239,52 @@ class _AdminContentPageState extends State<AdminContentPage> {
               },
               onSubmit: _createLevel,
             ),
+              ],
+            ),
           ],
         ],
       ),
     );
+  }
+
+  /// Levels for the module being looked at, narrowed further by the search.
+  ///
+  /// Nothing is listed until a module is picked or something is searched for.
+  /// Ten modules with twenty levels each is two hundred rows, which is the
+  /// problem this page had.
+  List<AdminContentLevel> _visibleLevels(List<AdminContentLevel> levels) {
+    final query = _searchController.text.trim().toLowerCase();
+    final moduleId = _browseModuleId;
+
+    if (moduleId == null && query.isEmpty) return const [];
+
+    return [
+      for (final level in levels)
+        if (moduleId == null || level.level.moduleId == moduleId)
+          if (query.isEmpty || _matchesLevel(level, query)) level,
+    ];
+  }
+
+  bool _matchesLevel(AdminContentLevel level, String query) {
+    return level.level.title.toLowerCase().contains(query) ||
+        level.level.id.toLowerCase().contains(query) ||
+        level.level.subtitle.toLowerCase().contains(query);
+  }
+
+  String _levelListSubtitle(List<AdminContentLevel> levels) {
+    final query = _searchController.text.trim();
+    final moduleId = _browseModuleId;
+
+    if (moduleId == null && query.isEmpty) {
+      return 'Pick a module above, or search, to see its levels.';
+    }
+
+    final shown = _visibleLevels(levels).length;
+    if (query.isNotEmpty) {
+      return '$shown ${shown == 1 ? 'level matches' : 'levels match'} '
+          '"$query"${moduleId == null ? '' : ' in this module'}.';
+    }
+    return '$shown ${shown == 1 ? 'level' : 'levels'} in this module.';
   }
 
   Future<void> _createModule() async {
@@ -355,24 +442,26 @@ class _ModuleList extends StatelessWidget {
 }
 
 class _LevelList extends StatelessWidget {
-  const _LevelList({required this.levels});
+  const _LevelList({required this.levels, this.subtitle});
 
   final List<AdminContentLevel> levels;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     if (levels.isEmpty) {
-      return const AdminEmptyState(
+      return AdminEmptyState(
         icon: Icons.map_rounded,
-        title: 'No levels yet',
-        message: 'Levels belong to a module. Create one below to get started.',
+        title: 'Nothing to show',
+        message: subtitle ??
+            'Levels belong to a module. Create one below to get started.',
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const AdminSectionHeading(title: 'Levels'),
+        AdminSectionHeading(title: 'Levels', subtitle: subtitle),
         const SizedBox(height: 10),
         for (final level in levels)
           Padding(
@@ -858,6 +947,220 @@ class _FormTitle extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: label),
         ],
+      ),
+    );
+  }
+}
+
+/// The modules, as something to navigate rather than something to scroll.
+///
+/// Every module is always shown — it is how the page is steered, so hiding
+/// one behind a search would take the steering away. What the search changes
+/// is the count on each card: type part of a level name and you can see at a
+/// glance which module holds it, without opening any of them.
+class _ModuleBrowser extends StatelessWidget {
+  const _ModuleBrowser({
+    required this.modules,
+    required this.levels,
+    required this.selectedModuleId,
+    required this.query,
+    required this.onSelect,
+  });
+
+  final List<AdminContentModule> modules;
+  final List<AdminContentLevel> levels;
+  final String? selectedModuleId;
+  final String query;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    if (modules.isEmpty) {
+      return const AdminEmptyState(
+        icon: Icons.widgets_rounded,
+        title: 'No modules yet',
+        message: 'Create one below and its levels will live inside it.',
+      );
+    }
+
+    final needle = query.trim().toLowerCase();
+    final searching = needle.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AdminSectionHeading(
+          title: 'Modules',
+          subtitle: searching
+              ? 'Showing how many levels in each match "${query.trim()}".'
+              : 'Tap one to work on its levels.',
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final module in modules)
+              _ModuleCard(
+                module: module,
+                levelCount: _levelsIn(module).length,
+                publishedCount:
+                    _levelsIn(module).where((l) => l.isPublished).length,
+                matchCount: searching ? _matchesIn(module, needle) : null,
+                isSelected: module.module.id == selectedModuleId,
+                onTap: () => onSelect(module.module.id),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<AdminContentLevel> _levelsIn(AdminContentModule module) => [
+        for (final level in levels)
+          if (level.level.moduleId == module.module.id) level,
+      ];
+
+  int _matchesIn(AdminContentModule module, String needle) {
+    return _levelsIn(module).where((level) {
+      return level.level.title.toLowerCase().contains(needle) ||
+          level.level.id.toLowerCase().contains(needle) ||
+          level.level.subtitle.toLowerCase().contains(needle);
+    }).length;
+  }
+}
+
+class _ModuleCard extends StatelessWidget {
+  const _ModuleCard({
+    required this.module,
+    required this.levelCount,
+    required this.publishedCount,
+    required this.matchCount,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final AdminContentModule module;
+  final int levelCount;
+  final int publishedCount;
+
+  /// Null when nothing is being searched for.
+  final int? matchCount;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = ModuleVisuals.colorForModuleId(module.module.id);
+    final theme = Theme.of(context);
+    // Dimmed only while searching, and only when this module holds nothing
+    // that matches — so it stays visible and still selectable.
+    final faded = matchCount == 0;
+
+    return SizedBox(
+      width: 168,
+      child: Opacity(
+        opacity: faded ? 0.5 : 1,
+        child: AdminSoftCard(
+          onTap: onTap,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  AdminIconChip(
+                    icon: ModuleVisuals.iconFor(module.module.category),
+                    color: accent,
+                    size: 34,
+                  ),
+                  const Spacer(),
+                  if (isSelected)
+                    Icon(Icons.check_circle_rounded, size: 20, color: accent),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                module.module.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                matchCount != null
+                    ? '$matchCount of $levelCount match'
+                    : '$levelCount ${levelCount == 1 ? 'level' : 'levels'}',
+                style: theme.textTheme.labelSmall,
+              ),
+              const SizedBox(height: 8),
+              AdminProgressBar(
+                value: levelCount == 0 ? 0 : publishedCount / levelCount,
+                color: accent,
+                minHeight: 6,
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  _StatusPill(status: module.publishStatus),
+                  const Spacer(),
+                  Text(
+                    '$publishedCount live',
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The two create forms, folded away.
+///
+/// They are thirty-odd fields between them and used far less often than
+/// browsing is, so they no longer sit in the way of the thing this page is
+/// mostly used for.
+class _CreateSection extends StatelessWidget {
+  const _CreateSection({
+    required this.expanded,
+    required this.onExpandedChanged,
+    required this.children,
+  });
+
+  final bool expanded;
+  final ValueChanged<bool> onExpandedChanged;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return AdminSoftCard(
+      padding: EdgeInsets.zero,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: expanded,
+          onExpansionChanged: onExpandedChanged,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          leading: const AdminIconChip(
+            icon: Icons.add_rounded,
+            color: AppColors.leaf,
+            size: 36,
+          ),
+          title: Text(
+            'Create by hand',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          subtitle: const Text('Or use AI Authoring for a whole stage'),
+          children: children,
+        ),
       ),
     );
   }
