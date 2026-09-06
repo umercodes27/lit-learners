@@ -59,6 +59,7 @@ class AdminContentViewModel extends ChangeNotifier {
     required int maxStage,
     required int order,
     required bool isPublished,
+    bool allowOverwrite = false,
   }) async {
     final moduleId = _slug(id.isEmpty ? title : id);
     final validationError = _validateModule(
@@ -69,6 +70,19 @@ class AdminContentViewModel extends ChangeNotifier {
     );
     if (validationError != null) {
       _setError(validationError);
+      return false;
+    }
+
+    // Saving is an upsert keyed on the id, so without this a second module
+    // called "Math" did not fail — it quietly replaced the first one and took
+    // every level under it. Overwriting stays possible, because with no edit
+    // screen it is the only way to change a module, but it has to be asked
+    // for rather than happening by reusing a name.
+    if (!allowOverwrite && _modules.any((m) => m.module.id == moduleId)) {
+      _setError(
+        'A module with the ID "$moduleId" already exists. Choose a different '
+        'ID, or turn on "Replace existing" to overwrite it.',
+      );
       return false;
     }
 
@@ -113,6 +127,7 @@ class AdminContentViewModel extends ChangeNotifier {
     int quizCorrectIndex = 0,
     String videoTitle = '',
     String videoUrl = '',
+    bool allowOverwrite = false,
   }) async {
     final levelId = _slug(
       id.isEmpty ? '$moduleId-stage$stage-$levelNumber' : id,
@@ -127,6 +142,17 @@ class AdminContentViewModel extends ChangeNotifier {
     );
     if (validationError != null) {
       _setError(validationError);
+      return false;
+    }
+
+    // The default id is built from the module, stage and number, so saving a
+    // second "level 1" of the same stage silently replaced the first. As with
+    // modules, overwriting stays possible but has to be asked for.
+    if (!allowOverwrite && _levels.any((l) => l.level.id == levelId)) {
+      _setError(
+        'A level with the ID "$levelId" already exists. Change the level '
+        'number or ID, or turn on "Replace existing" to overwrite it.',
+      );
       return false;
     }
 

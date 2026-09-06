@@ -54,6 +54,8 @@ LevelProgressReport done(
   int? score,
   bool completed = true,
   Duration ago = Duration.zero,
+  int attempts = 1,
+  int wrongAnswers = 0,
 }) =>
     LevelProgressReport(
       progress: LevelProgress(
@@ -66,6 +68,8 @@ LevelProgressReport done(
         updatedAt: fixedNow.subtract(ago),
         isSynced: true,
         score: score,
+        attempts: attempts,
+        wrongAnswers: wrongAnswers,
       ),
       levelTitle: levelId,
       moduleTitle: moduleId,
@@ -210,6 +214,37 @@ void main() {
     expect(quiet.levelsCompletedThisWeek, 0);
     expect(quiet.findingsOf(InsightKind.idle), hasLength(1));
     expect(quiet.findingsOf(InsightKind.idle).single.headline, contains('30'));
+  });
+
+  test('a subject passed after many wrong answers is called hard going', () {
+    final insights = buildFor([
+      // Passed, and on full stars — a score-based report would call this a
+      // success and say nothing at all.
+      done('math-stage3-1', 'math', attempts: 3, wrongAnswers: 8),
+      done('math-stage3-2', 'math', attempts: 2, wrongAnswers: 5),
+    ]);
+
+    final struggling = insights.findingsOf(InsightKind.struggling);
+    expect(struggling.single.moduleId, 'math');
+    expect(struggling.single.detail, contains('13 wrong answers'));
+    expect(insights.totalWrongAnswers, 13);
+    expect(insights.totalAttempts, 5);
+  });
+
+  test('getting the odd one wrong is how a small child learns', () {
+    final insights = buildFor([
+      done('math-stage3-1', 'math', attempts: 1, wrongAnswers: 1),
+    ]);
+
+    expect(insights.findingsOf(InsightKind.struggling), isEmpty);
+  });
+
+  test('the fingerprint moves when only the wrong answers change', () {
+    final easy = buildFor([done('math-stage3-1', 'math', wrongAnswers: 0)]);
+    final hard = buildFor([done('math-stage3-1', 'math', wrongAnswers: 6)]);
+
+    expect(hard.fingerprint, isNot(easy.fingerprint),
+        reason: 'a summary written before the struggle showed up is stale');
   });
 
   test('what to do next prefers finishing over starting something new', () {

@@ -2,7 +2,7 @@ class LocalDbSchema {
   const LocalDbSchema._();
 
   static const databaseName = 'little_learners.db';
-  static const version = 6;
+  static const version = 7;
 
   static const appMeta = 'app_meta';
   static const childProfiles = 'child_profiles';
@@ -123,6 +123,8 @@ CREATE TABLE $levelProgress (
   lastWatchedAt TEXT,
   updatedAt TEXT NOT NULL,
   isSynced INTEGER NOT NULL DEFAULT 0,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  wrongAnswers INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (childId, levelId)
 )
 ''';
@@ -194,5 +196,18 @@ CREATE TABLE $appMeta (
   /// upgrading keep their rows until the bundle is reinstalled.
   static const version6Statements = [
     'ALTER TABLE $levels ADD COLUMN portionLabel TEXT',
+  ];
+
+  /// Progress gained how often a level was tried and how many answers went
+  /// wrong. A final score says how a child did on their last go and nothing
+  /// about how hard they had to work to get there, which is the part a parent
+  /// most needs to know.
+  ///
+  /// Defaulting to zero, so rows written before this upgrade read as "never
+  /// counted" rather than "never got anything wrong".
+  static const version7Statements = [
+    'ALTER TABLE $levelProgress ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE $levelProgress ADD COLUMN wrongAnswers INTEGER NOT NULL '
+        'DEFAULT 0',
   ];
 }

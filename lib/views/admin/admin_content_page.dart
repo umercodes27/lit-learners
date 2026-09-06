@@ -31,6 +31,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
   var _moduleMinStage = 1;
   var _moduleMaxStage = 4;
   var _modulePublished = false;
+  var _moduleAllowOverwrite = false;
 
   final _levelIdController = TextEditingController();
   final _levelTitleController = TextEditingController();
@@ -50,6 +51,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
   var _levelStage = 1;
   var _levelType = LevelType.flashcards;
   var _levelPublished = false;
+  var _levelAllowOverwrite = false;
   var _didRequestLoad = false;
 
   /// Which module is being looked at. Null means none picked, and the page
@@ -190,6 +192,10 @@ class _AdminContentPageState extends State<AdminContentPage> {
               minStage: _moduleMinStage,
               maxStage: _moduleMaxStage,
               isPublished: _modulePublished,
+              allowOverwrite: _moduleAllowOverwrite,
+              onAllowOverwriteChanged: (value) {
+                setState(() => _moduleAllowOverwrite = value);
+              },
               onCategoryChanged: (value) {
                 setState(() => _moduleCategory = value);
               },
@@ -225,6 +231,10 @@ class _AdminContentPageState extends State<AdminContentPage> {
               stage: _levelStage,
               type: _levelType,
               isPublished: _levelPublished,
+              allowOverwrite: _levelAllowOverwrite,
+              onAllowOverwriteChanged: (value) {
+                setState(() => _levelAllowOverwrite = value);
+              },
               onModuleChanged: (value) {
                 setState(() => _selectedModuleId = value);
               },
@@ -297,6 +307,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
           maxStage: _moduleMaxStage,
           order: int.tryParse(_moduleOrderController.text) ?? 1,
           isPublished: _modulePublished,
+          allowOverwrite: _moduleAllowOverwrite,
         );
     if (!created || !mounted) return;
 
@@ -319,6 +330,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
           type: _levelType,
           passingScore: int.tryParse(_levelPassingScoreController.text) ?? 70,
           isPublished: _levelPublished,
+          allowOverwrite: _levelAllowOverwrite,
           contentTitle: _contentTitleController.text,
           contentPrompt: _contentPromptController.text,
           contentDisplayText: _contentDisplayController.text,
@@ -690,6 +702,8 @@ class _ModuleForm extends StatelessWidget {
     required this.onMinStageChanged,
     required this.onMaxStageChanged,
     required this.onPublishedChanged,
+    required this.allowOverwrite,
+    required this.onAllowOverwriteChanged,
     required this.onSubmit,
   });
 
@@ -697,6 +711,11 @@ class _ModuleForm extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
   final TextEditingController orderController;
+
+  /// Saving is an upsert on the id, so replacing an existing module has to be
+  /// deliberate rather than a side effect of reusing a name.
+  final bool allowOverwrite;
+  final ValueChanged<bool> onAllowOverwriteChanged;
   final ModuleCategory category;
   final int minStage;
   final int maxStage;
@@ -750,6 +769,16 @@ class _ModuleForm extends StatelessWidget {
             value: isPublished,
             onChanged: onPublishedChanged,
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Replace existing'),
+            subtitle: const Text(
+              'Leave off and saving onto an ID that already exists is '
+              'refused rather than overwriting it.',
+            ),
+            value: allowOverwrite,
+            onChanged: onAllowOverwriteChanged,
+          ),
           AppPrimaryButton(
             icon: Icons.add,
             label: 'Save module',
@@ -786,11 +815,18 @@ class _LevelForm extends StatelessWidget {
     required this.onStageChanged,
     required this.onTypeChanged,
     required this.onPublishedChanged,
+    required this.allowOverwrite,
+    required this.onAllowOverwriteChanged,
     required this.onSubmit,
   });
 
   final List<AdminContentModule> modules;
   final String? selectedModuleId;
+
+  /// As on the module form: an id collision replaces rather than fails, so
+  /// replacing has to be chosen.
+  final bool allowOverwrite;
+  final ValueChanged<bool> onAllowOverwriteChanged;
   final TextEditingController idController;
   final TextEditingController titleController;
   final TextEditingController subtitleController;
@@ -896,6 +932,16 @@ class _LevelForm extends StatelessWidget {
             title: const Text('Published'),
             value: isPublished,
             onChanged: onPublishedChanged,
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Replace existing'),
+            subtitle: const Text(
+              'Leave off and saving onto an ID that already exists is '
+              'refused rather than overwriting it.',
+            ),
+            value: allowOverwrite,
+            onChanged: onAllowOverwriteChanged,
           ),
           AppPrimaryButton(
             icon: Icons.add,

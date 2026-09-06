@@ -12,6 +12,8 @@ class LevelProgress {
     this.rewardEarnedAt,
     this.watchedLessonIds = const [],
     this.lastWatchedAt,
+    this.attempts = 0,
+    this.wrongAnswers = 0,
   });
 
   final String childId;
@@ -27,6 +29,21 @@ class LevelProgress {
   final List<String> watchedLessonIds;
   final DateTime? lastWatchedAt;
 
+  /// How many times this level has been finished, not how many were passed.
+  ///
+  /// A score alone cannot tell a child who got it right first go from one who
+  /// needed five attempts, and at this age the second child is the one whose
+  /// parent needs telling.
+  final int attempts;
+
+  /// Every wrong quiz answer this child has given on this level, added up
+  /// across attempts rather than replaced by the last run.
+  final int wrongAnswers;
+
+  /// Wrong answers per attempt, which is what makes the number comparable
+  /// between a level played once and a level played five times.
+  double get wrongPerAttempt => attempts == 0 ? 0 : wrongAnswers / attempts;
+
   LevelProgress copyWith({
     bool? completed,
     int? starsEarned,
@@ -37,6 +54,8 @@ class LevelProgress {
     DateTime? rewardEarnedAt,
     List<String>? watchedLessonIds,
     DateTime? lastWatchedAt,
+    int? attempts,
+    int? wrongAnswers,
   }) {
     return LevelProgress(
       childId: childId,
@@ -51,6 +70,8 @@ class LevelProgress {
       rewardEarnedAt: rewardEarnedAt ?? this.rewardEarnedAt,
       watchedLessonIds: watchedLessonIds ?? this.watchedLessonIds,
       lastWatchedAt: lastWatchedAt ?? this.lastWatchedAt,
+      attempts: attempts ?? this.attempts,
+      wrongAnswers: wrongAnswers ?? this.wrongAnswers,
     );
   }
 }

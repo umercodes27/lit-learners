@@ -56,6 +56,12 @@ You will be given findings the app has already worked out. Put them into
 words. Do not invent progress, subjects, scores or behaviour that is not in
 the findings, and do not guess at why a child is doing well or badly.
 
+Pay attention to how many answers a child got wrong, not only to their
+scores. A score is how the last attempt went; wrong answers counted across
+attempts are how hard the child had to work to get there, and a subject
+passed after many wrong answers is worth mentioning even though the score
+looks fine.
+
 Write warmly and plainly, the way a good nursery teacher speaks to a parent.
 No jargon, no percentages, no bullet symbols in the summary itself. Two or
 three short sentences at most. Say something true and good before anything
@@ -91,6 +97,12 @@ something a parent can actually do this week.''';
     if (insights.averageScore != null) {
       buffer.writeln('Average quiz score: ${insights.averageScore}.');
     }
+    if (insights.totalAttempts > 0) {
+      buffer.writeln(
+        'Lessons were attempted ${insights.totalAttempts} times in total, '
+        'with ${insights.totalWrongAnswers} wrong answers along the way.',
+      );
+    }
     buffer.writeln(
       'Lessons finished in the last week: ${insights.levelsCompletedThisWeek}.',
     );
@@ -101,6 +113,8 @@ something a parent can actually do this week.''';
         '- ${module.moduleTitle}: ${module.levelsCompleted} of '
         '${module.levelsAvailable} finished, ${module.starsEarned} of '
         '${module.starsPossible} stars'
+        '${module.attempts > 0 ? ', ${module.wrongAnswers} wrong answers over '
+            '${module.attempts} tries' : ''}'
         '${module.isStarted ? '' : ', never opened'}.',
       );
     }

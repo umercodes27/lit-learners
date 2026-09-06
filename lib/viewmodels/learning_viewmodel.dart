@@ -130,11 +130,13 @@ class LearningViewModel extends ChangeNotifier {
     String childId,
     LearningLevel level, {
     int? score,
+    int wrongAnswers = 0,
   }) async {
     final progress = await _progressRepository.completeLevel(
       childId: childId,
       level: level,
       score: score,
+      wrongAnswers: wrongAnswers,
     );
     await _progressSyncService?.syncNow(childId: childId);
     _progress = await _progressRepository.getProgressForChild(childId);

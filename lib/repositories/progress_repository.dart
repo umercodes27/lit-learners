@@ -12,6 +12,11 @@ abstract class ProgressRepository {
     required String childId,
     required LearningLevel level,
     int? score,
+
+    /// Wrong answers given during this attempt. Added to the running total
+    /// rather than replacing it, because the question a parent has is how
+    /// much a child has struggled with a level, not how their last go went.
+    int wrongAnswers = 0,
   });
   Future<LevelProgress> recordVideoWatched({
     required String childId,
@@ -31,6 +36,7 @@ class CachedProgressRepository implements ProgressRepository {
     required String childId,
     required LearningLevel level,
     int? score,
+    int wrongAnswers = 0,
   }) async {
     final existing = await getProgressForLevel(
       childId: childId,
@@ -50,6 +56,11 @@ class CachedProgressRepository implements ProgressRepository {
       lastWatchedAt: existing?.lastWatchedAt,
       updatedAt: now,
       isSynced: false,
+      // Both accumulate. The score is overwritten by the latest run, which is
+      // right for "how is this level going now" and useless for "how hard was
+      // this" — these two are what answer the second question.
+      attempts: (existing?.attempts ?? 0) + 1,
+      wrongAnswers: (existing?.wrongAnswers ?? 0) + wrongAnswers,
     );
     await _progressDao.upsert(progress);
     return progress;

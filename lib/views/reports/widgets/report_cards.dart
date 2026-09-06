@@ -70,6 +70,8 @@ class InsightCard extends StatelessWidget {
         InsightKind.momentum => (Icons.bolt_rounded, PlayColors.sunshine),
         InsightKind.needsPractice =>
           (Icons.refresh_rounded, PlayColors.tangerine),
+        InsightKind.struggling =>
+          (Icons.psychology_alt_rounded, PlayColors.strawberry),
         InsightKind.stalled => (Icons.pause_circle_rounded, PlayColors.grape),
         InsightKind.notStarted => (Icons.explore_rounded, PlayColors.sky),
         InsightKind.idle => (Icons.bedtime_rounded, PlayColors.blueberry),

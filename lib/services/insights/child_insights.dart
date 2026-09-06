@@ -12,6 +12,9 @@ enum InsightKind {
   /// Attempted, but the scores or the stars say it needs another go.
   needsPractice,
 
+  /// Getting there, but wrongly and often. The signal a final score hides.
+  struggling,
+
   /// Started and then left. The most useful thing to tell a parent.
   stalled,
 
@@ -57,6 +60,8 @@ class ModuleInsight {
     required this.starsEarned,
     required this.averageScore,
     required this.lastPlayedAt,
+    this.attempts = 0,
+    this.wrongAnswers = 0,
   });
 
   final String moduleId;
@@ -73,6 +78,17 @@ class ModuleInsight {
   final int starsEarned;
   final int? averageScore;
   final DateTime? lastPlayedAt;
+
+  /// Times a level in this subject was finished, counting repeats.
+  final int attempts;
+
+  /// Wrong quiz answers across all of those attempts.
+  final int wrongAnswers;
+
+  /// The number that makes subjects comparable: a subject played twice with
+  /// six wrong answers is harder going than one played ten times with eight.
+  double get wrongPerAttempt =>
+      attempts == 0 ? 0 : wrongAnswers / attempts;
 
   int get starsPossible => levelsAvailable * 3;
 
@@ -106,6 +122,8 @@ class ChildInsights {
     required this.lastActiveAt,
     required this.levelsCompletedThisWeek,
     required this.nextUp,
+    this.totalAttempts = 0,
+    this.totalWrongAnswers = 0,
   });
 
   final ChildProfile profile;
@@ -122,6 +140,16 @@ class ChildInsights {
   final int? averageScore;
   final DateTime? lastActiveAt;
   final int levelsCompletedThisWeek;
+
+  /// Across every subject. A score says how the last go went; these say how
+  /// much work it took to get there.
+  final int totalAttempts;
+  final int totalWrongAnswers;
+
+  /// Levels finished per attempt made. Below one means levels are being
+  /// replayed before they stick.
+  double get attemptsPerLevel =>
+      completedLevels == 0 ? 0 : totalAttempts / completedLevels;
 
   /// The single thing worth doing next, or null when everything at this
   /// stage is finished.
@@ -167,9 +195,11 @@ class ChildInsights {
       'done$completedLevels',
       'stars$totalStars',
       'avg${averageScore ?? -1}',
+      'tries$totalAttempts',
+      'wrong$totalWrongAnswers',
       for (final module in modules)
         '${module.moduleId}:${module.levelsCompleted}:${module.starsEarned}'
-            ':${module.levelsAttempted}',
+            ':${module.levelsAttempted}:${module.wrongAnswers}',
     ];
     return parts.join('|');
   }

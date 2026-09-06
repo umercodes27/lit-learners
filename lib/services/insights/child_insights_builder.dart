@@ -29,6 +29,11 @@ class ChildInsightsBuilder {
   /// a few days off is not told they have a problem.
   static const idleDays = 7;
 
+  /// Two wrong answers for every level finished. Getting one wrong is how a
+  /// small child learns; needing several every time is the subject being too
+  /// hard, and it is invisible in a passing score.
+  static const strugglingWrongPerAttempt = 2.0;
+
   ChildInsights build({
     required ChildReport report,
     required List<LearningModule> modules,
@@ -60,6 +65,8 @@ class ChildInsightsBuilder {
       var completed = 0;
       var attempted = 0;
       var stars = 0;
+      var tries = 0;
+      var wrong = 0;
       final scores = <int>[];
       DateTime? lastPlayed;
 
@@ -70,6 +77,8 @@ class ChildInsightsBuilder {
         attempted++;
         if (progress.completed) completed++;
         stars += progress.starsEarned;
+        tries += progress.attempts;
+        wrong += progress.wrongAnswers;
         if (progress.score != null) scores.add(progress.score!);
 
         final touched = progress.lastWatchedAt ?? progress.updatedAt;
@@ -89,6 +98,8 @@ class ChildInsightsBuilder {
             ? null
             : (scores.reduce((a, b) => a + b) / scores.length).round(),
         lastPlayedAt: lastPlayed,
+        attempts: tries,
+        wrongAnswers: wrong,
       ));
     }
 
@@ -119,6 +130,9 @@ class ChildInsightsBuilder {
       lastActiveAt: report.lastActivityAt,
       levelsCompletedThisWeek: completedThisWeek,
       nextUp: _nextUp(moduleInsights),
+      totalAttempts: moduleInsights.fold(0, (sum, m) => sum + m.attempts),
+      totalWrongAnswers:
+          moduleInsights.fold(0, (sum, m) => sum + m.wrongAnswers),
     );
 
     return ChildInsights(
@@ -133,6 +147,8 @@ class ChildInsightsBuilder {
       lastActiveAt: insights.lastActiveAt,
       levelsCompletedThisWeek: insights.levelsCompletedThisWeek,
       nextUp: insights.nextUp,
+      totalAttempts: insights.totalAttempts,
+      totalWrongAnswers: insights.totalWrongAnswers,
     );
   }
 
@@ -213,6 +229,26 @@ class ChildInsightsBuilder {
         detail: '${module.moduleTitle} is getting through on '
             '${module.starsEarned} of ${module.starsPossible} stars. Playing '
             'the same levels again is worth more here than new ones.',
+      ));
+    }
+
+    // Said before the stars-based finding, because a subject being passed
+    // while going wrong repeatedly is a more useful thing to know than a
+    // subject being passed on few stars — and the two often mean the same
+    // child, told two ways.
+    for (final module in insights.started) {
+      if (module.attempts == 0) continue;
+      if (module.wrongPerAttempt < strugglingWrongPerAttempt) continue;
+
+      findings.add(Insight(
+        kind: InsightKind.struggling,
+        moduleId: module.moduleId,
+        moduleTitle: module.moduleTitle,
+        headline: '${module.moduleTitle} is hard going',
+        detail: '${module.wrongAnswers} wrong answers across '
+            '${module.attempts} ${module.attempts == 1 ? 'try' : 'tries'} in '
+            '${module.moduleTitle}. $name is getting there, but it is costing '
+            'a lot — slower and shorter would help more than moving on.',
       ));
     }
 

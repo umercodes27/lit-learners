@@ -101,6 +101,14 @@ class DemoDataSeeder {
           final completed = variation > 2;
           final stars = completed ? 1 + (variation % 3) : 0;
 
+          // Some children retry a lot and some barely at all, so the report
+          // has something to call hard going rather than every child looking
+          // equally comfortable. A level passed on the third try scores the
+          // same as one passed first time, which is the whole reason these
+          // two numbers exist.
+          final tries = completed ? 1 + (variation % 3) : 1;
+          final wrong = (variation % 4) * tries;
+
           await _progress.upsert(
             LevelProgress(
               childId: family.childId(index),
@@ -112,6 +120,8 @@ class DemoDataSeeder {
               score: completed ? 55 + variation * 4 : null,
               updatedAt: now.subtract(Duration(days: (seed + n * 2) % 40)),
               isSynced: false,
+              attempts: tries,
+              wrongAnswers: wrong,
             ),
           );
         }
