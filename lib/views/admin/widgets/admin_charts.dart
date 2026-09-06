@@ -33,10 +33,19 @@ class AdminDistributionChart extends StatelessWidget {
     super.key,
     required this.bars,
     this.height = 132,
+    this.onBarTap,
+    this.selectedLabel,
   });
 
   final List<AdminChartBar> bars;
   final double height;
+
+  /// When set, the bars become the filter for whatever is below them. A chart
+  /// an admin can point at beats a chart they have to translate into a search.
+  final ValueChanged<AdminChartBar>? onBarTap;
+
+  /// Label of the bar currently filtering, so it can be shown as picked.
+  final String? selectedLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +64,11 @@ class AdminDistributionChart extends StatelessWidget {
         children: [
           for (final bar in bars)
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
+              child: _tappable(
+                bar,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
@@ -76,7 +87,8 @@ class AdminDistributionChart extends StatelessWidget {
                         heightFactor: peak == 0
                             ? 0.02
                             : math.max(bar.value / peak, 0.02),
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
                           decoration: BoxDecoration(
                             color: bar.value == 0
                                 ? bar.accent.withValues(alpha: 0.25)
@@ -84,6 +96,9 @@ class AdminDistributionChart extends StatelessWidget {
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(8),
                             ),
+                            border: bar.label == selectedLabel
+                                ? Border.all(color: AppColors.ink, width: 2.5)
+                                : null,
                           ),
                         ),
                       ),
@@ -105,11 +120,23 @@ class AdminDistributionChart extends StatelessWidget {
                         style: theme.textTheme.labelSmall,
                       ),
                   ],
+                  ),
                 ),
               ),
             ),
         ],
       ),
+    );
+  }
+
+  Widget _tappable(AdminChartBar bar, Widget child) {
+    final onTap = onBarTap;
+    if (onTap == null) return child;
+
+    return InkWell(
+      onTap: () => onTap(bar),
+      borderRadius: BorderRadius.circular(10),
+      child: child,
     );
   }
 }

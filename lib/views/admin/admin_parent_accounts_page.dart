@@ -6,19 +6,22 @@ import '../../models/admin_stats.dart';
 import '../../services/insights/parent_account_insights.dart';
 import '../../viewmodels/admin_auth_viewmodel.dart';
 import '../../viewmodels/admin_stats_viewmodel.dart';
+import 'widgets/account_grid.dart';
 import 'widgets/admin_charts.dart';
 import 'widgets/admin_form_fields.dart';
 import 'widgets/admin_scaffold.dart';
 
 /// Registered parent accounts, read only.
 ///
-/// This used to be two counts and then every account as a row. At a hundred
-/// families that is a hundred rows to scroll past, and none of them answer
-/// the questions an admin actually has: are people still signing up, and are
-/// they getting as far as adding a child?
+/// This began as two counts and then every account as a row. At a hundred
+/// families that is four screens of scrolling, and none of it answers what an
+/// admin came to find out.
 ///
-/// So the shape comes first, in two small charts, and the list is searchable
-/// and capped rather than dumped.
+/// So the shape comes first, and the accounts are discs rather than rows: a
+/// hundred of them fit in a few lines and their colours show the take-up
+/// problem before a single address is read. The charts are the filter — tap a
+/// bar and the grid below narrows to those families — and tapping a disc
+/// opens that account, which is where the scrolling was headed anyway.
 class AdminParentAccountsPage extends StatefulWidget {
   const AdminParentAccountsPage({super.key});
 
@@ -30,11 +33,8 @@ class AdminParentAccountsPage extends StatefulWidget {
 class _AdminParentAccountsPageState extends State<AdminParentAccountsPage> {
   final _search = TextEditingController();
   var _didRequestLoad = false;
-  var _showAll = false;
-
-  /// Enough to scan, few enough to stay on one screen. Searching reaches
-  /// anything past it, and "show all" is one tap away.
-  static const _visibleByDefault = 12;
+  String? _bucketFilter;
+  String? _selectedParentId;
 
   @override
   void initState() {
@@ -66,9 +66,18 @@ class _AdminParentAccountsPageState extends State<AdminParentAccountsPage> {
   Widget build(BuildContext context) {
     final stats = context.watch<AdminStatsViewModel>();
     final accounts = stats.parentAccounts;
-    final matches = ParentAccountInsights.search(accounts, _search.text);
-    final visible =
-        _showAll ? matches : matches.take(_visibleByDefault).toList();
+
+    final matches = [
+      for (final account
+          in ParentAccountInsights.search(accounts, _search.text))
+        if (_bucketFilter == null ||
+            accountBucket(account.childProfileCount) == _bucketFilter)
+          account,
+    ];
+
+    final selected = matches
+        .where((account) => account.parentId == _selectedParentId)
+        .firstOrNull;
 
     return AdminScaffold(
       title: 'Parent Accounts',
@@ -93,22 +102,42 @@ class _AdminParentAccountsPageState extends State<AdminParentAccountsPage> {
                 ],
                 _Totals(stats: stats.stats, accounts: accounts),
                 const SizedBox(height: 18),
-                _Charts(accounts: accounts),
+                _Charts(
+                  accounts: accounts,
+                  selectedBucket: _bucketFilter,
+                  onBucketTap: (bucket) => setState(() {
+                    _bucketFilter = _bucketFilter == bucket ? null : bucket;
+                    _selectedParentId = null;
+                  }),
+                ),
                 const SizedBox(height: 18),
                 AdminSectionHeading(
-                  title: 'Registered Parents',
-                  subtitle: matches.length == accounts.length
-                      ? '${accounts.length} '
-                          '${accounts.length == 1 ? 'account' : 'accounts'}. '
-                          'View only — nothing can be edited here.'
-                      : '${matches.length} of ${accounts.length} match '
-                          '"${_search.text.trim()}".',
+                  title: 'Everyone',
+                  subtitle: _subtitle(accounts.length, matches.length),
                 ),
                 const SizedBox(height: 10),
                 AdminTextField(
                   controller: _search,
                   label: 'Search by email',
                 ),
+                if (_bucketFilter != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: InputChip(
+                        label: Text(_bucketFilter == 'None'
+                            ? 'No children'
+                            : '$_bucketFilter children'),
+                        onDeleted: () => setState(() => _bucketFilter = null),
+                      ),
+                    ),
+                  ),
+                if (selected != null)
+                  AccountDetailCard(
+                    account: selected,
+                    onClose: () => setState(() => _selectedParentId = null),
+                  ),
                 if (accounts.isEmpty)
                   const AdminEmptyState(
                     icon: Icons.family_restroom_rounded,
@@ -119,29 +148,34 @@ class _AdminParentAccountsPageState extends State<AdminParentAccountsPage> {
                 else if (matches.isEmpty)
                   const AdminEmptyState(
                     icon: Icons.search_off_rounded,
-                    title: 'No match',
-                    message: 'No account email contains that text.',
+                    title: 'Nothing matches',
+                    message: 'Try a different search, or clear the filter.',
                   )
                 else ...[
-                  for (final account in visible)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _ParentAccountTile(account: account),
+                  AccountGrid(
+                    accounts: matches,
+                    selectedId: _selectedParentId,
+                    onSelect: (account) => setState(
+                      () => _selectedParentId =
+                          _selectedParentId == account.parentId
+                              ? null
+                              : account.parentId,
                     ),
-                  if (matches.length > visible.length)
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: () => setState(() => _showAll = true),
-                        icon: const Icon(Icons.expand_more_rounded),
-                        label: Text(
-                          'Show all ${matches.length}',
-                        ),
-                      ),
-                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const _Legend(),
                 ],
               ],
             ),
     );
+  }
+
+  String _subtitle(int total, int shown) {
+    if (shown == total) {
+      return '$total ${total == 1 ? 'account' : 'accounts'}. Tap anyone for '
+          'their details.';
+    }
+    return 'Showing $shown of $total.';
   }
 }
 
@@ -189,9 +223,15 @@ class _Totals extends StatelessWidget {
 }
 
 class _Charts extends StatelessWidget {
-  const _Charts({required this.accounts});
+  const _Charts({
+    required this.accounts,
+    required this.selectedBucket,
+    required this.onBucketTap,
+  });
 
   final List<AdminParentAccountSummary> accounts;
+  final String? selectedBucket;
+  final ValueChanged<String> onBucketTap;
 
   @override
   Widget build(BuildContext context) {
@@ -212,10 +252,12 @@ class _Charts extends StatelessWidget {
             children: [
               const AdminSectionHeading(
                 title: 'Children per family',
-                subtitle: 'How far accounts get after registering',
+                subtitle: 'Tap a bar to see just those families',
               ),
               const SizedBox(height: 14),
               AdminDistributionChart(
+                selectedLabel: selectedBucket,
+                onBarTap: (bar) => onBucketTap(bar.label),
                 bars: [
                   for (final bucket in families)
                     AdminChartBar(
@@ -223,9 +265,7 @@ class _Charts extends StatelessWidget {
                       value: bucket.count,
                       // The "none" bucket is the one worth noticing, so it is
                       // the one that is not the house colour.
-                      accent: bucket.label == 'None'
-                          ? AppColors.coral
-                          : AppColors.plum,
+                      accent: accountAccent(_countFor(bucket.label)),
                     ),
                 ],
               ),
@@ -233,7 +273,7 @@ class _Charts extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   '$noChildren ${noChildren == 1 ? 'account has' : 'accounts have'} '
-                  'no child profile yet, so nobody in '
+                  'no child profile yet, so nobody on '
                   '${noChildren == 1 ? 'it' : 'them'} has started learning.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -267,66 +307,51 @@ class _Charts extends StatelessWidget {
       ],
     );
   }
+
+  /// A representative child count for a bucket, so the bar takes the same
+  /// colour as the discs it stands for.
+  int _countFor(String bucket) => switch (bucket) {
+        'None' => 0,
+        '1' => 1,
+        '2' => 2,
+        _ => 3,
+      };
 }
 
-class _ParentAccountTile extends StatelessWidget {
-  const _ParentAccountTile({required this.account});
-
-  final AdminParentAccountSummary account;
+/// What the colours mean, said once rather than guessed at.
+class _Legend extends StatelessWidget {
+  const _Legend();
 
   @override
   Widget build(BuildContext context) {
-    final createdAt = account.createdAt;
-    final hasChildren = account.childProfileCount > 0;
+    const entries = [
+      (0, 'No children'),
+      (1, '1 child'),
+      (2, '2 children'),
+      (3, '3 or more'),
+    ];
 
-    return AdminSoftCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          AdminIconChip(
-            icon: Icons.person_rounded,
-            color: hasChildren ? AppColors.plum : AppColors.coral,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  account.email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+    return Wrap(
+      spacing: 14,
+      runSpacing: 8,
+      children: [
+        for (final (count, label) in entries)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 13,
+                height: 13,
+                decoration: BoxDecoration(
+                  color: accountAccent(count),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    AdminPill(
-                      icon: Icons.child_care_rounded,
-                      label: hasChildren
-                          ? '${account.childProfileCount} '
-                              '${account.childProfileCount == 1 ? 'child' : 'children'}'
-                          : 'no children yet',
-                      accent: hasChildren ? AppColors.aqua : AppColors.coral,
-                    ),
-                    if (createdAt != null)
-                      AdminPill(
-                        icon: Icons.calendar_today_rounded,
-                        label: 'Joined ${createdAt.year}-'
-                            '${_two(createdAt.month)}-${_two(createdAt.day)}',
-                        accent: AppColors.violet,
-                      ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 6),
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
+            ],
           ),
-        ],
-      ),
+      ],
     );
   }
-
-  String _two(int value) => value.toString().padLeft(2, '0');
 }
