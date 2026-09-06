@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+
+import 'sound_controller.dart';
 
 /// Says a letter or numeral out loud.
 ///
@@ -34,6 +38,11 @@ class GlyphSpeech {
       // Slower than default: a two-year-old is matching a sound to a shape.
       await _tts.setSpeechRate(0.4);
       await _tts.setPitch(1.1);
+      // Makes `speak` wait until the words are actually finished, which is
+      // what lets the music come back at the right moment instead of the
+      // moment speaking started. Not supported on every platform, hence the
+      // timeout below rather than a promise that it works.
+      await _tts.awaitSpeakCompletion(true);
       _ready = true;
     } on Exception catch (error) {
       _broken = true;
@@ -45,6 +54,14 @@ class GlyphSpeech {
     }
   }
 
+  /// The longest a single glyph can hold the music down.
+  ///
+  /// One letter at the rate set above takes about a second. If the engine
+  /// never reports completion — some platforms ignore
+  /// `awaitSpeakCompletion` — the bed comes back anyway rather than staying
+  /// quiet for the rest of the session.
+  static const _longestUtterance = Duration(seconds: 5);
+
   /// Speaks [text]. [urdu] picks the voice, not the script.
   Future<void> speak(String text, {bool urdu = false}) async {
     if (_broken || text.isEmpty) return;
@@ -52,7 +69,15 @@ class GlyphSpeech {
     if (!_ready) return;
     try {
       await _tts.stop();
-      await _tts.speak(text);
+      // A spoken letter is the entire point of a tracing level, and it is one
+      // syllable competing with a music bed. The bed comes down for it, the
+      // same as for every other voice in the app.
+      await AppSound.instance.duck();
+      try {
+        await _tts.speak(text).timeout(_longestUtterance, onTimeout: () {});
+      } finally {
+        await AppSound.instance.unduck();
+      }
     } on Exception catch (error) {
       debugPrint('GlyphSpeech: could not speak "$text" ($error)');
     } on Object catch (error) {

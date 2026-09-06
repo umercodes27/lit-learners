@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart' as audio;
 import 'package:flutter/services.dart';
+
+import 'sound_controller.dart';
 
 enum KoalaAudioPlaybackSource {
   none,
@@ -131,6 +135,8 @@ class AudioplayersKoalaAudioPlayer implements KoalaAudioPlayer {
   final Future<void> Function(String assetPath)? _playAsset;
   final Future<void> Function(String url)? _playRemoteUrl;
   audio.AudioPlayer? _player;
+  StreamSubscription<audio.PlayerState>? _state;
+  bool _ducking = false;
 
   @override
   Future<KoalaAudioPlaybackResult> playCue(
@@ -208,6 +214,36 @@ class AudioplayersKoalaAudioPlayer implements KoalaAudioPlayer {
   }
 
   audio.AudioPlayer get _audioPlayer {
-    return _player ??= audio.AudioPlayer();
+    final existing = _player;
+    if (existing != null) return existing;
+
+    final player = audio.AudioPlayer();
+    // The koala is a voice — it explains the screen and reads the quiz
+    // prompts — so the bed comes down underneath it for exactly as long as it
+    // is talking. Tied to the player's own state rather than to [playCue],
+    // which returns as soon as playback starts.
+    _state = player.onPlayerStateChanged.listen((state) {
+      _setDucking(state == audio.PlayerState.playing);
+    });
+    return _player = player;
+  }
+
+  void _setDucking(bool value) {
+    if (_ducking == value) return;
+    _ducking = value;
+    if (value) {
+      AppSound.instance.duck();
+    } else {
+      AppSound.instance.unduck();
+    }
+  }
+
+  /// Releases the player and hands the music back.
+  Future<void> dispose() async {
+    _setDucking(false);
+    await _state?.cancel();
+    _state = null;
+    await _player?.dispose();
+    _player = null;
   }
 }
