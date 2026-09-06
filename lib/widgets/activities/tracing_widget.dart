@@ -8,6 +8,7 @@ import '../../core/localization/urdu_letters.dart';
 import '../../core/theme/age2_skin.dart';
 import '../../models/activity_data.dart';
 import '../../services/audio/glyph_speech.dart';
+import '../../services/content/asset_availability.dart';
 import '../../services/tracing/trace_glyph.dart';
 import '../tracing/trace_guide_painter.dart';
 import 'activity_audio.dart';
@@ -100,11 +101,19 @@ class _TracingWidgetState extends State<TracingWidget>
       UrduLetters.glyphFor(_item.glyph) != null ||
       UrduLetters.isUrduScript(_item.glyph);
 
-  /// A recorded clip when the pack has one, otherwise the device's voice.
+  /// A recorded clip when the bundle has one, otherwise the device's voice.
+  ///
+  /// Naming a clip is not the same as shipping one. The age-3 pack asks for a
+  /// recording per glyph but only six were ever cut, so twenty-one letters and
+  /// ten numerals name a file that is not there. Testing `clip != null` sent
+  /// all thirty-one down the recorded path, where a missing file plays as
+  /// silence — leaving the child a shape to trace and no idea what it is
+  /// called, on the one screen where the sound *is* the lesson. What decides
+  /// this is whether the audio exists, not whether the pack mentioned it.
   Future<void> _announce() async {
     if (!mounted || _finished) return;
     final clip = _item.audio;
-    if (clip != null) {
+    if (clip != null && AssetAvailability.instance.has(clip)) {
       await widget.audio.playPrompt(clip);
       return;
     }
