@@ -70,9 +70,16 @@ void main() {
       expect(report.rewardsEarned, 1);
       expect(childReport.profile.isSynced, isTrue);
       expect(childReport.averageQuizScore, 92);
-      expect(videoReport.levelTitle, 'Watch and Count');
+      // Taken from the seed level rather than spelled out, so rewording a
+      // lesson does not fail a test about what the report aggregates. What
+      // matters here is that a parent reads titles, not ids.
+      expect(videoReport.levelTitle, videoLevel.title);
+      expect(videoReport.levelTitle, isNot(videoLevel.id));
       expect(videoReport.moduleTitle, 'Video Learning');
-      expect(videoReport.watchedLessonTitles, ['Counting Bees']);
+      expect(
+        videoReport.watchedLessonTitles,
+        [videoLevel.videoLessons.first.title],
+      );
     });
 
     test('names an age-pack activity rather than printing its id', () async {
