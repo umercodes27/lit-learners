@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/utils/age_stage_helper.dart';
 import '../models/admin_content.dart';
 import '../models/content_item.dart';
 import '../models/learning_level.dart';
@@ -503,7 +504,9 @@ class AdminContentViewModel extends ChangeNotifier {
   }) {
     if (id.isEmpty) return 'Module ID is required.';
     if (title.trim().isEmpty) return 'Module title is required.';
-    if (minStage < 1 || maxStage > 4 || minStage > maxStage) {
+    if (minStage < AgeStageHelper.minStage ||
+        maxStage > 4 ||
+        minStage > maxStage) {
       return 'Choose a valid age-stage range.';
     }
     return null;
@@ -519,7 +522,9 @@ class AdminContentViewModel extends ChangeNotifier {
   }) {
     if (id.isEmpty) return 'Level ID is required.';
     if (moduleId.isEmpty) return 'Choose a module first.';
-    if (stage < 1 || stage > 4) return 'Stage must be between 1 and 4.';
+    if (stage < AgeStageHelper.minStage || stage > 4) {
+      return 'Stage must be between ${AgeStageHelper.minStage} and 4.';
+    }
     if (levelNumber < 1) return 'Level number must be at least 1.';
     if (title.trim().isEmpty) return 'Level title is required.';
     if (passingScore < 0 || passingScore > 100) {

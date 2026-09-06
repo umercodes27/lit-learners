@@ -130,6 +130,8 @@ passingScore MUST be between $canvasBand.''',
 These are video levels. Each level needs a "videoLessons" list with a real,
 working https:// link to a video file. Never invent a URL. If you do not have
 a real one, say so instead of guessing.
+Never write a path beginning "assets/". Those name files shipped inside the
+app, and you cannot add one, so the lesson would open to nothing.
 passingScore should be between 55 and 70.''',
     };
   }

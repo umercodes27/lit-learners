@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// single toy rather than like a dozen separately-tuned widgets. This is the
 /// motion counterpart to `AppColors`.
 ///
-/// The guiding rule for ages 1-4: **motion directs attention, it does not
+/// The guiding rule for ages 2-4: **motion directs attention, it does not
 /// compete for it.** An idle attractor runs on the one thing a child should
 /// touch next, never on everything at once — a screen where everything wiggles
 /// tells a toddler nothing about where to look.

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:little_learners/core/utils/age_stage_helper.dart';
 import 'package:little_learners/models/learning_level.dart';
 import 'package:little_learners/models/learning_module.dart';
 import 'package:little_learners/repositories/admin_content_repository.dart';
@@ -31,7 +32,7 @@ import 'package:little_learners/viewmodels/admin_content_viewmodel.dart';
 Future<void> createModule(
   AdminContentViewModel admin, {
   String id = 'shapes',
-  int minStage = 1,
+  int minStage = AgeStageHelper.minStage,
   int maxStage = 4,
   bool isPublished = true,
 }) async {
@@ -123,7 +124,7 @@ void main() {
         () async {
       final w = world();
       await createModule(w.admin);
-      await createLevel(w.admin, stage: 1);
+      await createLevel(w.admin, stage: AgeStageHelper.minStage);
 
       // Not a failure mode after all. Rather than show a three-year-old an
       // empty subject, the repository falls back to the nearest lower stage
@@ -138,8 +139,12 @@ void main() {
     test('a module whose stage range excludes the child is filtered out',
         () async {
       final w = world();
-      await createModule(w.admin, minStage: 1, maxStage: 2);
-      await createLevel(w.admin, stage: 1);
+      await createModule(
+        w.admin,
+        minStage: AgeStageHelper.minStage,
+        maxStage: AgeStageHelper.minStage,
+      );
+      await createLevel(w.admin, stage: AgeStageHelper.minStage);
 
       final modules = await w.content.getModulesForStage(3);
       expect(modules.map((m) => m.id), isNot(contains('shapes')));

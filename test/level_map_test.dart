@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:little_learners/models/content_item.dart';
+import 'package:little_learners/models/learning_level.dart';
 import 'package:little_learners/views/child_dashboard/widgets/level_map.dart';
 
 void main() {
@@ -73,4 +76,103 @@ void main() {
       expect(rtl[i].dy, ltr[i].dy);
     }
   });
+
+  testWidgets('a stop prints its caption instead of portion and steps',
+      (tester) async {
+    await _pumpMap(tester, caption: 'Trace the shape');
+
+    expect(find.text('Trace the shape'), findsOneWidget);
+    // The line a seeded stop would have shown from the same level.
+    expect(find.textContaining('2 steps'), findsNothing);
+  });
+
+  testWidgets('without a caption a stop still counts its own steps',
+      (tester) async {
+    await _pumpMap(tester);
+
+    expect(find.textContaining('2 steps'), findsOneWidget);
+  });
+
+  testWidgets('the trophy is tappable only when something waits behind it',
+      (tester) async {
+    var taps = 0;
+    await _pumpMap(tester, onGoalTap: () => taps++, goalLabel: 'Quiz time');
+
+    await tester.tap(find.bySemanticsLabel('Quiz time'));
+    await tester.pumpAndSettle();
+    expect(taps, 1);
+
+    // With no callback the marker goes back to being decoration.
+    await _pumpMap(tester);
+    expect(find.bySemanticsLabel('Quiz time'), findsNothing);
+  });
 }
+
+Future<void> _pumpMap(
+  WidgetTester tester, {
+  String? caption,
+  VoidCallback? onGoalTap,
+  String? goalLabel,
+}) async {
+  tester.view.physicalSize = const Size(390, 900);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: LevelMap(
+            moduleId: 'english',
+            accent: Colors.amber,
+            textDirection: TextDirection.ltr,
+            onOpen: (_) {},
+            onDownload: (_) {},
+            onLocked: (_) {},
+            onGoalTap: onGoalTap,
+            goalLabel: goalLabel,
+            stops: [
+              LevelStopData(
+                level: _level,
+                stars: 0,
+                completed: false,
+                canOpen: true,
+                canDownload: false,
+                lockReason: '',
+                caption: caption,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+const _level = LearningLevel(
+  id: 'level-1',
+  moduleId: 'english',
+  stage: 1,
+  levelNumber: 1,
+  title: 'Meet A',
+  subtitle: 'Look and listen.',
+  type: LevelType.flashcards,
+  passingScore: 1,
+  isBundled: true,
+  contentItems: [
+    ContentItem(
+      title: 'A',
+      prompt: 'Say A',
+      displayText: 'A',
+      visualLabel: 'Apple',
+    ),
+    ContentItem(
+      title: 'B',
+      prompt: 'Say B',
+      displayText: 'B',
+      visualLabel: 'Ball',
+    ),
+  ],
+);

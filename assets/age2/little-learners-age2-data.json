@@ -1,0 +1,159 @@
+{
+  "age": 2,
+  "phase": "Basic Tap & Identification",
+  "modules": {
+
+    "english": {
+      "level_1": {
+        "component": "two-choice-tap",
+        "title": "Letter Choice (2 Options)",
+        "items": [
+          { "target": "A", "distractor": "B", "audio_prompt": "assets/audio/en/where_is_A.mp3", "target_audio": "assets/audio/en/letter_A.mp3" },
+          { "target": "C", "distractor": "D", "audio_prompt": "assets/audio/en/where_is_C.mp3", "target_audio": "assets/audio/en/letter_C.mp3" },
+          { "target": "E", "distractor": "F", "audio_prompt": "assets/audio/en/where_is_E.mp3", "target_audio": "assets/audio/en/letter_E.mp3" },
+          { "target": "M", "distractor": "N", "audio_prompt": "assets/audio/en/where_is_M.mp3", "target_audio": "assets/audio/en/letter_M.mp3" },
+          { "target": "S", "distractor": "T", "audio_prompt": "assets/audio/en/where_is_S.mp3", "target_audio": "assets/audio/en/letter_S.mp3" }
+        ],
+        "feedback": { "correct_sound": "assets/audio/sfx/applause.mp3", "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3" }
+      },
+      "level_2": {
+        "component": "identify-and-tap",
+        "title": "Phonics Matching",
+        "items": [
+          { "image": "assets/img/duck.png", "correct_letter": "D", "wrong_letter": "M", "audio_prompt": "assets/audio/en/what_letter_duck.mp3" },
+          { "image": "assets/img/sun.png", "correct_letter": "S", "wrong_letter": "T", "audio_prompt": "assets/audio/en/what_letter_sun.mp3" },
+          { "image": "assets/img/cat.png", "correct_letter": "C", "wrong_letter": "K", "audio_prompt": "assets/audio/en/what_letter_cat.mp3" },
+          { "image": "assets/img/ball.png", "correct_letter": "B", "wrong_letter": "P", "audio_prompt": "assets/audio/en/what_letter_ball.mp3" }
+        ]
+      },
+      "level_3": {
+        "component": "listen-and-see",
+        "title": "Sight Words Visuals",
+        "items": [
+          { "word": "CAT", "image": "assets/img/cat.png", "audio": "assets/audio/en/word_cat.mp3" },
+          { "word": "DOG", "image": "assets/img/dog.png", "audio": "assets/audio/en/word_dog.mp3" },
+          { "word": "SUN", "image": "assets/img/sun.png", "audio": "assets/audio/en/word_sun.mp3" },
+          { "word": "HAT", "image": "assets/img/hat.png", "audio": "assets/audio/en/word_hat.mp3" },
+          { "word": "CUP", "image": "assets/img/cup.png", "audio": "assets/audio/en/word_cup.mp3" },
+          { "word": "PARROT", "image": "assets/img/parrot.png", "audio": "assets/audio/en/word_parrot.mp3" }
+        ]
+      }
+    },
+
+    "urdu": {
+      "title": "اردو",
+      "level_1": {
+        "component": "two-choice-tap",
+        "title": "حرف کی پہچان",
+        "items": [
+          { "target": "Alif", "distractor": "Bay", "audio_prompt": "assets/audio/ur/alif_kahan_hai.mp3", "target_audio": "assets/audio/ur/harf_alif.mp3" },
+          { "target": "Jeem", "distractor": "Hay", "audio_prompt": "assets/audio/ur/jeem_kahan_hai.mp3", "target_audio": "assets/audio/ur/harf_jeem.mp3" },
+          { "target": "Daal", "distractor": "Zaal", "audio_prompt": "assets/audio/ur/daal_kahan_hai.mp3", "target_audio": "assets/audio/ur/harf_daal.mp3" }
+        ],
+        "feedback": { "correct_sound": "assets/audio/sfx/applause.mp3", "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3" }
+      },
+      "level_2": {
+        "component": "identify-and-tap",
+        "title": "نقطوں کی پہچان",
+        "items": [
+          { "image": "assets/img/ur/bay_shape.png", "correct_letter": "Bay", "wrong_letter": "Pay", "audio_prompt": "assets/audio/ur/nuqta_bay.mp3" },
+          { "image": "assets/img/ur/pay_shape.png", "correct_letter": "Pay", "wrong_letter": "Tay", "audio_prompt": "assets/audio/ur/nuqta_pay.mp3" },
+          { "image": "assets/img/ur/tay_shape.png", "correct_letter": "Tay", "wrong_letter": "Bay", "audio_prompt": "assets/audio/ur/nuqta_tay.mp3" },
+          { "image": "assets/img/ur/say_shape.png", "correct_letter": "Say", "wrong_letter": "Tay", "audio_prompt": "assets/audio/ur/nuqta_say.mp3" },
+          { "image": "assets/img/ur/jeem_shape.png", "correct_letter": "Jeem", "wrong_letter": "Che", "audio_prompt": "assets/audio/ur/nuqta_jeem.mp3" },
+          { "image": "assets/img/ur/che_shape.png", "correct_letter": "Che", "wrong_letter": "Hay", "audio_prompt": "assets/audio/ur/nuqta_che.mp3" },
+          { "image": "assets/img/ur/hay_shape.png", "correct_letter": "Hay", "wrong_letter": "Khay", "audio_prompt": "assets/audio/ur/nuqta_hay.mp3" },
+          { "image": "assets/img/ur/khay_shape.png", "correct_letter": "Khay", "wrong_letter": "Jeem", "audio_prompt": "assets/audio/ur/nuqta_khay.mp3" }
+        ]
+      },
+      "level_3": {
+        "component": "identify-and-tap",
+        "title": "اردو الفاظ اور تصویریں",
+        "items": [
+          { "image": "assets/img/anaar.png", "correct_letter": "Alif", "wrong_letter": "Bay", "audio_prompt": "assets/audio/ur/anaar_pehla_harf.mp3" },
+          { "image": "assets/img/billi.png", "correct_letter": "Bay", "wrong_letter": "Jeem", "audio_prompt": "assets/audio/ur/billi_pehla_harf.mp3" },
+          { "image": "assets/img/apple.png", "correct_letter": "Seen", "wrong_letter": "Alif", "audio_prompt": "assets/audio/ur/seb_pehla_harf.mp3" },
+          { "image": "assets/img/banana.png", "correct_letter": "Kaf", "wrong_letter": "Bay", "audio_prompt": "assets/audio/ur/kela_pehla_harf.mp3" },
+          { "image": "assets/img/car.png", "correct_letter": "Gaaf", "wrong_letter": "Kaf", "audio_prompt": "assets/audio/ur/gari_pehla_harf.mp3" },
+          { "image": "assets/img/parrot.png", "correct_letter": "Tay", "wrong_letter": "Bay", "audio_prompt": "assets/audio/ur/tota_pehla_harf.mp3" },
+          { "image": "assets/img/sun.png", "correct_letter": "Seen", "wrong_letter": "Alif", "audio_prompt": "assets/audio/ur/suraj_pehla_harf.mp3" }
+        ]
+      }
+    },
+
+    "math": {
+      "level_1": {
+        "component": "tap-to-count",
+        "title": "Counting 1 to 5",
+        "items": [
+          { "object_image": "assets/img/star.png", "count": 3, "audio_numbers": ["assets/audio/num/1.mp3", "assets/audio/num/2.mp3", "assets/audio/num/3.mp3"] },
+          { "object_image": "assets/img/ball_red.png", "count": 5, "audio_numbers": ["assets/audio/num/1.mp3", "assets/audio/num/2.mp3", "assets/audio/num/3.mp3", "assets/audio/num/4.mp3", "assets/audio/num/5.mp3"] }
+        ]
+      },
+      "level_2": {
+        "component": "identify-and-tap",
+        "title": "Shapes & Colors",
+        "items": [
+          { "shape": "circle", "color": "red", "basket_options": ["red", "blue"], "image": "assets/img/red_circle.png" },
+          { "shape": "square", "color": "blue", "basket_options": ["blue", "yellow"], "image": "assets/img/blue_square.png" },
+          { "shape": "triangle", "color": "yellow", "basket_options": ["yellow", "red"], "image": "assets/img/yellow_triangle.png" }
+        ]
+      },
+      "level_3": {
+        "component": "two-choice-tap",
+        "title": "Big vs Small",
+        "note": "For dog/cat/car/duck, render the SAME image at two different display sizes in code instead of using separate big/small image files.",
+        "items": [
+          { "object": "elephant", "big_image": "assets/img/elephant_big.png", "small_image": "assets/img/elephant_small.png", "audio_prompt": "assets/audio/en/tap_big_elephant.mp3" },
+          { "object": "ball", "big_image": "assets/img/ball_big.png", "small_image": "assets/img/ball_small.png", "audio_prompt": "assets/audio/en/tap_big_ball.mp3" },
+          { "object": "dog", "image": "assets/img/dog.png", "render_sizes_in_code": true, "audio_prompt": "assets/audio/en/tap_big_dog.mp3" },
+          { "object": "cat", "image": "assets/img/cat.png", "render_sizes_in_code": true, "audio_prompt": "assets/audio/en/tap_big_cat.mp3" },
+          { "object": "car", "image": "assets/img/car.png", "render_sizes_in_code": true, "audio_prompt": "assets/audio/en/tap_big_car.mp3" },
+          { "object": "duck", "image": "assets/img/duck.png", "render_sizes_in_code": true, "audio_prompt": "assets/audio/en/tap_big_duck.mp3" }
+        ]
+      }
+    },
+
+    "logic": {
+      "note": "Included per client spec — Age 2 is the first age where Logic module is visible to the child (Age 1 keeps it hidden).",
+      "level_1": {
+        "component": "shadow-match",
+        "title": "Shadow Matching",
+        "items": [
+          { "object_image": "assets/img/cat.png", "correct_shadow": "assets/img/shadow_cat.png", "wrong_shadow": "assets/img/shadow_dog.png" },
+          { "object_image": "assets/img/car.png", "correct_shadow": "assets/img/shadow_car.png", "wrong_shadow": "assets/img/shadow_ball.png" }
+        ]
+      },
+      "level_2": {
+        "component": "puzzle",
+        "piece_count": 2,
+        "title": "2-Piece Puzzle",
+        "items": [
+          { "full_image": "assets/img/apple.png", "piece_1": "assets/img/apple_half_1.png", "piece_2": "assets/img/apple_half_2.png" }
+        ]
+      },
+      "level_3": {
+        "component": "odd-one-out",
+        "title": "Odd One Out",
+        "items": [
+          { "items": ["assets/img/apple.png", "assets/img/banana.png", "assets/img/orange.png", "assets/img/car.png"], "odd_item_index": 3 },
+          { "items": ["assets/img/cat.png", "assets/img/dog.png", "assets/img/duck.png", "assets/img/car.png"], "odd_item_index": 3 },
+          { "items": ["assets/img/red_circle.png", "assets/img/blue_square.png", "assets/img/yellow_triangle.png", "assets/img/star.png"], "odd_item_index": 3 },
+          { "items": ["assets/img/ball.png", "assets/img/ball_big.png", "assets/img/ball_small.png", "assets/img/car.png"], "odd_item_index": 3 },
+          { "items": ["assets/img/sun.png", "assets/img/star.png", "assets/img/red_circle.png", "assets/img/car.png"], "odd_item_index": 3 }
+        ]
+      }
+    },
+
+    "storytelling": {
+      "habit_stories": {
+        "component": "story-interactive",
+        "title": "Washing Hands",
+        "audio_narration": "assets/audio/stories/washing_hands.mp3",
+        "illustration_sequence": ["assets/img/story/wash_1.png", "assets/img/story/wash_2.png", "assets/img/story/wash_3.png"],
+        "choice_point": { "prompt": "Tap the soap!", "correct_image": "assets/img/story/soap.png" }
+      }
+    }
+
+  }
+}

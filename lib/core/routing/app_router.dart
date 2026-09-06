@@ -4,6 +4,10 @@ import '../../models/canvas_work.dart';
 import '../../models/learning_level.dart';
 import '../../models/parent_mark.dart';
 import '../../models/video_lesson.dart';
+import '../../views/activity_pack/activity_age_picker_page.dart';
+import '../../views/activity_pack/activity_level_page.dart';
+import '../../views/activity_pack/activity_levels_page.dart';
+import '../../views/activity_pack/activity_modules_page.dart';
 import '../../views/admin/admin_ai_authoring_page.dart';
 import '../../views/admin/admin_content_page.dart';
 import '../../views/admin/admin_dashboard_page.dart';
@@ -36,6 +40,7 @@ import '../../views/splash/splash_page.dart';
 import '../../views/video/video_learning_page.dart';
 import '../../views/video/video_player_page.dart';
 import '../../widgets/play/play_route.dart';
+import 'gentle_page_route.dart';
 import 'route_names.dart';
 
 class CelebrationArgs {
@@ -135,6 +140,35 @@ class AppRouter {
         builder: (_) => ParentMarkingPage(
           args: settings.arguments! as ParentMarkingArgs,
         ),
+      );
+    }
+
+    // The age-2 screens fade and rise rather than slamming in from the edge.
+    // See [GentlePageRoute] for why a toddler needs the slower transition.
+    if (settings.name == RouteNames.activityAges) {
+      return GentlePageRoute<void>(
+        settings: settings,
+        builder: (_) => const ActivityAgePickerPage(),
+      );
+    }
+    if (settings.name == RouteNames.activityModules) {
+      return GentlePageRoute<void>(
+        settings: settings,
+        builder: (_) => const ActivityModulesPage(),
+      );
+    }
+    if (settings.name == RouteNames.activityLevels) {
+      return GentlePageRoute<void>(
+        settings: settings,
+        builder: (_) =>
+            ActivityLevelsPage(args: settings.arguments! as ActivityLevelsArgs),
+      );
+    }
+    if (settings.name == RouteNames.activityLevel) {
+      return GentlePageRoute<void>(
+        settings: settings,
+        builder: (_) =>
+            ActivityLevelPage(args: settings.arguments! as ActivityLevelArgs),
       );
     }
 

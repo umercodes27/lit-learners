@@ -49,6 +49,7 @@ import 'services/local/db_helper.dart';
 import 'services/local/progress_dao.dart';
 import 'services/local/sync_outbox_dao.dart';
 import 'services/notifications/local_notification_service.dart';
+import 'services/auth/last_account_store.dart';
 import 'services/audio/audioplayers_sound_controller.dart';
 import 'services/audio/koala_audio_player.dart';
 import 'services/audio/sound_controller.dart';
@@ -389,7 +390,12 @@ class LittleLearnersApp extends StatelessWidget {
         Provider<LeaderboardSyncService>.value(
           value: _leaderboardSyncService,
         ),
-        ChangeNotifierProvider(create: (_) => AuthViewModel(_authRepository)),
+        ChangeNotifierProvider(
+          create: (_) => AuthViewModel(
+            _authRepository,
+            lastAccountStore: LocalLastAccountStore(dbHelper: _localDbHelper),
+          ),
+        ),
         ChangeNotifierProvider(
           create: (_) => AdminAuthViewModel(_adminAuthRepository),
         ),

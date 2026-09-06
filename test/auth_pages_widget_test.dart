@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:little_learners/core/theme/app_theme.dart';
 import 'package:little_learners/repositories/auth_repository.dart';
+import 'package:little_learners/services/auth/last_account_store.dart';
 import 'package:little_learners/viewmodels/auth_viewmodel.dart';
 import 'package:little_learners/views/auth/forgot_password_page.dart';
 import 'package:little_learners/views/auth/login_page.dart';
@@ -43,6 +44,52 @@ void main() {
       findsOneWidget,
     );
     expect(errorCapture.errors, isEmpty);
+  });
+
+  testWidgets('a returning parent finds their address already filled in',
+      (tester) async {
+    await _pumpAuthPage(
+      tester,
+      const LoginPage(),
+      lastAccountStore: InMemoryLastAccountStore('parent@example.com'),
+      size: const Size(320, 700),
+    );
+
+    // The address the last sign-in used, back in the field, with a way out of
+    // it for whoever is not that parent.
+    final email = tester.widget<TextField>(find.byType(TextField).first);
+    expect(email.controller?.text, 'parent@example.com');
+    expect(find.text('Not you?'), findsOneWidget);
+  });
+
+  testWidgets('a first-time parent gets an empty field and no way out of it',
+      (tester) async {
+    await _pumpAuthPage(
+      tester,
+      const LoginPage(),
+      lastAccountStore: InMemoryLastAccountStore(),
+      size: const Size(320, 700),
+    );
+
+    final email = tester.widget<TextField>(find.byType(TextField).first);
+    expect(email.controller?.text, isEmpty);
+    expect(find.text('Not you?'), findsNothing);
+  });
+
+  testWidgets('"Not you?" empties the field', (tester) async {
+    await _pumpAuthPage(
+      tester,
+      const LoginPage(),
+      lastAccountStore: InMemoryLastAccountStore('parent@example.com'),
+      size: const Size(320, 700),
+    );
+
+    await tester.tap(find.text('Not you?'));
+    await tester.pumpAndSettle();
+
+    final email = tester.widget<TextField>(find.byType(TextField).first);
+    expect(email.controller?.text, isEmpty);
+    expect(find.text('Not you?'), findsNothing);
   });
 
   testWidgets('LoginPage offers Google alongside the password form',
@@ -100,6 +147,7 @@ Future<void> _pumpAuthPage(
   WidgetTester tester,
   Widget page, {
   InMemoryAuthRepository? repository,
+  LastAccountStore? lastAccountStore,
   Size size = const Size(320, 568),
 }) async {
   tester.view.physicalSize = size;
@@ -109,7 +157,10 @@ Future<void> _pumpAuthPage(
 
   await tester.pumpWidget(
     ChangeNotifierProvider(
-      create: (_) => AuthViewModel(repository ?? InMemoryAuthRepository()),
+      create: (_) => AuthViewModel(
+        repository ?? InMemoryAuthRepository(),
+        lastAccountStore: lastAccountStore,
+      ),
       child: MaterialApp(
         theme: AppTheme.light(),
         home: page,

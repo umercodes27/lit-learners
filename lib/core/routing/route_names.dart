@@ -34,4 +34,11 @@ class RouteNames {
   static const celebration = '/child/celebration';
   static const videoLearning = '/child/video';
   static const videoPlayer = '/child/video/player';
+
+  /// Age-pack activities, driven entirely by a content JSON rather than the
+  /// Firestore-backed module tree the other child routes use.
+  static const activityAges = '/child/activities/ages';
+  static const activityModules = '/child/activities';
+  static const activityLevels = '/child/activities/levels';
+  static const activityLevel = '/child/activities/level';
 }

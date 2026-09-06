@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/ai_level_draft.dart';
+import '../core/utils/age_stage_helper.dart';
 import '../models/learning_level.dart';
 import '../models/learning_module.dart';
 import '../services/ai/ai_content_generator.dart';
@@ -32,7 +33,7 @@ class AiContentViewModel extends ChangeNotifier {
   bool get hasKey => _credentials.isConfigured;
 
   String? _moduleId;
-  int _stage = 1;
+  int _stage = AgeStageHelper.minStage;
   int _levelCount = 3;
   LevelType _type = LevelType.flashcards;
   String _guidance = '';
@@ -149,7 +150,11 @@ class AiContentViewModel extends ChangeNotifier {
 
   List<int> stagesFor(List<LearningModule> modules) {
     final module = modules.where((m) => m.id == _moduleId).firstOrNull;
-    if (module == null) return const [1, 2, 3, 4];
+    if (module == null) {
+      return [
+        for (var stage = AgeStageHelper.minStage; stage <= 4; stage++) stage,
+      ];
+    }
     return [
       for (var stage = module.minStage; stage <= module.maxStage; stage++)
         stage,

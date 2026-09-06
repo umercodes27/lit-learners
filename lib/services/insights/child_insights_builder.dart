@@ -44,9 +44,18 @@ class ChildInsightsBuilder {
     // Only what this child can actually reach. Measuring a two-year-old
     // against the four-year-old ladder would make every report look like
     // failure.
+    //
+    // At or below, not equal to. When a module has nothing authored at the
+    // child's own stage, the content repository deliberately serves the
+    // nearest lower stage rather than an empty subject — so those levels are
+    // what the child is actually playing. Matching the stage exactly here
+    // threw them straight back out, leaving the module with no levels at all,
+    // and a module with no levels is skipped: the subject then vanished from
+    // the report entirely, which is exactly what a newly authored module
+    // looked like.
     final reachable = [
       for (final level in levels)
-        if (level.stage == stage) level,
+        if (level.stage <= stage) level,
     ];
 
     final progressByLevel = {

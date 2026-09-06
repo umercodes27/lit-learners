@@ -2,10 +2,14 @@ import 'package:flutter/foundation.dart';
 
 import '../core/utils/age_stage_helper.dart';
 import '../models/learning_level.dart';
+import '../models/learning_module.dart';
 import '../models/parent_report.dart';
 import '../repositories/content_repository.dart';
 import '../repositories/parent_report_repository.dart';
 import '../services/ai/llm_client.dart';
+import '../services/content/activity_pack_loader.dart';
+import '../services/content/activity_pack_stops.dart';
+import '../services/content/module_activity_bridge.dart';
 import '../services/insights/child_insights.dart';
 import '../services/insights/child_insights_builder.dart';
 import '../services/insights/progress_summary_service.dart';
@@ -84,6 +88,11 @@ class ParentReportViewModel extends ChangeNotifier {
           await content.getLevelsForModule(moduleId: module.id, stage: stage),
         );
       }
+      levels.addAll(await _packLevels(
+        modules: modules,
+        age: child.profile.age,
+        stage: stage,
+      ));
 
       _insights[child.profile.id] = _insightsBuilder.build(
         report: child,
@@ -93,6 +102,47 @@ class ParentReportViewModel extends ChangeNotifier {
     }
 
     await _loadCachedSummaries();
+  }
+
+  /// The age-pack levels this child plays, drawn the same way the level map
+  /// draws them.
+  ///
+  /// The packs are a second content system: JSON bundled with the app rather
+  /// than rows in the module tree. Finishing one still writes an ordinary
+  /// progress row, keyed by the drawn level's id — so without this the report
+  /// held real progress it could not attribute to anything, and a subject the
+  /// child had been playing all week was reported as never started.
+  ///
+  /// A pack that will not load costs nothing here. The report is built from
+  /// the seeded ladder either way, and a parent seeing slightly less is a far
+  /// better failure than a parent seeing an error.
+  Future<List<LearningLevel>> _packLevels({
+    required List<LearningModule> modules,
+    required int age,
+    required int stage,
+  }) async {
+    final result = await ActivityPackLoader.forPath(
+      ModuleActivityBridge.packPathFor(age),
+    ).load(path: ModuleActivityBridge.packPathFor(age));
+
+    final pack = result.pack;
+    if (pack == null) return const [];
+
+    final levels = <LearningLevel>[];
+    for (final module in modules) {
+      final key = ModuleActivityBridge.packModuleKeyFor(module.id);
+      if (key == null) continue;
+
+      final packModule = pack.moduleByKey(key);
+      if (packModule == null) continue;
+
+      levels.addAll(ActivityPackStops.levelsFor(
+        packModule,
+        moduleId: module.id,
+        stage: stage,
+      ));
+    }
+    return levels;
   }
 
   /// Only summaries that are still true of the child are restored. One

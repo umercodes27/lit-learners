@@ -754,13 +754,13 @@ class _ModuleForm extends StatelessWidget {
           AdminIntDropdown(
             label: 'Min stage',
             value: minStage,
-            values: const [1, 2, 3, 4],
+            values: const [2, 3, 4],
             onChanged: onMinStageChanged,
           ),
           AdminIntDropdown(
             label: 'Max stage',
             value: maxStage,
-            values: const [1, 2, 3, 4],
+            values: const [2, 3, 4],
             onChanged: onMaxStageChanged,
           ),
           SwitchListTile(
@@ -889,7 +889,7 @@ class _LevelForm extends StatelessWidget {
           AdminIntDropdown(
             label: 'Stage',
             value: stage,
-            values: const [1, 2, 3, 4],
+            values: const [2, 3, 4],
             onChanged: onStageChanged,
           ),
           AdminEnumDropdown<LevelType>(

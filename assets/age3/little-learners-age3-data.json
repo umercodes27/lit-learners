@@ -1,0 +1,178 @@
+{
+  "age": 3,
+  "phase": "Drag, Sort & Tracing Intro",
+  "modules": {
+
+    "english": {
+      "level_1": {
+        "component": "tracing",
+        "title": "Tracing Letters A-M",
+        "note": "No image assets needed — the component renders each letter's outline directly from a font, with guided directional arrows drawn by the app itself.",
+        "items": [
+          { "letter": "A", "audio": "assets/audio/en/letter_A.mp3" },
+          { "letter": "B", "audio": "assets/audio/en/letter_B.mp3" },
+          { "letter": "C", "audio": "assets/audio/en/letter_C.mp3" },
+          { "letter": "D", "audio": "assets/audio/en/letter_D.mp3" },
+          { "letter": "E", "audio": "assets/audio/en/letter_E.mp3" },
+          { "letter": "F", "audio": "assets/audio/en/letter_F.mp3" },
+          { "letter": "G", "audio": "assets/audio/en/letter_G.mp3" },
+          { "letter": "H", "audio": "assets/audio/en/letter_H.mp3" },
+          { "letter": "I", "audio": "assets/audio/en/letter_I.mp3" },
+          { "letter": "J", "audio": "assets/audio/en/letter_J.mp3" },
+          { "letter": "K", "audio": "assets/audio/en/letter_K.mp3" },
+          { "letter": "L", "audio": "assets/audio/en/letter_L.mp3" },
+          { "letter": "M", "audio": "assets/audio/en/letter_M.mp3" }
+        ],
+        "reward_sound": "assets/audio/sfx/applause.mp3"
+      },
+      "level_2": {
+        "component": "tracing",
+        "title": "Tracing Letters N-Z",
+        "note": "Same as Level 1 — no images needed.",
+        "items": [
+          { "letter": "N", "audio": "assets/audio/en/letter_N.mp3" },
+          { "letter": "O", "audio": "assets/audio/en/letter_O.mp3" },
+          { "letter": "P", "audio": "assets/audio/en/letter_P.mp3" },
+          { "letter": "Q", "audio": "assets/audio/en/letter_Q.mp3" },
+          { "letter": "R", "audio": "assets/audio/en/letter_R.mp3" },
+          { "letter": "S", "audio": "assets/audio/en/letter_S.mp3" },
+          { "letter": "T", "audio": "assets/audio/en/letter_T.mp3" },
+          { "letter": "U", "audio": "assets/audio/en/letter_U.mp3" },
+          { "letter": "V", "audio": "assets/audio/en/letter_V.mp3" },
+          { "letter": "W", "audio": "assets/audio/en/letter_W.mp3" },
+          { "letter": "X", "audio": "assets/audio/en/letter_X.mp3" },
+          { "letter": "Y", "audio": "assets/audio/en/letter_Y.mp3" },
+          { "letter": "Z", "audio": "assets/audio/en/letter_Z.mp3" }
+        ],
+        "reward_sound": "assets/audio/sfx/applause.mp3"
+      },
+      "level_3": {
+        "component": "drag-and-match",
+        "title": "Drag & Match",
+        "items": [
+          { "letter": "C", "image": "assets/img/cat.png", "id_pair": "cat" },
+          { "letter": "D", "image": "assets/img/dog.png", "id_pair": "dog" },
+          { "letter": "B", "image": "assets/img/ball.png", "id_pair": "ball" },
+          { "letter": "S", "image": "assets/img/sun.png", "id_pair": "sun" }
+        ],
+        "feedback": { "correct_sound": "assets/audio/sfx/applause.mp3", "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3" }
+      }
+    },
+
+    "urdu": {
+      "level_1": {
+        "component": "tracing",
+        "title": "Tracing Huroof (Alif to Se)",
+        "note": "No images needed — rendered from font, right-to-left stroke direction.",
+        "items": [
+          { "letter": "Alif", "audio": "assets/audio/ur/harf_alif.mp3" },
+          { "letter": "Bay", "audio": "assets/audio/ur/harf_bay.mp3" },
+          { "letter": "Pay", "audio": "assets/audio/ur/harf_pay.mp3" },
+          { "letter": "Tay", "audio": "assets/audio/ur/harf_tay.mp3" },
+          { "letter": "Tay (Te)", "audio": "assets/audio/ur/harf_tte.mp3" },
+          { "letter": "Se", "audio": "assets/audio/ur/harf_se.mp3" }
+        ]
+      },
+      "level_2": {
+        "component": "tracing",
+        "title": "Tracing Huroof (Jeem to Yay)",
+        "note": "No images needed.",
+        "items": [
+          { "letter": "Jeem", "audio": "assets/audio/ur/harf_jeem.mp3" },
+          { "letter": "Che", "audio": "assets/audio/ur/harf_che.mp3" },
+          { "letter": "Hay", "audio": "assets/audio/ur/harf_hay.mp3" },
+          { "letter": "Khay", "audio": "assets/audio/ur/harf_khay.mp3" },
+          { "letter": "Daal", "audio": "assets/audio/ur/harf_daal.mp3" },
+          { "letter": "Yay", "audio": "assets/audio/ur/harf_yay.mp3" }
+        ]
+      },
+      "level_3": {
+        "component": "drag-and-match",
+        "title": "Drag & Match Urdu",
+        "items": [
+          { "letter": "Bay", "image": "assets/img/ur/billi.png", "id_pair": "billi" },
+          { "letter": "Alif", "image": "assets/img/ur/anaar.png", "id_pair": "anaar" }
+        ],
+        "feedback": { "correct_sound": "assets/audio/sfx/applause.mp3", "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3" }
+      }
+    },
+
+    "math": {
+      "level_1": {
+        "component": "counting-drag",
+        "title": "Counting 1 to 10",
+        "items": [
+          { "objects": "assets/img/star.png", "target_count": 7 },
+          { "objects": "assets/img/apple.png", "target_count": 10 }
+        ],
+        "audio_numbers_folder": "assets/audio/num"
+      },
+      "level_2": {
+        "component": "tracing",
+        "title": "Number Tracing 1-5",
+        "note": "No images needed — numerals rendered from font.",
+        "items": [
+          { "number": "1", "audio": "assets/audio/num/1.mp3" },
+          { "number": "2", "audio": "assets/audio/num/2.mp3" },
+          { "number": "3", "audio": "assets/audio/num/3.mp3" },
+          { "number": "4", "audio": "assets/audio/num/4.mp3" },
+          { "number": "5", "audio": "assets/audio/num/5.mp3" }
+        ]
+      },
+      "level_3": {
+        "component": "two-choice-tap",
+        "title": "More vs Less",
+        "items": [
+          { "plate_a_count": 3, "plate_b_count": 5, "images": "assets/img/apple.png", "audio_prompt": "assets/audio/en/which_has_more.mp3" }
+        ]
+      }
+    },
+
+    "logic": {
+      "level_1": {
+        "component": "sort-into-zones",
+        "title": "Categorization",
+        "items": [
+          { "item": "assets/img/cat.png", "correct_zone": "farm" },
+          { "item": "assets/img/dog.png", "correct_zone": "farm" },
+          { "item": "assets/img/car.png", "correct_zone": "road" }
+        ],
+        "zones": { "farm": "assets/img/zone_farm.png", "road": "assets/img/zone_road.png" }
+      },
+      "level_2": {
+        "component": "puzzle",
+        "piece_count": 4,
+        "title": "4-Piece Puzzle",
+        "note": "Pieces are generated in code by splitting full_image into a 2x2 grid — no separate piece image files needed.",
+        "items": [
+          { "full_image": "assets/img/duck.png" }
+        ]
+      },
+      "level_3": {
+        "component": "pattern-complete",
+        "title": "Pattern Completion",
+        "items": [
+          { "sequence": ["assets/img/ball_red.png", "assets/img/blue_square.png", "assets/img/ball_red.png"], "correct_answer": "assets/img/blue_square.png", "options": ["assets/img/blue_square.png", "assets/img/red_circle.png"] }
+        ]
+      }
+    },
+
+    "storytelling": {
+      "moral_stories": {
+        "component": "story-interactive",
+        "title": "Sharing and Kindness",
+        "audio_narration": "assets/audio/stories/sharing_kindness.mp3",
+        "illustration_sequence": ["assets/img/story/share_1.png", "assets/img/story/share_2.png", "assets/img/story/share_3.png"],
+        "choice_point": { "prompt": "What should you do?", "correct_answer": "share_toy" }
+      },
+      "daily_routine_stories": {
+        "component": "story-interactive",
+        "title": "My Day",
+        "sequence_mode": true,
+        "audio_narration": "assets/audio/stories/my_day.mp3",
+        "illustration_sequence": ["assets/img/story/wake_up.png", "assets/img/story/breakfast.png", "assets/img/story/play.png", "assets/img/story/brush_teeth.png", "assets/img/story/sleep.png"]
+      }
+    }
+
+  }
+}

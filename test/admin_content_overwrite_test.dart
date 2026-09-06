@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:little_learners/core/utils/age_stage_helper.dart';
 import 'package:little_learners/models/learning_level.dart';
 import 'package:little_learners/models/learning_module.dart';
 import 'package:little_learners/repositories/admin_content_repository.dart';
@@ -23,7 +24,7 @@ Future<bool> createMath(
     title: title,
     description: 'Numbers',
     category: ModuleCategory.math,
-    minStage: 1,
+    minStage: AgeStageHelper.minStage,
     maxStage: 4,
     order: 1,
     isPublished: true,
@@ -52,7 +53,7 @@ void main() {
       await vm.createLevel(
         id: '',
         moduleId: 'math',
-        stage: 1,
+        stage: AgeStageHelper.minStage,
         levelNumber: 1,
         title: 'Count to 3',
         subtitle: 'Together',
@@ -84,7 +85,7 @@ void main() {
         title: 'Math',
         description: 'Again',
         category: ModuleCategory.math,
-        minStage: 1,
+        minStage: AgeStageHelper.minStage,
         maxStage: 4,
         order: 2,
         isPublished: true,
@@ -116,7 +117,7 @@ void main() {
         title: 'Shapes',
         description: 'Circles and squares',
         category: ModuleCategory.logic,
-        minStage: 1,
+        minStage: AgeStageHelper.minStage,
         maxStage: 4,
         order: 9,
         isPublished: true,
@@ -136,7 +137,7 @@ void main() {
       return vm.createLevel(
         id: '',
         moduleId: 'math',
-        stage: 1,
+        stage: AgeStageHelper.minStage,
         levelNumber: 1,
         title: title,
         subtitle: 'Together',

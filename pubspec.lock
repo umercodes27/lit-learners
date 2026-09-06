@@ -189,10 +189,10 @@ packages:
     dependency: transitive
     description:
       name: dev_build
-      sha256: f639b36c1cf845c11b506b562e162eca84f2cb368cf9cca48117069f881d4be8
+      sha256: f2742f154e484a52471dcc7eda17e6da06ab8b1d0a64b4845710d5de4fa9cc47
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.8+3"
+    version: "1.1.7+4"
   equatable:
     dependency: transitive
     description:
@@ -435,6 +435,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.0"
+  flutter_tts:
+    dependency: "direct main"
+    description:
+      name: flutter_tts
+      sha256: ce5eb209b40e95f2f4a1397116c87ab2fcdff32257d04ed7a764e75894c03775
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2.5"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -804,10 +812,10 @@ packages:
     dependency: transitive
     description:
       name: process_run
-      sha256: dadbf4986ddab79086a107b2f893bacd580a523453f76238bc0c13a9faa982af
+      sha256: e0e24c11a49445c449911daef46cf28d68e80a5e33daafbfbc6d6819a1f83519
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.4+1"
+    version: "1.3.3+1"
   provider:
     dependency: "direct main"
     description:

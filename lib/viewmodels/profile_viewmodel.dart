@@ -122,10 +122,10 @@ class ProfileViewModel extends ChangeNotifier {
   }) {
     final nameError = Validators.requiredText(name, 'Child name');
     if (nameError != null) return nameError;
-    // The four ages the content is authored for: `AgeStageHelper` maps each
+    // The three ages the content is authored for: `AgeStageHelper` maps each
     // one onto its own stage, and modules declare `minStage`/`maxStage` in the
-    // same 1-4 range.
-    if (age < 1 || age > 4) return 'Age must be between 1 and 4.';
+    // matching 2-4 range.
+    if (age < 2 || age > 4) return 'Age must be between 2 and 4.';
     return null;
   }
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 8+ masks the icon to the launcher's own shape. The foreground is a
+     108dp canvas with the koala disc drawn at the 72dp the launcher must keep,
+     so a circular mask lands on the disc edge and a rounded-square one shows
+     it on the cream ground below. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

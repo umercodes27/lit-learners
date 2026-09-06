@@ -6,6 +6,7 @@ import 'package:little_learners/models/parent_mark.dart';
 import 'package:little_learners/models/quiz_question.dart';
 import 'package:little_learners/models/video_lesson.dart';
 import 'package:little_learners/services/ai/content_draft_validator.dart';
+import 'package:little_learners/services/content/asset_availability.dart';
 
 const validator = ContentDraftValidator();
 
@@ -58,6 +59,20 @@ Set<DraftRule> blockingRulesOf(LearningLevel candidate) => validator
     .blocking
     .map((issue) => issue.rule)
     .toSet();
+
+LearningLevel videoLevel(String url) => level(
+      type: LevelType.video,
+      videoLessons: [
+        VideoLesson(
+          id: 'v1',
+          title: 'Clip',
+          description: 'A clip.',
+          durationLabel: '0:10',
+          videoUrl: url,
+          thumbnailLabel: 'Clip',
+        ),
+      ],
+    );
 
 void main() {
   group('golden: the validator agrees with content the app already ships', () {
@@ -251,26 +266,50 @@ void main() {
       );
     });
 
-    test('a video url that is not http(s) blocks', () {
+    test('a video url that is neither an asset nor http(s) blocks', () {
       for (final url in ['example.com/a.mp4', 'file:///tmp/a.mp4', '']) {
         expect(
-          blockingRulesOf(level(
-            type: LevelType.video,
-            videoLessons: [
-              VideoLesson(
-                id: 'v1',
-                title: 'Clip',
-                description: 'A clip.',
-                durationLabel: '0:10',
-                videoUrl: url,
-                thumbnailLabel: 'Clip',
-              ),
-            ],
-          )),
-          contains(DraftRule.videoUrlNotHttp),
+          blockingRulesOf(videoLevel(url)),
+          contains(DraftRule.videoUrlNotPlayable),
           reason: '"$url" is not playable',
         );
       }
+    });
+
+    // The player opens a bundled file as readily as a URL, and the lessons
+    // that ship today are all bundled. A validator that only knew about
+    // http(s) called all nine of them broken.
+    test('a bundled asset path is accepted', () {
+      AssetAvailability.instance.debugSeed({'assets/videos/age2/duck.mp4'});
+      addTearDown(AssetAvailability.instance.debugReset);
+
+      expect(
+        blockingRulesOf(videoLevel('assets/videos/age2/duck.mp4')),
+        isEmpty,
+      );
+    });
+
+    test('an asset path the app does not ship blocks', () {
+      AssetAvailability.instance.debugSeed({'assets/videos/age2/duck.mp4'});
+      addTearDown(AssetAvailability.instance.debugReset);
+
+      expect(
+        blockingRulesOf(videoLevel('assets/videos/age2/rabbit.mp4')),
+        contains(DraftRule.videoAssetMissing),
+        reason: 'nothing would play, and no admin could fix it without a '
+            'new release',
+      );
+    });
+
+    test('an unread manifest accuses nothing', () {
+      // `debugSeed` marks the registry populated, so this has to be the
+      // untouched singleton to prove the optimistic path.
+      expect(
+        blockingRulesOf(videoLevel('assets/videos/age2/rabbit.mp4')),
+        isEmpty,
+        reason: 'a headless test has no manifest, and guessing "missing" '
+            'would fail every video level in this suite',
+      );
     });
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:little_learners/core/utils/learning_text_direction.dart';
+import 'package:little_learners/core/utils/age_stage_helper.dart';
 import 'package:little_learners/data/seed_content.dart';
 import 'package:little_learners/models/content_item.dart';
 import 'package:little_learners/models/learning_level.dart';
@@ -224,6 +225,22 @@ void main() {
           );
         }
       }
+    });
+
+    test('nothing is authored below the youngest age the app accepts', () {
+      // Ages 2-4 map onto stages 2-4, so a stage-1 level or a module claiming
+      // to start there is content no child can reach. Stage numbers were left
+      // alone when age 1 was dropped - they are baked into progress rows and
+      // `leaderboards/stage-{n}` ids - so stage 1 still exists as a number and
+      // has to stay empty by test rather than by construction.
+      expect(
+        seedLevels.where((level) => level.stage < AgeStageHelper.minStage),
+        isEmpty,
+      );
+      expect(
+        seedModules.where((module) => module.minStage < AgeStageHelper.minStage),
+        isEmpty,
+      );
     });
   });
 }

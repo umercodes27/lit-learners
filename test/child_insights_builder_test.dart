@@ -262,6 +262,57 @@ void main() {
     expect(insights.nextUp?.moduleId, 'english');
   });
 
+  // The content repository serves a lower stage rather than an empty subject
+  // when a module has nothing at the child's own. Filtering on an exact stage
+  // match here threw those levels away, the module was left with none, and a
+  // module with no levels is skipped entirely - so a newly authored subject
+  // simply was not in the report.
+  test('a module served from a lower stage is still reported', () {
+    final insights = buildFor(
+      [done('shapes-stage2-1', 'shapes')],
+      modules: [module('shapes', 'Shapes')],
+      levels: [lvl('shapes', 1, stage: 2)],
+    );
+
+    expect(
+      insights.modules.map((m) => m.moduleId),
+      contains('shapes'),
+      reason: 'the repository chose to serve these levels to this child',
+    );
+    expect(insights.completedLevels, 1);
+  });
+
+  // Pack activities record progress against a drawn level id. The report has
+  // to be given those levels or the rows are orphans, and a subject played
+  // all week reads as never started.
+  test('progress from an age-pack activity counts towards its module', () {
+    const packLevel = LearningLevel(
+      id: 'pack:math:level_1',
+      moduleId: 'math',
+      stage: 3,
+      levelNumber: 1,
+      title: 'Count the ducks',
+      subtitle: '',
+      type: LevelType.flashcards,
+      passingScore: 0,
+      isBundled: true,
+    );
+
+    final insights = buildFor(
+      [done('pack:math:level_1', 'math')],
+      modules: [module('math', 'Math')],
+      levels: [packLevel],
+    );
+
+    expect(insights.hasStarted, isTrue);
+    expect(insights.completedLevels, 1);
+    expect(
+      insights.modules.single.moduleId,
+      'math',
+      reason: 'a pack activity is Math to the child, so it is Math here',
+    );
+  });
+
   test('the fingerprint moves on progress and not on the clock', () {
     final first = buildFor([done('math-stage3-1', 'math')]);
     final again = buildFor([done('math-stage3-1', 'math')]);

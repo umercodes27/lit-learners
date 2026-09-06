@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../core/utils/validators.dart';
 import '../models/parent_account.dart';
 import '../repositories/auth_repository.dart';
+import '../services/auth/last_account_store.dart';
 
 enum AuthFlowStatus {
   idle,
@@ -12,14 +13,22 @@ enum AuthFlowStatus {
 }
 
 class AuthViewModel extends ChangeNotifier {
-  AuthViewModel(this._authRepository);
+  AuthViewModel(this._authRepository, {LastAccountStore? lastAccountStore})
+      : _lastAccountStore = lastAccountStore ?? InMemoryLastAccountStore();
 
   final AuthRepository _authRepository;
+  final LastAccountStore _lastAccountStore;
 
   ParentAccount? _parent;
   AuthFlowStatus _status = AuthFlowStatus.idle;
   String? _errorMessage;
   String? _infoMessage;
+
+  String? _rememberedEmail;
+
+  /// The address the last parent signed in with on this device, once
+  /// [loadRememberedEmail] has been. Null until then, and after [forgetEmail].
+  String? get rememberedEmail => _rememberedEmail;
 
   ParentAccount? get parent => _parent;
   AuthFlowStatus get status => _status;
@@ -27,6 +36,20 @@ class AuthViewModel extends ChangeNotifier {
   String? get infoMessage => _infoMessage;
   bool get isLoading => _status == AuthFlowStatus.loading;
   bool get isAuthenticated => _parent != null;
+
+  /// Reads the remembered address so the sign-in screen can open with it
+  /// already filled in.
+  Future<void> loadRememberedEmail() async {
+    _rememberedEmail = await _lastAccountStore.read();
+    notifyListeners();
+  }
+
+  /// "Not you?" — drops the remembered address and leaves the field empty.
+  Future<void> forgetEmail() async {
+    await _lastAccountStore.clear();
+    _rememberedEmail = null;
+    notifyListeners();
+  }
 
   Future<void> loadCurrentParent() async {
     _status = AuthFlowStatus.loading;
@@ -78,6 +101,7 @@ class AuthViewModel extends ChangeNotifier {
 
     try {
       _parent = await _authRepository.signInWithGoogle();
+      await _remember(_parent);
       _status = AuthFlowStatus.authenticated;
       notifyListeners();
       return true;
@@ -143,6 +167,16 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Records the address that just worked, so the next visit only asks for a
+  /// password. Deliberately survives [signOut] — a parent signing out of a
+  /// family tablet is the case this exists for.
+  Future<void> _remember(ParentAccount? parent) async {
+    final email = parent?.email;
+    if (email == null || email.isEmpty) return;
+    await _lastAccountStore.write(email);
+    _rememberedEmail = email.trim().toLowerCase();
+  }
+
   Future<bool> _runAuthAction(
     Future<ParentAccount> Function() action,
   ) async {
@@ -153,6 +187,7 @@ class AuthViewModel extends ChangeNotifier {
 
     try {
       _parent = await action();
+      await _remember(_parent);
       _status = AuthFlowStatus.authenticated;
       notifyListeners();
       return true;

@@ -1,4 +1,5 @@
 import '../models/content_item.dart';
+import '../core/utils/age_stage_helper.dart';
 import '../models/learning_level.dart';
 import '../models/learning_module.dart';
 import '../models/quiz_question.dart';
@@ -12,7 +13,7 @@ import '../models/video_lesson.dart';
 /// progress and downloaded flags intact.
 ///
 /// **Bump this whenever you add, remove or edit anything in this file.**
-const bundledContentRevision = '2026-08-23-portion-ladder';
+const bundledContentRevision = '2026-09-06-age-video-lessons';
 
 const seedModules = <LearningModule>[
   LearningModule(
@@ -20,7 +21,7 @@ const seedModules = <LearningModule>[
     title: 'Math',
     description: 'Numbers, counting, and shapes.',
     category: ModuleCategory.math,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 1,
   ),
@@ -29,7 +30,7 @@ const seedModules = <LearningModule>[
     title: 'English',
     description: 'Letters, sounds, and simple words.',
     category: ModuleCategory.english,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 2,
   ),
@@ -38,7 +39,7 @@ const seedModules = <LearningModule>[
     title: 'اردو',
     description: 'حروف، آوازیں، اور آسان الفاظ۔',
     category: ModuleCategory.urdu,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 3,
   ),
@@ -47,7 +48,7 @@ const seedModules = <LearningModule>[
     title: 'Video Learning',
     description: 'Short guided lessons with parent-friendly pacing.',
     category: ModuleCategory.video,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 4,
   ),
@@ -56,7 +57,7 @@ const seedModules = <LearningModule>[
     title: 'Logic',
     description: 'Patterns, sorting, and tiny thinking puzzles.',
     category: ModuleCategory.logic,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 5,
   ),
@@ -65,7 +66,7 @@ const seedModules = <LearningModule>[
     title: 'Stories',
     description: 'Picture stories with gentle narration.',
     category: ModuleCategory.story,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 6,
   ),
@@ -74,7 +75,7 @@ const seedModules = <LearningModule>[
     title: 'Drawing',
     description: 'Free drawing and coloring activities.',
     category: ModuleCategory.drawing,
-    minStage: 1,
+    minStage: 2,
     maxStage: 4,
     order: 7,
   ),
@@ -105,32 +106,6 @@ final seedLevels = <LearningLevel>[
 ];
 
 const _authoredLevels = <LearningLevel>[
-  LearningLevel(
-    id: 'math-stage1-1',
-    portionLabel: '1 – 2',
-    moduleId: 'math',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Meet 1 and 2',
-    subtitle: 'Tap, count, and say the numbers aloud.',
-    type: LevelType.counting,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'One',
-        prompt: 'Point to one bright block.',
-        displayText: '1',
-        visualLabel: 'One block',
-      ),
-      ContentItem(
-        title: 'Two',
-        prompt: 'Count two friendly blocks.',
-        displayText: '2',
-        visualLabel: 'Two blocks',
-      ),
-    ],
-  ),
   LearningLevel(
     id: 'math-stage3-1',
     portionLabel: '1 – 5',
@@ -204,34 +179,6 @@ const _authoredLevels = <LearningLevel>[
         prompt: 'Which shape has three sides?',
         options: ['Circle', 'Square', 'Triangle'],
         correctIndex: 2,
-      ),
-    ],
-  ),
-  LearningLevel(
-    id: 'urdu-stage1-1',
-    portionLabel: 'ا',
-    moduleId: 'urdu',
-    stage: 1,
-    levelNumber: 1,
-    title: 'حرف ا',
-    subtitle: 'حرف کو دیکھیں، سنیں، اور دہرائیں۔',
-    type: LevelType.flashcards,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'ا',
-        prompt: 'آواز سنیں: ا۔ پھر آہستہ سے دہرائیں۔',
-        displayText: 'ا',
-        visualLabel: 'حرف ا',
-        audioCueKey: 'urdu_alif',
-      ),
-      ContentItem(
-        title: 'انار',
-        prompt: 'ا سے انار۔ لفظ کو دیکھیں اور بولیں۔',
-        displayText: 'انار',
-        visualLabel: 'انار کا لفظی کارڈ',
-        audioCueKey: 'urdu_anaar',
       ),
     ],
   ),
@@ -408,33 +355,6 @@ const _authoredLevels = <LearningLevel>[
         prompt: 'پانی کس حرف سے شروع ہوتا ہے؟',
         options: ['ب', 'پ', 'ا'],
         correctIndex: 1,
-      ),
-    ],
-  ),
-  LearningLevel(
-    id: 'logic-stage1-1',
-    moduleId: 'logic',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Same Shapes',
-    subtitle: 'Notice shapes that look alike.',
-    type: LevelType.flashcards,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'Circle',
-        prompt: 'Look for another round circle.',
-        displayText: 'O',
-        visualLabel: 'Two matching circles',
-        audioCueKey: 'logic_circle',
-      ),
-      ContentItem(
-        title: 'Star',
-        prompt: 'Find the star that looks the same.',
-        displayText: '★',
-        visualLabel: 'Two matching stars',
-        audioCueKey: 'logic_star',
       ),
     ],
   ),
@@ -666,33 +586,6 @@ const _authoredLevels = <LearningLevel>[
     ],
   ),
   LearningLevel(
-    id: 'story-stage1-1',
-    moduleId: 'story',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Picture Talk',
-    subtitle: 'Point, name, and tell one tiny page at a time.',
-    type: LevelType.story,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'Hello',
-        prompt: 'Look at the sunny room. Say hello to the picture.',
-        displayText: 'Hi',
-        visualLabel: 'Sunny room picture',
-        audioCueKey: 'story_hello',
-      ),
-      ContentItem(
-        title: 'Snack',
-        prompt: 'Point to the snack. Tell what you see.',
-        displayText: 'Yum',
-        visualLabel: 'Snack table picture',
-        audioCueKey: 'story_snack',
-      ),
-    ],
-  ),
-  LearningLevel(
     id: 'story-stage2-1',
     moduleId: 'story',
     stage: 2,
@@ -916,33 +809,6 @@ const _authoredLevels = <LearningLevel>[
         prompt: 'What comes between beginning and end?',
         options: ['Middle', 'Title', 'Cover'],
         correctIndex: 0,
-      ),
-    ],
-  ),
-  LearningLevel(
-    id: 'drawing-stage1-1',
-    moduleId: 'drawing',
-    stage: 1,
-    levelNumber: 1,
-    title: 'Color Marks',
-    subtitle: 'Choose a color and make simple marks.',
-    type: LevelType.drawing,
-    passingScore: 60,
-    isBundled: true,
-    contentItems: [
-      ContentItem(
-        title: 'Red Line',
-        prompt: 'Pick red and draw one long line.',
-        displayText: 'Red',
-        visualLabel: 'Long red line prompt',
-        audioCueKey: 'drawing_red_line',
-      ),
-      ContentItem(
-        title: 'Blue Dot',
-        prompt: 'Pick blue and make a dot.',
-        displayText: 'Blue',
-        visualLabel: 'Blue dot prompt',
-        audioCueKey: 'drawing_blue_dot',
       ),
     ],
   ),
@@ -1173,33 +1039,126 @@ const _authoredLevels = <LearningLevel>[
       ),
     ],
   ),
+  // Video module. Each stop is one short film bundled under
+  // assets/videos/age{stage}/, so a lesson plays with no connection — the
+  // module the age packs deliberately do not carry. Stops are ordered
+  // shortest film first, because a level is only unlocked by finishing the
+  // one before it and attention grows with age. Every film opens on a drawn
+  // card of its subject and then shows the real thing.
   LearningLevel(
-    id: 'video-stage3-1',
+    id: 'video-stage2-1',
     moduleId: 'video',
-    stage: 3,
+    stage: 2,
     levelNumber: 1,
-    title: 'Watch and Count',
-    subtitle: 'A short counting video followed by a quick check.',
+    title: 'The Butterfly',
+    subtitle: 'A butterfly opens its wings on a yellow flower.',
     type: LevelType.video,
     passingScore: 70,
     isBundled: true,
     videoLessons: [
       VideoLesson(
-        id: 'counting-video-1',
-        title: 'Counting Bees',
-        description: 'Watch a short clip, then count what you saw.',
-        durationLabel: '0:10',
-        videoUrl:
-            'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
-        thumbnailLabel: 'Bee video',
+        id: 'video-butterfly',
+        title: 'Butterfly',
+        description: 'An orange butterfly rests on a flower.',
+        durationLabel: '0:12',
+        videoUrl: 'assets/videos/age2/butterfly.mp4',
+        thumbnailLabel: 'Butterfly on a yellow flower',
       ),
     ],
     quizQuestions: [
       QuizQuestion(
-        id: 'video-count-q1',
-        prompt: 'What did you watch in the video?',
-        options: ['A bee', 'A car', 'A book'],
+        id: 'video-butterfly-q1',
+        prompt: 'What did you watch?',
+        options: ['A butterfly', 'A car', 'A cup'],
         correctIndex: 0,
+      ),
+    ],
+  ),
+  LearningLevel(
+    id: 'video-stage2-2',
+    moduleId: 'video',
+    stage: 2,
+    levelNumber: 2,
+    title: 'The Ducks',
+    subtitle: 'Two ducks swim, then dip under the water.',
+    type: LevelType.video,
+    passingScore: 70,
+    isBundled: true,
+    videoLessons: [
+      VideoLesson(
+        id: 'video-duck',
+        title: 'Duck',
+        description: 'Two white ducks swim on a pond.',
+        durationLabel: '0:16',
+        videoUrl: 'assets/videos/age2/duck.mp4',
+        thumbnailLabel: 'Two ducks on the water',
+      ),
+    ],
+    quizQuestions: [
+      QuizQuestion(
+        id: 'video-duck-q1',
+        prompt: 'Where were the ducks?',
+        options: ['On the water', 'In a tree', 'On a bus'],
+        correctIndex: 0,
+      ),
+    ],
+  ),
+  LearningLevel(
+    id: 'video-stage2-3',
+    moduleId: 'video',
+    stage: 2,
+    levelNumber: 3,
+    title: 'The Tortoise',
+    subtitle: 'Slow climbers rest on a rock by the water.',
+    type: LevelType.video,
+    passingScore: 70,
+    isBundled: true,
+    videoLessons: [
+      VideoLesson(
+        id: 'video-tortoise',
+        title: 'Tortoise',
+        description: 'They climb the rock slowly, one over the other.',
+        durationLabel: '0:31',
+        videoUrl: 'assets/videos/age2/tortoise.mp4',
+        thumbnailLabel: 'Tortoises on a rock',
+      ),
+    ],
+    quizQuestions: [
+      QuizQuestion(
+        id: 'video-tortoise-q1',
+        prompt: 'How did they move?',
+        options: ['Slowly', 'Very fast', 'They flew'],
+        correctIndex: 0,
+      ),
+    ],
+  ),
+  LearningLevel(
+    id: 'video-stage3-1',
+    moduleId: 'video',
+    stage: 3,
+    levelNumber: 1,
+    title: 'The Busy Bee',
+    subtitle: 'A bee works its way around a yellow flower.',
+    type: LevelType.video,
+    passingScore: 70,
+    isBundled: true,
+    videoLessons: [
+      VideoLesson(
+        id: 'video-bee',
+        title: 'Bee',
+        description: 'A bee lands on a dandelion and crawls over it.',
+        durationLabel: '0:13',
+        videoUrl: 'assets/videos/age3/bee.mp4',
+        thumbnailLabel: 'Bee on a dandelion',
+      ),
+    ],
+    quizQuestions: [
+      QuizQuestion(
+        id: 'video-bee-q1',
+        prompt: 'Where did the bee land?',
+        options: ['On a flower', 'On a shoe', 'In a box'],
+        correctIndex: 0,
+        explanation: 'Bees visit flowers to gather food.',
       ),
     ],
   ),
@@ -1208,28 +1167,147 @@ const _authoredLevels = <LearningLevel>[
     moduleId: 'video',
     stage: 3,
     levelNumber: 2,
-    title: 'Shapes in Motion',
-    subtitle: 'Watch simple shapes move across the screen.',
+    title: 'The Spider Web',
+    subtitle: 'A spider waits in the middle of its web.',
     type: LevelType.video,
     passingScore: 70,
-    isBundled: false,
+    isBundled: true,
     videoLessons: [
       VideoLesson(
-        id: 'shapes-video-1',
-        title: 'Shape Parade',
-        description: 'Circle, square, and triangle in one tiny lesson.',
-        durationLabel: '0:20',
-        videoUrl:
-            'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
-        thumbnailLabel: 'Shape video',
+        id: 'video-spider',
+        title: 'Spider',
+        description: 'A small spider sits still in a web it spun.',
+        durationLabel: '0:25',
+        videoUrl: 'assets/videos/age3/spider.mp4',
+        thumbnailLabel: 'Spider in its web',
       ),
     ],
     quizQuestions: [
       QuizQuestion(
-        id: 'video-shape-q1',
-        prompt: 'Which shape is round?',
-        options: ['Triangle', 'Circle', 'Square'],
-        correctIndex: 1,
+        id: 'video-spider-q1',
+        prompt: 'What does a spider make?',
+        options: ['A web', 'A cake', 'A hat'],
+        correctIndex: 0,
+        explanation: 'A spider spins a web and waits in it.',
+      ),
+    ],
+  ),
+  LearningLevel(
+    id: 'video-stage3-3',
+    moduleId: 'video',
+    stage: 3,
+    levelNumber: 3,
+    title: 'The Elephants',
+    subtitle: 'A herd walks together across the grass.',
+    type: LevelType.video,
+    passingScore: 70,
+    isBundled: true,
+    videoLessons: [
+      VideoLesson(
+        id: 'video-elephant',
+        title: 'Elephant',
+        description: 'Big and small elephants walk side by side.',
+        durationLabel: '0:28',
+        videoUrl: 'assets/videos/age3/elephant.mp4',
+        thumbnailLabel: 'A herd of elephants',
+      ),
+    ],
+    quizQuestions: [
+      QuizQuestion(
+        id: 'video-elephant-q1',
+        prompt: 'Which animal has a long trunk?',
+        options: ['The elephant', 'The bee', 'The spider'],
+        correctIndex: 0,
+      ),
+    ],
+  ),
+  LearningLevel(
+    id: 'video-stage4-1',
+    moduleId: 'video',
+    stage: 4,
+    levelNumber: 1,
+    title: 'The Candle Burns',
+    subtitle: 'A flame burns and the candle grows shorter.',
+    type: LevelType.video,
+    passingScore: 70,
+    isBundled: true,
+    videoLessons: [
+      VideoLesson(
+        id: 'video-candle',
+        title: 'Candle',
+        description: 'The flame stays lit while the wax melts away.',
+        durationLabel: '0:22',
+        videoUrl: 'assets/videos/age4/candle.mp4',
+        thumbnailLabel: 'A burning candle',
+      ),
+    ],
+    quizQuestions: [
+      QuizQuestion(
+        id: 'video-candle-q1',
+        prompt: 'What happens to a candle as it burns?',
+        options: ['It gets shorter', 'It gets taller', 'Nothing changes'],
+        correctIndex: 0,
+        explanation: 'The wax melts away, so the candle shrinks.',
+      ),
+    ],
+  ),
+  LearningLevel(
+    id: 'video-stage4-2',
+    moduleId: 'video',
+    stage: 4,
+    levelNumber: 2,
+    title: 'A Seed Grows',
+    subtitle: 'A seed sends a root down and a shoot up.',
+    type: LevelType.video,
+    passingScore: 70,
+    isBundled: true,
+    videoLessons: [
+      VideoLesson(
+        id: 'video-plant',
+        title: 'Plant',
+        description: 'Days of growing, sped up into one short film.',
+        durationLabel: '0:25',
+        videoUrl: 'assets/videos/age4/plant.mp4',
+        thumbnailLabel: 'A seed sprouting in soil',
+      ),
+    ],
+    quizQuestions: [
+      QuizQuestion(
+        id: 'video-plant-q1',
+        prompt: 'Which part of the plant grows down into the soil?',
+        options: ['The root', 'The leaf', 'The flower'],
+        correctIndex: 0,
+        explanation: 'Roots grow down and hold the plant in the soil.',
+      ),
+    ],
+  ),
+  LearningLevel(
+    id: 'video-stage4-3',
+    moduleId: 'video',
+    stage: 4,
+    levelNumber: 3,
+    title: 'Ice Melts',
+    subtitle: 'An ice cube turns into a puddle of water.',
+    type: LevelType.video,
+    passingScore: 70,
+    isBundled: true,
+    videoLessons: [
+      VideoLesson(
+        id: 'video-ice',
+        title: 'Ice',
+        description: 'Watch solid ice slowly become water.',
+        durationLabel: '0:29',
+        videoUrl: 'assets/videos/age4/ice.mp4',
+        thumbnailLabel: 'An ice cube melting',
+      ),
+    ],
+    quizQuestions: [
+      QuizQuestion(
+        id: 'video-ice-q1',
+        prompt: 'What does ice turn into when it melts?',
+        options: ['Water', 'Sand', 'Smoke'],
+        correctIndex: 0,
+        explanation: 'Ice is water that has frozen hard, so it melts back.',
       ),
     ],
   ),
@@ -1648,7 +1726,7 @@ const _englishPortionBounds = <List<int>>[
 List<LearningLevel> _englishAlphabetLevels() {
   final levels = <LearningLevel>[];
 
-  for (var stage = 1; stage <= 4; stage++) {
+  for (var stage = AgeStageHelper.minStage; stage <= 4; stage++) {
     for (var index = 0; index < _englishPortionBounds.length; index++) {
       final bounds = _englishPortionBounds[index];
       final entries = _englishAlphabet.sublist(bounds.first, bounds.last);
@@ -1693,7 +1771,6 @@ List<LearningLevel> _englishAlphabetLevels() {
 
 String _englishSubtitle(int stage) {
   return switch (stage) {
-    1 => 'Look and listen to each letter.',
     2 => 'Hear each letter and copy the sound.',
     3 => 'Say each letter, then the word it starts.',
     _ => 'Match every letter to a word that starts with it.',
@@ -1703,7 +1780,6 @@ String _englishSubtitle(int stage) {
 String _englishPrompt(int stage, _AlphabetEntry entry) {
   final glyph = entry.glyph;
   return switch (stage) {
-    1 => 'This is $glyph. Look at it and listen.',
     2 => '$glyph is for ${entry.word}. Say $glyph.',
     3 => '$glyph is for ${entry.word}. Say the letter, then say the word.',
     _ => '$glyph is for ${entry.word}. Can you think of another word that '

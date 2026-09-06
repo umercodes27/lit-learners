@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
 import 'core/config/app_config.dart';
 import 'core/config/firebase_web_options.dart';
+import 'services/content/asset_availability.dart';
 import 'services/firebase/admin_firebase_app.dart';
 import 'services/local/db_factory.dart';
 
@@ -22,6 +23,12 @@ Future<void> main() async {
   // family who silenced the app last night does not get a burst of music
   // while the setting loads.
   await loadSoundSettings();
+  // Read the asset manifest once, up front. The activity widgets and the
+  // content validator both ask this registry whether a file exists, and it
+  // answers optimistically until it is filled — so leaving it to the first
+  // activity pack load meant an admin reviewing content never got a real
+  // answer, and neither did the first frame of the first pack.
+  await AssetAvailability.instance.populate();
   // Demo mode only, and a no-op with Firebase on.
   await seedDemoDataIfNeeded();
   runApp(const LittleLearnersApp());

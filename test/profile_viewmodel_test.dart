@@ -32,7 +32,7 @@ void main() {
     test('accepts only the ages the content is authored for', () async {
       final viewModel = ProfileViewModel(InMemoryChildProfileRepository());
 
-      for (final age in [0, 5, 8]) {
+      for (final age in [0, 1, 5, 8]) {
         expect(
           await viewModel.createProfile(
             parentId: 'parent-1',
@@ -43,12 +43,12 @@ void main() {
             displayPreference: 'alias',
           ),
           isFalse,
-          reason: 'age $age is outside 1-4',
+          reason: 'age $age is outside 2-4',
         );
       }
-      expect(viewModel.errorMessage, 'Age must be between 1 and 4.');
+      expect(viewModel.errorMessage, 'Age must be between 2 and 4.');
 
-      for (final age in [1, 2, 3, 4]) {
+      for (final age in [2, 3, 4]) {
         expect(
           await viewModel.createProfile(
             parentId: 'parent-$age',
@@ -59,7 +59,7 @@ void main() {
             displayPreference: 'alias',
           ),
           isTrue,
-          reason: 'age $age is inside 1-4',
+          reason: 'age $age is inside 2-4',
         );
       }
     });

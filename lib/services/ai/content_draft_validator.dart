@@ -3,6 +3,7 @@ import '../../models/learning_level.dart';
 import '../../models/learning_module.dart';
 import '../../models/parent_mark.dart';
 import '../../models/quiz_question.dart';
+import '../content/asset_availability.dart';
 
 /// Whether an issue stops a draft being saved, or merely warns about it.
 enum DraftSeverity {
@@ -33,7 +34,8 @@ enum DraftRule {
   countingTargetTooHigh,
   matchingNeedsTwoDistinctTitles,
   videoLessonsMissing,
-  videoUrlNotHttp,
+  videoUrlNotPlayable,
+  videoAssetMissing,
   videoDurationLabelMalformed,
   quizTooFewOptions,
   quizCorrectIndexOutOfRange,
@@ -117,6 +119,10 @@ class ContentDraftValidator {
   static final int canvasMaxPassingScore = ParentMark.goodTry.score;
 
   static final RegExp _durationLabel = RegExp(r'^\d{1,2}:\d{2}$');
+
+  /// What the video player treats as a bundled file rather than an
+  /// address. Kept in step with the check in [VideoPlayerPage].
+  static const _assetPrefix = 'assets/';
   static final RegExp _arabicScript = RegExp(r'[؀-ۿ]');
 
   /// The scripts the app can actually draw a tracing guide for: Fredoka
@@ -381,21 +387,49 @@ class ContentDraftValidator {
     final issues = <DraftIssue>[];
     for (var i = 0; i < level.videoLessons.length; i++) {
       final lesson = level.videoLessons[i];
-      final uri = Uri.tryParse(lesson.videoUrl.trim());
-      final playable = uri != null &&
-          uri.hasAuthority &&
-          (uri.scheme == 'http' || uri.scheme == 'https');
+      final source = lesson.videoUrl.trim();
 
-      if (!playable) {
-        issues.add(DraftIssue(
-          rule: DraftRule.videoUrlNotHttp,
-          severity: DraftSeverity.blocking,
-          path: '$path.videoLessons[$i].videoUrl',
-          message: '"${lesson.videoUrl}" is not a URL the player can open.',
-          modelHint: 'videoUrl must be a full http:// or https:// address to a '
-              'video file. Never invent one — leave videoLessons empty and '
-              'choose a different level type if you have no real URL.',
-        ));
+      // Two shapes are legal because [VideoPlayerPage] opens two: a file
+      // bundled with the app, and a remote address for lessons an admin
+      // publishes through Firestore. Anything else reaches
+      // `VideoPlayerController.networkUrl` and fails there.
+      if (source.startsWith(_assetPrefix)) {
+        // A bundled path that is not in the bundle is the worse failure of
+        // the two: there is no network to blame, it breaks identically on
+        // every device, and no admin can fix it without a new release. The
+        // registry stays optimistic until something populates it, so an
+        // unpopulated manifest reports nothing rather than condemning every
+        // path — the same bargain [AssetAvailability] makes everywhere else.
+        if (AssetAvailability.instance.isKnown &&
+            !AssetAvailability.instance.has(source)) {
+          issues.add(DraftIssue(
+            rule: DraftRule.videoAssetMissing,
+            severity: DraftSeverity.blocking,
+            path: '$path.videoLessons[$i].videoUrl',
+            message: '"$source" is not a file this app ships.',
+            modelHint: 'Only name a bundled video that already exists. You '
+                'cannot add files to the app, so a path you invented will '
+                'never play.',
+          ));
+        }
+      } else {
+        final uri = Uri.tryParse(source);
+        final playable = uri != null &&
+            uri.hasAuthority &&
+            (uri.scheme == 'http' || uri.scheme == 'https');
+        if (!playable) {
+          issues.add(DraftIssue(
+            rule: DraftRule.videoUrlNotPlayable,
+            severity: DraftSeverity.blocking,
+            path: '$path.videoLessons[$i].videoUrl',
+            message: '"$source" is neither a bundled asset nor a URL the '
+                'player can open.',
+            modelHint: 'videoUrl must be a full http:// or https:// address '
+                'to a video file. Never invent one — leave videoLessons '
+                'empty and choose a different level type if you have no real '
+                'URL.',
+          ));
+        }
       }
       if (!_durationLabel.hasMatch(lesson.durationLabel.trim())) {
         issues.add(DraftIssue(
