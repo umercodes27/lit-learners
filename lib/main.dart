@@ -22,6 +22,8 @@ Future<void> main() async {
   // family who silenced the app last night does not get a burst of music
   // while the setting loads.
   await loadSoundSettings();
+  // Demo mode only, and a no-op with Firebase on.
+  await seedDemoDataIfNeeded();
   runApp(const LittleLearnersApp());
 }
 

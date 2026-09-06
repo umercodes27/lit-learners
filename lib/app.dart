@@ -74,6 +74,7 @@ import 'services/ai/llm_client.dart';
 import 'services/ai/llm_credential_store.dart';
 import 'services/ai/openai_compatible_llm_client.dart';
 import 'services/insights/progress_summary_service.dart';
+import 'services/demo/demo_data_seeder.dart';
 import 'services/insights/progress_summary_store.dart';
 import 'viewmodels/admin_content_viewmodel.dart';
 import 'viewmodels/ai_content_viewmodel.dart';
@@ -316,6 +317,27 @@ final LlmClient _llmClient =
 
 final AiContentGenerator _aiContentGenerator =
     AiContentGenerator(client: _llmClient);
+
+/// Fills the local database with invented families so the admin screens have
+/// something to show.
+///
+/// Demo mode only, and it says so twice: the flag is checked, and the seeder
+/// needs the in-memory auth repository, which only exists when Firebase is
+/// off. With Firebase on this returns immediately and the admin portal reads
+/// the real project.
+Future<void> seedDemoDataIfNeeded() async {
+  if (AppConfig.useFirebase) return;
+
+  final auth = _authRepository;
+  if (auth is! InMemoryAuthRepository) return;
+
+  await DemoDataSeeder(
+    authRepository: auth,
+    childProfileDao: _childProfileDao,
+    progressDao: _progressDao,
+    contentRepository: _contentRepository,
+  ).seed();
+}
 
 /// Loads the stored sound settings. Called from `main()` before the first
 /// frame.
