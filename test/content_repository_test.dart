@@ -331,9 +331,14 @@ void main() {
       final modules = await repository.getModulesForStage(3);
       final level = await repository.getLevelById('remote-level-1');
 
-      expect(modules.map((module) => module.id), ['remote-module']);
+      expect(modules.map((module) => module.id), contains('remote-module'));
       expect(level?.title, 'Remote Level');
       expect(level?.contentItems.single.displayText, '8');
+
+      // Remote content arrives alongside the bundled curriculum rather than
+      // in place of it, so a child still has everything the app shipped with.
+      expect(modules.map((module) => module.id), contains('math'));
+      expect(await repository.getLevelById('math-stage3-1'), isNotNull);
     });
   });
 }

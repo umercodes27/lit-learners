@@ -422,7 +422,22 @@ class _Actions extends StatelessWidget {
     final route = args.moduleId == 'video'
         ? RouteNames.videoLearning
         : RouteNames.moduleLevels;
-    Navigator.of(context).pushReplacementNamed(route, arguments: args.moduleId);
+
+    // Go back to the levels page that is already underneath, rather than
+    // pushing a second copy of it.
+    //
+    // That is how the child got here — levels, then the player, which the
+    // quiz and this screen replaced in turn — so pushing another one left two
+    // identical pages on the stack, and a third after the next level, and a
+    // fourth after that. Back then had to be tapped once per level played
+    // before anything appeared to happen.
+    //
+    // Falling back to the first route rather than popping blindly: if this
+    // screen were ever reached without a levels page below it, popUntil would
+    // otherwise empty the stack and show nothing at all.
+    Navigator.of(context).popUntil(
+      (existing) => existing.settings.name == route || existing.isFirst,
+    );
   }
 
   void _home(BuildContext context) {
