@@ -6,6 +6,8 @@ import 'activity_stage.dart';
 import 'drag_and_match_widget.dart';
 import 'identify_and_tap_widget.dart';
 import 'listen_and_see_widget.dart';
+import 'maze_widget.dart';
+import 'memory_match_widget.dart';
 import 'odd_one_out_widget.dart';
 import 'puzzle_widget.dart';
 import 'pattern_complete_widget.dart';
@@ -15,6 +17,8 @@ import 'story_interactive_widget.dart';
 import 'tap_to_count_widget.dart';
 import 'tracing_widget.dart';
 import 'two_choice_tap_widget.dart';
+import 'visual_math_widget.dart';
+import 'word_builder_widget.dart';
 
 /// Picks the component for a level's data.
 ///
@@ -92,6 +96,26 @@ class ActivityPlayer extends StatelessWidget {
           onCompleted: onCompleted,
         ),
       PatternCompleteData d => PatternCompleteWidget(
+          data: d,
+          audio: audio,
+          onCompleted: onCompleted,
+        ),
+      WordBuilderData d => WordBuilderWidget(
+          data: d,
+          audio: audio,
+          onCompleted: onCompleted,
+        ),
+      VisualMathData d => VisualMathWidget(
+          data: d,
+          audio: audio,
+          onCompleted: onCompleted,
+        ),
+      MazeData d => MazeWidget(
+          data: d,
+          audio: audio,
+          onCompleted: onCompleted,
+        ),
+      MemoryMatchData d => MemoryMatchWidget(
           data: d,
           audio: audio,
           onCompleted: onCompleted,

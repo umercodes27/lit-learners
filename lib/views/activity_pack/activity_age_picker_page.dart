@@ -37,6 +37,12 @@ class AgePack {
       blurb: 'Drag, sort and trace',
       palette: Age2Palette.logic,
     ),
+    AgePack(
+      age: 4,
+      path: ActivityPackLoader.age4Path,
+      blurb: 'Build words, add and solve',
+      palette: Age2Palette.storytelling,
+    ),
   ];
 }
 

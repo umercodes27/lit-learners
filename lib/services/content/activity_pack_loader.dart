@@ -44,6 +44,7 @@ class ActivityPackLoader {
 
   static const age2Path = 'assets/age2/little-learners-age2-data.json';
   static const age3Path = 'assets/age3/little-learners-age3-data.json';
+  static const age4Path = 'assets/age4/little-learners-age4-data.json';
 
   /// The instance the screens use, so the pack is parsed and audited once per
   /// run rather than on every navigation.

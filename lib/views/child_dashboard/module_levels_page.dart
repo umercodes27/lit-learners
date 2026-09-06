@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +11,7 @@ import '../../core/utils/module_visuals.dart';
 import '../../models/activity_pack.dart';
 import '../../models/koala_guide_message.dart';
 import '../../models/learning_level.dart';
+import '../../models/module_quiz.dart';
 import '../../services/content/activity_pack_loader.dart';
 import '../../services/content/activity_pack_stops.dart';
 import '../../services/content/module_activity_bridge.dart';
@@ -54,6 +57,11 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
   Future<ActivityPackLoadResult>? _packFuture;
   int? _packAge;
 
+  /// Set while the trophy celebration is on screen, after the module quiz is
+  /// passed. The road behind it stays visible: the point is to see the trophy
+  /// land on the map you just walked.
+  bool _celebratingTrophy = false;
+
   @override
   void initState() {
     super.initState();
@@ -93,10 +101,12 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
     final packFuture = _packFuture;
 
     return Scaffold(
-      body: PlayGround(
-        color: ground,
-        safeArea: false,
-        child: SafeArea(
+      body: Stack(
+        children: [
+          PlayGround(
+            color: ground,
+            safeArea: false,
+            child: SafeArea(
           child: packFuture == null
               ? _seededMap(context, learning, module, child, textDirection)
               : FutureBuilder<ActivityPackLoadResult>(
@@ -140,9 +150,35 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
                     );
                   },
                 ),
-        ),
+            ),
+          ),
+          if (_celebratingTrophy)
+            _TrophyCelebration(
+              moduleTitle: module?.title ?? 'this subject',
+              accent: ground,
+              onDone: () => setState(() => _celebratingTrophy = false),
+            ),
+        ],
       ),
     );
+  }
+
+  /// Opens the module quiz and celebrates on the map if it is passed.
+  ///
+  /// The quiz has its own trophy screen, but that one is inside the quiz — a
+  /// child taps Done and lands back on a road that looks exactly as it did
+  /// before. The celebration belongs here too, over the map they just
+  /// finished, which is the thing the trophy is attached to.
+  Future<void> _openTrophyQuiz(ModuleQuiz quiz, Color accent) async {
+    final passed = await Navigator.of(context).push<bool>(
+      GentlePageRoute<bool>(
+        builder: (_) => ModuleQuizPage(quiz: quiz, accent: accent),
+      ),
+    );
+
+    if (!mounted || passed != true) return;
+    AppSound.instance.play(Sfx.moduleComplete);
+    setState(() => _celebratingTrophy = true);
   }
 
   ActivityModule? _packModuleFrom(ActivityPackLoadResult? result) {
@@ -306,14 +342,8 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
             // The quiz is the trophy at the end of the road. A module whose
             // activities cannot produce enough questions shows no quiz at all
             // — see [ModuleQuizBuilder] — and the trophy stays decoration.
-            onGoalTap: quiz.isEmpty
-                ? null
-                : () => Navigator.of(context).push(
-                      GentlePageRoute<bool>(
-                        builder: (_) =>
-                            ModuleQuizPage(quiz: quiz, accent: accent),
-                      ),
-                    ),
+            onGoalTap:
+                quiz.isEmpty ? null : () => _openTrophyQuiz(quiz, accent),
             goalLabel: quiz.isEmpty ? null : 'Finish with a quiz',
           ),
         ],
@@ -373,6 +403,114 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${level.title} downloaded.')),
+    );
+  }
+}
+
+
+/// The trophy landing on the map the child just finished.
+///
+/// Shown over the road rather than as another page: the reward is that *this*
+/// map is complete, and pushing a fresh screen would hide the thing being
+/// rewarded. Taps through to dismiss, and clears itself after a few seconds so
+/// a child who puts the phone down does not come back to a stuck overlay.
+class _TrophyCelebration extends StatefulWidget {
+  const _TrophyCelebration({
+    required this.moduleTitle,
+    required this.accent,
+    required this.onDone,
+  });
+
+  final String moduleTitle;
+  final Color accent;
+  final VoidCallback onDone;
+
+  @override
+  State<_TrophyCelebration> createState() => _TrophyCelebrationState();
+}
+
+class _TrophyCelebrationState extends State<_TrophyCelebration> {
+  Timer? _dismiss;
+
+  @override
+  void initState() {
+    super.initState();
+    _dismiss = Timer(const Duration(milliseconds: 4200), () {
+      if (mounted) widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _dismiss?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: widget.onDone,
+        child: ColoredBox(
+          color: PlayColors.ink.withValues(alpha: 0.45),
+          child: Stack(
+            children: [
+              Center(
+                child: PopIn(
+                  child: Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: PlayPanel(
+                      padding: const EdgeInsets.fromLTRB(26, 30, 26, 26),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.emoji_events_rounded,
+                            size: 92,
+                            color: PlayColors.sunshine,
+                          ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'Trophy won!',
+                            style: TextStyle(
+                              fontFamily: 'Fredoka',
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              color: PlayColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'You finished ${widget.moduleTitle}.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Fredoka',
+                              fontSize: 18,
+                              height: 1.3,
+                              fontWeight: FontWeight.w600,
+                              color: PlayColors.ink.withValues(alpha: 0.75),
+                            ),
+                          ),
+                          const SizedBox(height: 22),
+                          PlayButton(
+                            label: 'Yay!',
+                            icon: Icons.celebration_rounded,
+                            color: widget.accent,
+                            onPressed: widget.onDone,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const Positioned.fill(
+                child: IgnorePointer(child: ConfettiBurst(pieces: 46)),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

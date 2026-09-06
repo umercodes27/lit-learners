@@ -34,13 +34,21 @@ class ModuleActivityBridge {
 
   /// Which pack a child of this age plays.
   ///
-  /// Ages either side of the two packs get the nearest one rather than an
-  /// empty screen: a just-turned-two still gets age 2, and a four-year-old
-  /// gets age 3 until a pack of their own exists. The age picker on the home
-  /// screen remains the way to reach the other pack deliberately.
-  static int packAgeFor(int age) => age <= 2 ? 2 : 3;
+  /// There is now a pack for every age the app accepts, so nobody is served
+  /// someone else's curriculum: a four-year-old gets age 4 rather than the
+  /// age-3 pack they used to fall back to. Ages outside the range still get
+  /// the nearest pack rather than an empty screen — a just-turned-two gets
+  /// age 2, and anyone older than four gets age 4. The age picker on the home
+  /// screen remains the way to reach another pack deliberately.
+  static int packAgeFor(int age) {
+    if (age <= 2) return 2;
+    if (age == 3) return 3;
+    return 4;
+  }
 
-  static String packPathFor(int age) => packAgeFor(age) == 2
-      ? ActivityPackLoader.age2Path
-      : ActivityPackLoader.age3Path;
+  static String packPathFor(int age) => switch (packAgeFor(age)) {
+        2 => ActivityPackLoader.age2Path,
+        3 => ActivityPackLoader.age3Path,
+        _ => ActivityPackLoader.age4Path,
+      };
 }

@@ -65,6 +65,17 @@ flutter:
     - assets/age3/img/
     - assets/age3/img/story/
     - assets/age3/img/ur/
+    # Age 4 content pack ("Little Learner AGE 4"). Same shape as the packs
+    # above; the img/ files it shares with the younger packs are copied in
+    # rather than reached across, so one pack is never a dependency of
+    # another.
+    - assets/age4/
+    - assets/age4/audio/num/
+    - assets/age4/audio/sfx/
+    - assets/age4/audio/stories/
+    - assets/age4/img/
+    - assets/age4/img/story/
+    - assets/age4/img/ur/
     - assets/audio/learning/
     - assets/audio/koala/
     # Cut from assets/audio/_masters/ by tool/prepare_audio.py. The masters

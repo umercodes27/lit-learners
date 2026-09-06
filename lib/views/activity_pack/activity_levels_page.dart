@@ -132,6 +132,10 @@ class _LevelCard extends StatelessWidget {
       ActivityComponent.dragAndMatch => Icons.compare_arrows_rounded,
       ActivityComponent.sortIntoZones => Icons.inbox_rounded,
       ActivityComponent.patternComplete => Icons.auto_awesome_motion_rounded,
+      ActivityComponent.wordBuilder => Icons.abc_rounded,
+      ActivityComponent.visualMath => Icons.calculate_rounded,
+      ActivityComponent.maze => Icons.route_rounded,
+      ActivityComponent.memoryMatch => Icons.style_rounded,
       ActivityComponent.unknown => Icons.hourglass_empty_rounded,
     };
   }

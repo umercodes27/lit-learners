@@ -1,0 +1,150 @@
+{
+  "age": 4,
+  "phase": "Logic, Words & Pre-School Math",
+  "modules": {
+
+    "english": {
+      "level_1": {
+        "component": "tracing",
+        "title": "Advanced Tracing & Phonics (Upper & Lower Case)",
+        "note": "No images needed — renders both uppercase and lowercase letterforms directly from a font, same tracing engine built for Age 3.",
+        "items": [
+          { "letter_upper": "A", "letter_lower": "a" },
+          { "letter_upper": "B", "letter_lower": "b" },
+          { "letter_upper": "C", "letter_lower": "c" },
+          { "letter_upper": "D", "letter_lower": "d" },
+          { "letter_upper": "E", "letter_lower": "e" }
+        ]
+      },
+      "level_2": {
+        "component": "word-builder",
+        "title": "3-Letter Word Building",
+        "note": "No images needed — letter tiles are font-rendered, drag into blanks.",
+        "items": [
+          { "word": "CAT", "letter_tiles": ["C", "A", "T"] },
+          { "word": "DOG", "letter_tiles": ["D", "O", "G"] },
+          { "word": "SUN", "letter_tiles": ["S", "U", "N"] },
+          { "word": "HAT", "letter_tiles": ["H", "A", "T"] }
+        ],
+        "feedback": { "correct_sound": "assets/audio/sfx/applause.mp3", "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3" }
+      },
+      "level_3": {
+        "component": "identify-and-tap",
+        "title": "Sight Words & Sentences",
+        "items": [
+          { "sentence": "The Dog runs", "image": "assets/img/dog.png", "audio_prompt": "assets/audio/en/sentence_dog_runs.mp3" },
+          { "sentence": "The Cat sits", "image": "assets/img/cat.png", "audio_prompt": "assets/audio/en/sentence_cat_sits.mp3" },
+          { "sentence": "The Duck swims", "image": "assets/img/duck.png", "audio_prompt": "assets/audio/en/sentence_duck_swims.mp3" }
+        ]
+      }
+    },
+
+    "urdu": {
+      "level_1": {
+        "component": "identify-and-tap",
+        "title": "Huroof ki Choti Ashkaal (Initial/Middle/Final Shapes)",
+        "note": "No images needed — Urdu fonts automatically render the correct contextual (initial/middle/final) letterform when the character is placed in a word context, so this can be font-rendered rather than needing separate shape images.",
+        "items": [
+          { "letter": "Bay", "example_word": "Kitab" },
+          { "letter": "Jeem", "example_word": "Masjid" },
+          { "letter": "Ain", "example_word": "Baarish" }
+        ]
+      },
+      "level_2": {
+        "component": "word-builder",
+        "title": "2-Letter Urdu Words",
+        "note": "No images needed — font-rendered letter tiles, right-to-left assembly.",
+        "items": [
+          { "word": "Ab", "letter_tiles": ["Alif", "Bay"] },
+          { "word": "Do", "letter_tiles": ["Daal", "Wao"] },
+          { "word": "Dil", "letter_tiles": ["Daal", "Yay", "Laam"] }
+        ],
+        "feedback": { "correct_sound": "assets/audio/sfx/applause.mp3", "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3" }
+      },
+      "level_3": {
+        "component": "identify-and-tap",
+        "title": "Urdu Vocabulary",
+        "items": [
+          { "word": "Seb", "image": "assets/img/apple.png", "audio_prompt": "assets/audio/ur/word_seb.mp3" },
+          { "word": "Kela", "image": "assets/img/banana.png", "audio_prompt": "assets/audio/ur/word_kela.mp3" },
+          { "word": "Billi", "image": "assets/img/ur/billi.png", "audio_prompt": "assets/audio/ur/word_billi.mp3" }
+        ]
+      }
+    },
+
+    "math": {
+      "level_1": {
+        "component": "counting-drag",
+        "title": "Counting 1 to 20",
+        "items": [
+          { "objects": "assets/img/star.png", "target_count": 15 },
+          { "objects": "assets/img/apple.png", "target_count": 20 }
+        ],
+        "audio_numbers_folder": "assets/audio/num"
+      },
+      "level_2": {
+        "component": "tracing",
+        "title": "Number Tracing 6-10",
+        "note": "No images needed — font-rendered numerals.",
+        "items": [
+          { "number": "6" }, { "number": "7" }, { "number": "8" }, { "number": "9" }, { "number": "10" }
+        ]
+      },
+      "level_3": {
+        "component": "visual-math",
+        "title": "Simple Addition & Subtraction (Visual)",
+        "note": "Reuses existing images — no new assets needed.",
+        "items": [
+          { "operand_1": { "count": 1, "image": "assets/img/apple.png" }, "operand_2": { "count": 1, "image": "assets/img/apple.png" }, "operation": "add", "correct_answer": 2 },
+          { "operand_1": { "count": 3, "image": "assets/img/star.png" }, "operand_2": { "count": 1, "image": "assets/img/star.png" }, "operation": "subtract", "correct_answer": 2 }
+        ]
+      }
+    },
+
+    "logic": {
+      "level_1": {
+        "component": "pattern-complete",
+        "title": "Complex Patterns (Multi-shape & Color)",
+        "note": "Reuses existing shape/color images.",
+        "items": [
+          { "sequence": ["assets/img/red_circle.png", "assets/img/blue_square.png", "assets/img/red_circle.png", "assets/img/blue_square.png"], "correct_answer": "assets/img/red_circle.png", "options": ["assets/img/red_circle.png", "assets/img/yellow_triangle.png"] }
+        ]
+      },
+      "level_2": {
+        "component": "maze",
+        "title": "Maze Solving (Medium Difficulty)",
+        "note": "Maze grid generated in code — no image assets needed. Character sprite can reuse an existing image (e.g. duck.png) as the thing being dragged through the maze.",
+        "items": [
+          { "maze_layout_grid": "generated_in_code", "character_image": "assets/img/duck.png", "difficulty": "medium" }
+        ]
+      },
+      "level_3": {
+        "component": "memory-match",
+        "title": "Memory Game",
+        "note": "Reuses existing images as card faces — zero new assets needed.",
+        "items": [
+          { "card_pairs": ["assets/img/cat.png", "assets/img/dog.png", "assets/img/apple.png", "assets/img/star.png", "assets/img/duck.png", "assets/img/sun.png"], "grid_size": "4x3" }
+        ]
+      }
+    },
+
+    "storytelling": {
+      "audio_book_style": {
+        "component": "story-interactive",
+        "title": "Audio Book: Favorite Stories Revisited",
+        "read_along": true,
+        "note": "Can reuse/re-present earlier stories (washing hands, sharing & kindness, my day) in a 'read along, text highlights as narrated' mode — no brand new story required if reusing prior narrations, OR write a fresh one.",
+        "audio_narration": "assets/audio/stories/audio_book_story.mp3",
+        "illustration_sequence": ["assets/img/story/book_1.png", "assets/img/story/book_2.png", "assets/img/story/book_3.png"]
+      },
+      "social_emotional_learning": {
+        "component": "story-interactive",
+        "title": "Manners & Safety",
+        "audio_narration": "assets/audio/stories/manners_safety.mp3",
+        "illustration_sequence": ["assets/img/story/manners_1.png", "assets/img/story/manners_2.png", "assets/img/story/manners_3.png"],
+        "choice_point": { "prompt": "What should you say?", "correct_answer": "please_and_thank_you" }
+      }
+    }
+
+  }
+}
