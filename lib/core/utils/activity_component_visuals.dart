@@ -26,6 +26,10 @@ class ActivityComponentVisuals {
       ActivityComponent.dragAndMatch => Icons.compare_arrows_rounded,
       ActivityComponent.sortIntoZones => Icons.inbox_rounded,
       ActivityComponent.patternComplete => Icons.auto_awesome_motion_rounded,
+      ActivityComponent.wordBuilder => Icons.abc_rounded,
+      ActivityComponent.visualMath => Icons.calculate_rounded,
+      ActivityComponent.maze => Icons.route_rounded,
+      ActivityComponent.memoryMatch => Icons.style_rounded,
       ActivityComponent.unknown => Icons.hourglass_empty_rounded,
     };
   }
@@ -45,6 +49,10 @@ class ActivityComponentVisuals {
       ActivityComponent.dragAndMatch => 'Drag to match',
       ActivityComponent.sortIntoZones => 'Sort into groups',
       ActivityComponent.patternComplete => 'Finish the pattern',
+      ActivityComponent.wordBuilder => 'Build the word',
+      ActivityComponent.visualMath => 'Add and take away',
+      ActivityComponent.maze => 'Find the way out',
+      ActivityComponent.memoryMatch => 'Remember the pairs',
       ActivityComponent.unknown => 'Coming soon',
     };
   }

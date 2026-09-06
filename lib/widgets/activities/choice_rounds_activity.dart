@@ -8,6 +8,8 @@ import '../../core/localization/urdu_letters.dart';
 import '../../core/theme/age2_skin.dart';
 import '../../models/activity_option.dart';
 import 'activity_asset_image.dart';
+import '../../services/audio/glyph_speech.dart';
+import '../../services/content/asset_availability.dart';
 import 'activity_audio.dart';
 import 'activity_feedback_controller.dart';
 import 'activity_stage.dart';
@@ -92,6 +94,8 @@ class _ChoiceRoundsActivityState extends State<ChoiceRoundsActivity>
   bool _finished = false;
   Timer? _advanceTimer;
 
+  late final GlyphSpeech _speech = GlyphSpeech();
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +105,7 @@ class _ChoiceRoundsActivityState extends State<ChoiceRoundsActivity>
   @override
   void dispose() {
     _advanceTimer?.cancel();
+    _speech.stop();
     _reaction.dispose();
     _feedback.dispose();
     super.dispose();
@@ -108,9 +113,25 @@ class _ChoiceRoundsActivityState extends State<ChoiceRoundsActivity>
 
   ChoiceRound get _round => widget.rounds[_roundIndex];
 
+  /// The recorded prompt when the bundle actually has one, the device's voice
+  /// when it does not.
+  ///
+  /// A pack may name a clip that was never recorded — age 4 writes
+  /// `sentence_dog_runs.mp3` for a line nobody has voiced yet. Played
+  /// literally that is silence, and silence in a round whose whole instruction
+  /// is spoken leaves a child with nothing to go on. So a named-but-absent
+  /// clip falls through to speech, exactly as an unnamed one does.
   void _playPrompt() {
     if (!mounted) return;
-    widget.audio.playPrompt(_round.audioPrompt);
+    final clip = _round.audioPrompt;
+    if (clip != null && AssetAvailability.instance.has(clip)) {
+      widget.audio.playPrompt(clip);
+      return;
+    }
+
+    final text = _round.promptText;
+    if (text == null || text.isEmpty) return;
+    _speech.speak(text, urdu: widget.isRtl || UrduLetters.isUrduScript(text));
   }
 
   Future<void> _onOptionTapped(int index) async {
@@ -191,7 +212,10 @@ class _ChoiceRoundsActivityState extends State<ChoiceRoundsActivity>
       isRtl: widget.isRtl,
       roundIndex: _roundIndex,
       roundCount: widget.rounds.length,
-      onReplayPrompt: round.audioPrompt == null ? null : _playPrompt,
+      onReplayPrompt:
+          round.audioPrompt == null && round.promptText == null
+              ? null
+              : _playPrompt,
       feedback: _feedback,
       // The answers keep their full size and the page scrolls if the window
       // is too short for them. The previous Flexible let a short screen crush

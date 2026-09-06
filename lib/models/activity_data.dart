@@ -18,6 +18,10 @@ enum ActivityComponent {
   dragAndMatch,
   sortIntoZones,
   patternComplete,
+  wordBuilder,
+  visualMath,
+  maze,
+  memoryMatch,
   unknown;
 
   static ActivityComponent fromJson(String? raw) {
@@ -57,6 +61,17 @@ enum ActivityComponent {
       case 'pattern_complete':
       case 'pattern-complete':
         return ActivityComponent.patternComplete;
+      case 'word_builder':
+      case 'word-builder':
+        return ActivityComponent.wordBuilder;
+      case 'visual_math':
+      case 'visual-math':
+        return ActivityComponent.visualMath;
+      case 'maze':
+        return ActivityComponent.maze;
+      case 'memory_match':
+      case 'memory-match':
+        return ActivityComponent.memoryMatch;
       default:
         return ActivityComponent.unknown;
     }
@@ -164,6 +179,14 @@ sealed class ActivityData {
         return SortIntoZonesData.fromJson(json, title: title, isRtl: isRtl);
       case ActivityComponent.patternComplete:
         return PatternCompleteData.fromJson(json, title: title, isRtl: isRtl);
+      case ActivityComponent.wordBuilder:
+        return WordBuilderData.fromJson(json, title: title, isRtl: isRtl);
+      case ActivityComponent.visualMath:
+        return VisualMathData.fromJson(json, title: title, isRtl: isRtl);
+      case ActivityComponent.maze:
+        return MazeData.fromJson(json, title: title, isRtl: isRtl);
+      case ActivityComponent.memoryMatch:
+        return MemoryMatchData.fromJson(json, title: title, isRtl: isRtl);
       case ActivityComponent.unknown:
         return UnsupportedActivityData(
           title: title,
@@ -472,14 +495,86 @@ class IdentifyAndTapData extends ActivityData {
       isRtl: isRtl,
       correctSound: ActivityData.correctSoundOf(json),
       wrongSound: ActivityData.wrongSoundOf(json),
-      items: ActivityData._items(json)
-          .indexed
-          .map((entry) => IdentifyAndTapItem.fromJson(
-                entry.$2,
-                flip: flipAt(entry.$1, title),
-              ))
-          .toList(),
+      items: _roundsFrom(ActivityData._items(json), title: title),
     );
+  }
+
+  /// Parses the level's items, and builds the choices when the pack does not
+  /// name any.
+  ///
+  /// Age 4 writes these levels as a list of targets — a sentence and its
+  /// picture, a word and its picture, a letter and a word it appears in — with
+  /// no wrong answers anywhere. Parsed literally that is a round with nothing
+  /// to tap, so a level's own siblings are used as its distractors: the round
+  /// for "The Dog runs" offers the dog against the next item's picture. The
+  /// content stays the pack's, and a level needs no new artwork to be
+  /// playable.
+  ///
+  /// Only ever reached when *every* item came out empty. A pack that names its
+  /// options, as ages 2 and 3 do, parses exactly as before.
+  static List<IdentifyAndTapItem> _roundsFrom(
+    List<Map<String, dynamic>> raw, {
+    required String title,
+  }) {
+    final parsed = raw.indexed
+        .map((entry) => IdentifyAndTapItem.fromJson(
+              entry.$2,
+              flip: flipAt(entry.$1, title),
+            ))
+        .toList();
+
+    final needsChoices =
+        parsed.isNotEmpty && parsed.every((item) => item.options.isEmpty);
+    if (!needsChoices || raw.length < 2) return parsed;
+
+    // What the round asks for, and what the child reads or hears while
+    // choosing.
+    String? imageOf(Map<String, dynamic> item) => item['image'] as String?;
+    String? letterOf(Map<String, dynamic> item) => item['letter'] as String?;
+    String? textOf(Map<String, dynamic> item) =>
+        item['sentence'] as String? ??
+        item['word'] as String? ??
+        item['example_word'] as String?;
+
+    final rounds = <IdentifyAndTapItem>[];
+    for (var i = 0; i < raw.length; i++) {
+      final mine = raw[i];
+      final other = raw[(i + 1) % raw.length];
+      final flip = flipAt(i, title);
+      final audio = mine['audio_prompt'] as String?;
+      final text = textOf(mine);
+
+      final image = imageOf(mine);
+      if (image != null && imageOf(other) != null) {
+        rounds.add(IdentifyAndTapItem(
+          // No prompt image: the picture *is* the answer, so showing it above
+          // the choices would be showing the child which one to tap.
+          options: orderedPair(
+            ActivityOption(image: image, isCorrect: true),
+            ActivityOption(image: imageOf(other)),
+            flip: flip,
+          ),
+          audioPrompt: audio,
+          promptText: text,
+        ));
+        continue;
+      }
+
+      final letter = letterOf(mine);
+      if (letter != null && letterOf(other) != null) {
+        rounds.add(IdentifyAndTapItem(
+          options: orderedPair(
+            ActivityOption(label: letter, isCorrect: true),
+            ActivityOption(label: letterOf(other)),
+            flip: flip,
+          ),
+          audioPrompt: audio,
+          promptText: text,
+        ));
+      }
+    }
+
+    return rounds.isEmpty ? parsed : rounds;
   }
 
   final List<IdentifyAndTapItem> items;
@@ -908,12 +1003,29 @@ class StoryChoicePoint {
       options = [ActivityOption(image: correctImage, isCorrect: true)];
     }
 
+    // Age 4 names the answer as a slug and nothing else —
+    // `"correct_answer": "please_and_thank_you"`. Read literally that is a
+    // question with no answers, which is a story a child cannot get out of.
+    // The slug is the answer, so it becomes the option, spelled the way it
+    // would be said.
+    final correctAnswer = json['correct_answer'] as String?;
+    if (options.isEmpty && correctAnswer != null && correctAnswer.isNotEmpty) {
+      options = [ActivityOption(label: _spellOut(correctAnswer), isCorrect: true)];
+    }
+
     return StoryChoicePoint(
       options: options,
       atMs: (json['at_ms'] as num?)?.toInt() ?? 0,
       promptText: json['prompt_text'] as String? ?? json['prompt'] as String?,
       audioPrompt: json['audio_prompt'] as String?,
     );
+  }
+
+  /// `please_and_thank_you` -> `Please and thank you`.
+  static String _spellOut(String slug) {
+    final words = slug.replaceAll('_', ' ').trim();
+    if (words.isEmpty) return words;
+    return '${words[0].toUpperCase()}${words.substring(1)}';
   }
 
   final List<ActivityOption> options;
@@ -1078,6 +1190,27 @@ class TracingItem {
   /// A recorded clip, when one exists. Most glyphs have none and are spoken
   /// by the device instead.
   final String? audio;
+
+  /// The tracing rounds one authored item turns into.
+  ///
+  /// Age 4 pairs the cases — `{"letter_upper": "A", "letter_lower": "a"}` —
+  /// because a child who can draw A has not yet met a. Rather than teach the
+  /// widget about pairs, the pair is unrolled here into two ordinary rounds,
+  /// capital first: the same engine draws both, and the progress stars count
+  /// what the child actually traces. Every other pack yields one round, as
+  /// before.
+  static Iterable<TracingItem> allFrom(Map<String, dynamic> json) {
+    final upper = json['letter_upper'] as String?;
+    final lower = json['letter_lower'] as String?;
+    if (upper == null && lower == null) return [TracingItem.fromJson(json)];
+
+    final audio = json['audio'] as String?;
+    return [
+      for (final glyph in [upper, lower])
+        if (glyph != null && glyph.isNotEmpty)
+          TracingItem(glyph: glyph, audio: audio),
+    ];
+  }
 }
 
 /// Trace a letter or numeral drawn from a font, following guide arrows.
@@ -1106,7 +1239,7 @@ class TracingData extends ActivityData {
       isRtl: isRtl,
       correctSound: ActivityData.correctSoundOf(json),
       wrongSound: ActivityData.wrongSoundOf(json),
-      items: ActivityData._items(json).map(TracingItem.fromJson).toList(),
+      items: ActivityData._items(json).expand(TracingItem.allFrom).toList(),
       rewardSound: json['reward_sound'] as String?,
     );
   }
@@ -1369,3 +1502,376 @@ class PatternCompleteData extends ActivityData {
   bool get isEmpty => items.isEmpty;
 }
 
+
+// ---------------------------------------------------------------------------
+// word_builder
+// ---------------------------------------------------------------------------
+
+/// One word to assemble, and the tiles it is assembled from.
+///
+/// The pack writes English words as their letters (`["C","A","T"]`) and Urdu
+/// words as romanised letter names (`["Alif","Bay"]`), the same convention the
+/// tracing levels use. Names are kept as the identity and turned into script
+/// at the point of drawing, so a tile shows ا and never the word "Alif".
+class WordBuilderItem {
+  const WordBuilderItem({required this.word, required this.tiles});
+
+  factory WordBuilderItem.fromJson(Map<String, dynamic> json) {
+    final raw = json['letter_tiles'];
+    return WordBuilderItem(
+      word: json['word'] as String? ?? '',
+      tiles: raw is List
+          ? raw.whereType<String>().where((tile) => tile.isNotEmpty).toList()
+          : const [],
+    );
+  }
+
+  /// The word as the pack writes it, used for the spoken prompt.
+  final String word;
+
+  /// The tiles in their solved order. The widget shuffles them for display;
+  /// this list is the answer key.
+  final List<String> tiles;
+
+  bool get isPlayable => tiles.length >= 2;
+}
+
+/// Drag letter tiles into blank slots to build a word.
+///
+/// Carries no artwork: tiles and slots are drawn from the fonts the app
+/// already ships, which is what lets the same component serve a 3-letter
+/// English word and a 2-letter Urdu one. Right-to-left assembly comes from
+/// [isRtl], so Urdu fills from the right without a second widget.
+class WordBuilderData extends ActivityData {
+  const WordBuilderData({
+    required super.title,
+    required super.isRtl,
+    super.correctSound,
+    super.wrongSound,
+    required this.items,
+  });
+
+  factory WordBuilderData.fromJson(
+    Map<String, dynamic> json, {
+    required String title,
+    required bool isRtl,
+  }) {
+    return WordBuilderData(
+      title: title,
+      isRtl: isRtl,
+      correctSound: ActivityData.correctSoundOf(json),
+      wrongSound: ActivityData.wrongSoundOf(json),
+      items: ActivityData._items(json)
+          .map(WordBuilderItem.fromJson)
+          .where((item) => item.isPlayable)
+          .toList(),
+    );
+  }
+
+  final List<WordBuilderItem> items;
+
+  @override
+  ActivityComponent get component => ActivityComponent.wordBuilder;
+
+  /// Nothing to load. The word is spoken by the device, and the tiles are
+  /// glyphs.
+  @override
+  List<String> get referencedAssets => const [];
+
+  @override
+  bool get isEmpty => items.isEmpty;
+}
+
+// ---------------------------------------------------------------------------
+// visual_math
+// ---------------------------------------------------------------------------
+
+/// One side of a sum: how many of a picture to draw.
+class VisualMathOperand {
+  const VisualMathOperand({required this.count, required this.image});
+
+  factory VisualMathOperand.fromJson(Map<String, dynamic> json) {
+    return VisualMathOperand(
+      count: (json['count'] as num?)?.toInt() ?? 0,
+      image: json['image'] as String? ?? '',
+    );
+  }
+
+  final int count;
+  final String image;
+}
+
+enum VisualMathOperation { add, subtract }
+
+/// A sum shown as two groups of things rather than as digits.
+class VisualMathItem {
+  const VisualMathItem({
+    required this.first,
+    required this.second,
+    required this.operation,
+    required this.answer,
+    required this.options,
+  });
+
+  factory VisualMathItem.fromJson(Map<String, dynamic> json) {
+    final first = VisualMathOperand.fromJson(
+      json['operand_1'] as Map<String, dynamic>? ?? const {},
+    );
+    final second = VisualMathOperand.fromJson(
+      json['operand_2'] as Map<String, dynamic>? ?? const {},
+    );
+    final operation = (json['operation'] as String?) == 'subtract'
+        ? VisualMathOperation.subtract
+        : VisualMathOperation.add;
+    final answer = (json['correct_answer'] as num?)?.toInt() ??
+        (operation == VisualMathOperation.add
+            ? first.count + second.count
+            : first.count - second.count);
+
+    return VisualMathItem(
+      first: first,
+      second: second,
+      operation: operation,
+      answer: answer,
+      options: _optionsFor(answer),
+    );
+  }
+
+  /// The pack gives the answer but no wrong answers, so the near misses are
+  /// built here: a child who is counting should be able to get it right, and a
+  /// child who is guessing should not have a one-in-two chance. Neighbours are
+  /// used rather than random numbers because ±1 is exactly the mistake worth
+  /// catching, and the order is fixed by value so the same sum always looks
+  /// the same.
+  static List<int> _optionsFor(int answer) {
+    final options = <int>{answer};
+    for (final delta in [1, -1, 2, -2, 3]) {
+      if (options.length == 3) break;
+      final candidate = answer + delta;
+      if (candidate >= 0) options.add(candidate);
+    }
+    final ordered = options.toList()..sort();
+    return ordered;
+  }
+
+  final VisualMathOperand first;
+  final VisualMathOperand second;
+  final VisualMathOperation operation;
+  final int answer;
+
+  /// Three choices including [answer], ordered smallest first.
+  final List<int> options;
+
+  bool get isPlayable => first.image.isNotEmpty && second.image.isNotEmpty;
+}
+
+/// Add or take away, counted off two groups of pictures.
+class VisualMathData extends ActivityData {
+  const VisualMathData({
+    required super.title,
+    required super.isRtl,
+    super.correctSound,
+    super.wrongSound,
+    required this.items,
+  });
+
+  factory VisualMathData.fromJson(
+    Map<String, dynamic> json, {
+    required String title,
+    required bool isRtl,
+  }) {
+    return VisualMathData(
+      title: title,
+      isRtl: isRtl,
+      correctSound: ActivityData.correctSoundOf(json),
+      wrongSound: ActivityData.wrongSoundOf(json),
+      items: ActivityData._items(json)
+          .map(VisualMathItem.fromJson)
+          .where((item) => item.isPlayable)
+          .toList(),
+    );
+  }
+
+  final List<VisualMathItem> items;
+
+  @override
+  ActivityComponent get component => ActivityComponent.visualMath;
+
+  @override
+  List<String> get referencedAssets => [
+        for (final item in items) ...[item.first.image, item.second.image],
+      ];
+
+  @override
+  bool get isEmpty => items.isEmpty;
+}
+
+// ---------------------------------------------------------------------------
+// maze
+// ---------------------------------------------------------------------------
+
+/// How big a generated maze is, and so how hard.
+enum MazeDifficulty {
+  easy(5),
+  medium(7),
+  hard(9);
+
+  const MazeDifficulty(this.size);
+
+  /// Cells per side. Odd on purpose: the generator carves walls between cells,
+  /// which needs an odd grid to end on a wall.
+  final int size;
+
+  static MazeDifficulty fromJson(String? raw) => switch (raw) {
+        'easy' => MazeDifficulty.easy,
+        'hard' => MazeDifficulty.hard,
+        _ => MazeDifficulty.medium,
+      };
+}
+
+/// One maze to walk, described by size rather than by a drawn layout.
+class MazeItem {
+  const MazeItem({
+    required this.difficulty,
+    required this.character,
+    required this.seed,
+  });
+
+  factory MazeItem.fromJson(Map<String, dynamic> json, {required int index}) {
+    return MazeItem(
+      difficulty: MazeDifficulty.fromJson(json['difficulty'] as String?),
+      character: json['character_image'] as String? ?? '',
+      // Fixed rather than random so a child who leaves and comes back gets the
+      // maze they were solving, and so the widget can be tested at all.
+      seed: 1789 + index * 97,
+    );
+  }
+
+  final MazeDifficulty difficulty;
+
+  /// The sprite dragged through the maze — an existing picture, so a maze
+  /// costs no new artwork.
+  final String character;
+
+  final int seed;
+
+  bool get isPlayable => character.isNotEmpty;
+}
+
+/// Drag a character from one corner of a generated maze to the other.
+class MazeData extends ActivityData {
+  const MazeData({
+    required super.title,
+    required super.isRtl,
+    super.correctSound,
+    super.wrongSound,
+    required this.items,
+  });
+
+  factory MazeData.fromJson(
+    Map<String, dynamic> json, {
+    required String title,
+    required bool isRtl,
+  }) {
+    final raw = ActivityData._items(json);
+    return MazeData(
+      title: title,
+      isRtl: isRtl,
+      correctSound: ActivityData.correctSoundOf(json),
+      wrongSound: ActivityData.wrongSoundOf(json),
+      items: [
+        for (var i = 0; i < raw.length; i++) MazeItem.fromJson(raw[i], index: i),
+      ].where((item) => item.isPlayable).toList(),
+    );
+  }
+
+  final List<MazeItem> items;
+
+  @override
+  ActivityComponent get component => ActivityComponent.maze;
+
+  @override
+  List<String> get referencedAssets => [
+        for (final item in items) item.character,
+      ];
+
+  @override
+  bool get isEmpty => items.isEmpty;
+}
+
+// ---------------------------------------------------------------------------
+// memory_match
+// ---------------------------------------------------------------------------
+
+/// One board of face-down cards.
+class MemoryMatchItem {
+  const MemoryMatchItem({required this.faces, required this.columns});
+
+  factory MemoryMatchItem.fromJson(Map<String, dynamic> json) {
+    final raw = json['card_pairs'];
+    final faces = raw is List
+        ? raw.whereType<String>().where((path) => path.isNotEmpty).toList()
+        : <String>[];
+    return MemoryMatchItem(
+      faces: faces,
+      columns: _columnsOf(json['grid_size'] as String?, faces.length * 2),
+    );
+  }
+
+  /// `"4x3"` means four across. Falls back to a column count that keeps the
+  /// board close to square, so a pack that omits the size still lays out.
+  static int _columnsOf(String? raw, int cardCount) {
+    final match = RegExp(r'^(\d+)\s*[xX]\s*(\d+)$').firstMatch(raw ?? '');
+    if (match != null) return int.parse(match.group(1)!);
+    if (cardCount <= 4) return 2;
+    if (cardCount <= 12) return 4;
+    return 5;
+  }
+
+  /// One path per pair; each is dealt twice.
+  final List<String> faces;
+  final int columns;
+
+  bool get isPlayable => faces.length >= 2;
+}
+
+/// Turn two cards at a time and remember where the pictures were.
+class MemoryMatchData extends ActivityData {
+  const MemoryMatchData({
+    required super.title,
+    required super.isRtl,
+    super.correctSound,
+    super.wrongSound,
+    required this.items,
+  });
+
+  factory MemoryMatchData.fromJson(
+    Map<String, dynamic> json, {
+    required String title,
+    required bool isRtl,
+  }) {
+    return MemoryMatchData(
+      title: title,
+      isRtl: isRtl,
+      correctSound: ActivityData.correctSoundOf(json),
+      wrongSound: ActivityData.wrongSoundOf(json),
+      items: ActivityData._items(json)
+          .map(MemoryMatchItem.fromJson)
+          .where((item) => item.isPlayable)
+          .toList(),
+    );
+  }
+
+  final List<MemoryMatchItem> items;
+
+  @override
+  ActivityComponent get component => ActivityComponent.memoryMatch;
+
+  @override
+  List<String> get referencedAssets => [
+        for (final item in items) ...item.faces,
+      ];
+
+  @override
+  bool get isEmpty => items.isEmpty;
+}
