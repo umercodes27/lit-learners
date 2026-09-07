@@ -46,19 +46,14 @@ class ActivityPackStops {
     required bool Function(String levelId) isCompleted,
     required int Function(String levelId) starsFor,
   }) {
-    final levels = [...module.levels]
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final levels = _sorted(module);
+    final drawnLevels = levelsFor(module, moduleId: moduleId, stage: stage);
 
     final stops = <LevelStopData>[];
     var previousDone = true;
 
-    for (final (index, level) in levels.indexed) {
-      final drawn = _drawnLevel(
-        level,
-        moduleId: moduleId,
-        stage: stage,
-        number: index + 1,
-      );
+    for (final (index, drawn) in drawnLevels.indexed) {
+      final level = levels[index];
       final done = isCompleted(drawn.id);
 
       stops.add(
@@ -80,6 +75,29 @@ class ActivityPackStops {
 
     return stops;
   }
+
+  /// The same drawn levels [forModule] puts on the map, without the map.
+  ///
+  /// A pack activity records progress against these ids, so anything that
+  /// reads a child's progress — the parent's report most of all — has to know
+  /// the levels exist. Without them the rows are orphans: real progress
+  /// pointing at a level nothing can name, and a subject the child has been
+  /// playing all week reads as never started.
+  static List<LearningLevel> levelsFor(
+    ActivityModule module, {
+    required String moduleId,
+    required int stage,
+  }) {
+    return [
+      for (final (index, level) in _sorted(module).indexed)
+        _drawnLevel(level, moduleId: moduleId, stage: stage, number: index + 1),
+    ];
+  }
+
+  /// The pack's own order, which is the order its content is authored to be
+  /// met in. Shared so the map and the report number the levels identically.
+  static List<ActivityLevel> _sorted(ActivityModule module) =>
+      [...module.levels]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
   static LearningLevel _drawnLevel(
     ActivityLevel level, {

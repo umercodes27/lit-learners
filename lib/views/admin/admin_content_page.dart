@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/routing/route_names.dart';
+import '../../core/utils/module_visuals.dart';
 import '../../models/admin_content.dart';
 import '../../models/koala_guide_message.dart';
 import '../../models/learning_level.dart';
@@ -11,6 +12,7 @@ import '../../viewmodels/admin_auth_viewmodel.dart';
 import '../../viewmodels/admin_content_viewmodel.dart';
 import '../../widgets/app_primary_button.dart';
 import '../../widgets/koala_guide.dart';
+import 'widgets/admin_form_fields.dart';
 import 'widgets/admin_scaffold.dart';
 
 class AdminContentPage extends StatefulWidget {
@@ -29,6 +31,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
   var _moduleMinStage = 1;
   var _moduleMaxStage = 4;
   var _modulePublished = false;
+  var _moduleAllowOverwrite = false;
 
   final _levelIdController = TextEditingController();
   final _levelTitleController = TextEditingController();
@@ -48,7 +51,21 @@ class _AdminContentPageState extends State<AdminContentPage> {
   var _levelStage = 1;
   var _levelType = LevelType.flashcards;
   var _levelPublished = false;
+  var _levelAllowOverwrite = false;
   var _didRequestLoad = false;
+
+  /// Which module is being looked at. Null means none picked, and the page
+  /// shows the modules rather than every level in the app at once.
+  String? _browseModuleId;
+
+  final _searchController = TextEditingController();
+  var _showCreateForms = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() => setState(() {}));
+  }
 
   @override
   void didChangeDependencies() {
@@ -83,6 +100,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
     _quizCorrectIndexController.dispose();
     _videoTitleController.dispose();
     _videoUrlController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -96,6 +114,13 @@ class _AdminContentPageState extends State<AdminContentPage> {
       title: 'Manage Content',
       subtitle: 'Modules, levels and quizzes',
       actions: [
+        AdminHeaderAction(
+          tooltip: 'Generate levels with AI',
+          icon: Icons.auto_awesome_rounded,
+          onPressed: () =>
+              Navigator.of(context).pushNamed(RouteNames.adminAiAuthoring),
+        ),
+        const SizedBox(width: 4),
         AdminHeaderAction(
           tooltip: 'Media library',
           icon: Icons.perm_media_rounded,
@@ -124,10 +149,40 @@ class _AdminContentPageState extends State<AdminContentPage> {
             const Center(child: CircularProgressIndicator())
           else ...[
             _AdminStatus(admin: admin),
-            _ModuleList(modules: modules),
+            AdminTextField(
+              controller: _searchController,
+              label: 'Search modules and levels',
+            ),
+            _ModuleBrowser(
+              modules: modules,
+              levels: admin.levels,
+              selectedModuleId: _browseModuleId,
+              query: _searchController.text,
+              onSelect: (moduleId) => setState(
+                () => _browseModuleId =
+                    _browseModuleId == moduleId ? null : moduleId,
+              ),
+            ),
             const SizedBox(height: 12),
-            _LevelList(levels: admin.levels),
+            if (_browseModuleId != null) ...[
+              _ModuleList(
+                modules: [
+                  for (final module in modules)
+                    if (module.module.id == _browseModuleId) module,
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+            _LevelList(
+              levels: _visibleLevels(admin.levels),
+              subtitle: _levelListSubtitle(admin.levels),
+            ),
             const SizedBox(height: 16),
+            _CreateSection(
+              expanded: _showCreateForms,
+              onExpandedChanged: (value) =>
+                  setState(() => _showCreateForms = value),
+              children: [
             _ModuleForm(
               idController: _moduleIdController,
               titleController: _moduleTitleController,
@@ -137,6 +192,10 @@ class _AdminContentPageState extends State<AdminContentPage> {
               minStage: _moduleMinStage,
               maxStage: _moduleMaxStage,
               isPublished: _modulePublished,
+              allowOverwrite: _moduleAllowOverwrite,
+              onAllowOverwriteChanged: (value) {
+                setState(() => _moduleAllowOverwrite = value);
+              },
               onCategoryChanged: (value) {
                 setState(() => _moduleCategory = value);
               },
@@ -172,6 +231,10 @@ class _AdminContentPageState extends State<AdminContentPage> {
               stage: _levelStage,
               type: _levelType,
               isPublished: _levelPublished,
+              allowOverwrite: _levelAllowOverwrite,
+              onAllowOverwriteChanged: (value) {
+                setState(() => _levelAllowOverwrite = value);
+              },
               onModuleChanged: (value) {
                 setState(() => _selectedModuleId = value);
               },
@@ -186,10 +249,52 @@ class _AdminContentPageState extends State<AdminContentPage> {
               },
               onSubmit: _createLevel,
             ),
+              ],
+            ),
           ],
         ],
       ),
     );
+  }
+
+  /// Levels for the module being looked at, narrowed further by the search.
+  ///
+  /// Nothing is listed until a module is picked or something is searched for.
+  /// Ten modules with twenty levels each is two hundred rows, which is the
+  /// problem this page had.
+  List<AdminContentLevel> _visibleLevels(List<AdminContentLevel> levels) {
+    final query = _searchController.text.trim().toLowerCase();
+    final moduleId = _browseModuleId;
+
+    if (moduleId == null && query.isEmpty) return const [];
+
+    return [
+      for (final level in levels)
+        if (moduleId == null || level.level.moduleId == moduleId)
+          if (query.isEmpty || _matchesLevel(level, query)) level,
+    ];
+  }
+
+  bool _matchesLevel(AdminContentLevel level, String query) {
+    return level.level.title.toLowerCase().contains(query) ||
+        level.level.id.toLowerCase().contains(query) ||
+        level.level.subtitle.toLowerCase().contains(query);
+  }
+
+  String _levelListSubtitle(List<AdminContentLevel> levels) {
+    final query = _searchController.text.trim();
+    final moduleId = _browseModuleId;
+
+    if (moduleId == null && query.isEmpty) {
+      return 'Pick a module above, or search, to see its levels.';
+    }
+
+    final shown = _visibleLevels(levels).length;
+    if (query.isNotEmpty) {
+      return '$shown ${shown == 1 ? 'level matches' : 'levels match'} '
+          '"$query"${moduleId == null ? '' : ' in this module'}.';
+    }
+    return '$shown ${shown == 1 ? 'level' : 'levels'} in this module.';
   }
 
   Future<void> _createModule() async {
@@ -202,6 +307,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
           maxStage: _moduleMaxStage,
           order: int.tryParse(_moduleOrderController.text) ?? 1,
           isPublished: _modulePublished,
+          allowOverwrite: _moduleAllowOverwrite,
         );
     if (!created || !mounted) return;
 
@@ -224,6 +330,7 @@ class _AdminContentPageState extends State<AdminContentPage> {
           type: _levelType,
           passingScore: int.tryParse(_levelPassingScoreController.text) ?? 70,
           isPublished: _levelPublished,
+          allowOverwrite: _levelAllowOverwrite,
           contentTitle: _contentTitleController.text,
           contentPrompt: _contentPromptController.text,
           contentDisplayText: _contentDisplayController.text,
@@ -347,24 +454,26 @@ class _ModuleList extends StatelessWidget {
 }
 
 class _LevelList extends StatelessWidget {
-  const _LevelList({required this.levels});
+  const _LevelList({required this.levels, this.subtitle});
 
   final List<AdminContentLevel> levels;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     if (levels.isEmpty) {
-      return const AdminEmptyState(
+      return AdminEmptyState(
         icon: Icons.map_rounded,
-        title: 'No levels yet',
-        message: 'Levels belong to a module. Create one below to get started.',
+        title: 'Nothing to show',
+        message: subtitle ??
+            'Levels belong to a module. Create one below to get started.',
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const AdminSectionHeading(title: 'Levels'),
+        AdminSectionHeading(title: 'Levels', subtitle: subtitle),
         const SizedBox(height: 10),
         for (final level in levels)
           Padding(
@@ -593,6 +702,8 @@ class _ModuleForm extends StatelessWidget {
     required this.onMinStageChanged,
     required this.onMaxStageChanged,
     required this.onPublishedChanged,
+    required this.allowOverwrite,
+    required this.onAllowOverwriteChanged,
     required this.onSubmit,
   });
 
@@ -600,6 +711,11 @@ class _ModuleForm extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
   final TextEditingController orderController;
+
+  /// Saving is an upsert on the id, so replacing an existing module has to be
+  /// deliberate rather than a side effect of reusing a name.
+  final bool allowOverwrite;
+  final ValueChanged<bool> onAllowOverwriteChanged;
   final ModuleCategory category;
   final int minStage;
   final int maxStage;
@@ -621,27 +737,27 @@ class _ModuleForm extends StatelessWidget {
             icon: Icons.add_box_rounded,
             accent: AppColors.sky,
           ),
-          _TextField(controller: idController, label: 'Module ID'),
-          _TextField(controller: titleController, label: 'Title'),
-          _TextField(controller: descriptionController, label: 'Description'),
-          _TextField(
+          AdminTextField(controller: idController, label: 'Module ID'),
+          AdminTextField(controller: titleController, label: 'Title'),
+          AdminTextField(controller: descriptionController, label: 'Description'),
+          AdminTextField(
             controller: orderController,
             label: 'Sort order',
             keyboardType: TextInputType.number,
           ),
-          _EnumDropdown<ModuleCategory>(
+          AdminEnumDropdown<ModuleCategory>(
             label: 'Category',
             value: category,
             values: ModuleCategory.values,
             onChanged: onCategoryChanged,
           ),
-          _IntDropdown(
+          AdminIntDropdown(
             label: 'Min stage',
             value: minStage,
             values: const [2, 3, 4],
             onChanged: onMinStageChanged,
           ),
-          _IntDropdown(
+          AdminIntDropdown(
             label: 'Max stage',
             value: maxStage,
             values: const [2, 3, 4],
@@ -652,6 +768,16 @@ class _ModuleForm extends StatelessWidget {
             title: const Text('Published'),
             value: isPublished,
             onChanged: onPublishedChanged,
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Replace existing'),
+            subtitle: const Text(
+              'Leave off and saving onto an ID that already exists is '
+              'refused rather than overwriting it.',
+            ),
+            value: allowOverwrite,
+            onChanged: onAllowOverwriteChanged,
           ),
           AppPrimaryButton(
             icon: Icons.add,
@@ -689,11 +815,18 @@ class _LevelForm extends StatelessWidget {
     required this.onStageChanged,
     required this.onTypeChanged,
     required this.onPublishedChanged,
+    required this.allowOverwrite,
+    required this.onAllowOverwriteChanged,
     required this.onSubmit,
   });
 
   final List<AdminContentModule> modules;
   final String? selectedModuleId;
+
+  /// As on the module form: an id collision replaces rather than fails, so
+  /// replacing has to be chosen.
+  final bool allowOverwrite;
+  final ValueChanged<bool> onAllowOverwriteChanged;
   final TextEditingController idController;
   final TextEditingController titleController;
   final TextEditingController subtitleController;
@@ -740,26 +873,26 @@ class _LevelForm extends StatelessWidget {
             ],
             onChanged: onModuleChanged,
           ),
-          _TextField(controller: idController, label: 'Level ID'),
-          _TextField(controller: titleController, label: 'Title'),
-          _TextField(controller: subtitleController, label: 'Subtitle'),
-          _TextField(
+          AdminTextField(controller: idController, label: 'Level ID'),
+          AdminTextField(controller: titleController, label: 'Title'),
+          AdminTextField(controller: subtitleController, label: 'Subtitle'),
+          AdminTextField(
             controller: levelNumberController,
             label: 'Level number',
             keyboardType: TextInputType.number,
           ),
-          _TextField(
+          AdminTextField(
             controller: passingScoreController,
             label: 'Passing score',
             keyboardType: TextInputType.number,
           ),
-          _IntDropdown(
+          AdminIntDropdown(
             label: 'Stage',
             value: stage,
             values: const [2, 3, 4],
             onChanged: onStageChanged,
           ),
-          _EnumDropdown<LevelType>(
+          AdminEnumDropdown<LevelType>(
             label: 'Level type',
             value: type,
             values: LevelType.values,
@@ -767,9 +900,9 @@ class _LevelForm extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const _FormTitle(title: 'Activity card'),
-          _TextField(controller: contentTitleController, label: 'Card title'),
-          _TextField(controller: contentPromptController, label: 'Prompt'),
-          _TextField(
+          AdminTextField(controller: contentTitleController, label: 'Card title'),
+          AdminTextField(controller: contentPromptController, label: 'Prompt'),
+          AdminTextField(
             controller: contentDisplayController,
             label: 'Display text',
             helperText: type == LevelType.tracing
@@ -777,28 +910,38 @@ class _LevelForm extends StatelessWidget {
                     'letter or digit to trace, such as A or ا or 5.'
                 : null,
           ),
-          _TextField(controller: contentVisualController, label: 'Visual'),
+          AdminTextField(controller: contentVisualController, label: 'Visual'),
           const SizedBox(height: 8),
           const _FormTitle(title: 'Quiz'),
-          _TextField(controller: quizPromptController, label: 'Question'),
-          _TextField(
+          AdminTextField(controller: quizPromptController, label: 'Question'),
+          AdminTextField(
             controller: quizOptionsController,
             label: 'Options comma separated',
           ),
-          _TextField(
+          AdminTextField(
             controller: quizCorrectIndexController,
             label: 'Correct option index',
             keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 8),
           const _FormTitle(title: 'Video'),
-          _TextField(controller: videoTitleController, label: 'Video title'),
-          _TextField(controller: videoUrlController, label: 'Video URL'),
+          AdminTextField(controller: videoTitleController, label: 'Video title'),
+          AdminTextField(controller: videoUrlController, label: 'Video URL'),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Published'),
             value: isPublished,
             onChanged: onPublishedChanged,
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Replace existing'),
+            subtitle: const Text(
+              'Leave off and saving onto an ID that already exists is '
+              'refused rather than overwriting it.',
+            ),
+            value: allowOverwrite,
+            onChanged: onAllowOverwriteChanged,
           ),
           AppPrimaryButton(
             icon: Icons.add,
@@ -855,102 +998,215 @@ class _FormTitle extends StatelessWidget {
   }
 }
 
-class _TextField extends StatelessWidget {
-  const _TextField({
-    required this.controller,
-    required this.label,
-    this.keyboardType,
-    this.helperText,
+/// The modules, as something to navigate rather than something to scroll.
+///
+/// Every module is always shown — it is how the page is steered, so hiding
+/// one behind a search would take the steering away. What the search changes
+/// is the count on each card: type part of a level name and you can see at a
+/// glance which module holds it, without opening any of them.
+class _ModuleBrowser extends StatelessWidget {
+  const _ModuleBrowser({
+    required this.modules,
+    required this.levels,
+    required this.selectedModuleId,
+    required this.query,
+    required this.onSelect,
   });
 
-  final TextEditingController controller;
-  final String label;
-  final TextInputType? keyboardType;
-  final String? helperText;
+  final List<AdminContentModule> modules;
+  final List<AdminContentLevel> levels;
+  final String? selectedModuleId;
+  final String query;
+  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          helperText: helperText,
-          helperMaxLines: 3,
-          border: const OutlineInputBorder(),
+    if (modules.isEmpty) {
+      return const AdminEmptyState(
+        icon: Icons.widgets_rounded,
+        title: 'No modules yet',
+        message: 'Create one below and its levels will live inside it.',
+      );
+    }
+
+    final needle = query.trim().toLowerCase();
+    final searching = needle.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AdminSectionHeading(
+          title: 'Modules',
+          subtitle: searching
+              ? 'Showing how many levels in each match "${query.trim()}".'
+              : 'Tap one to work on its levels.',
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final module in modules)
+              _ModuleCard(
+                module: module,
+                levelCount: _levelsIn(module).length,
+                publishedCount:
+                    _levelsIn(module).where((l) => l.isPublished).length,
+                matchCount: searching ? _matchesIn(module, needle) : null,
+                isSelected: module.module.id == selectedModuleId,
+                onTap: () => onSelect(module.module.id),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<AdminContentLevel> _levelsIn(AdminContentModule module) => [
+        for (final level in levels)
+          if (level.level.moduleId == module.module.id) level,
+      ];
+
+  int _matchesIn(AdminContentModule module, String needle) {
+    return _levelsIn(module).where((level) {
+      return level.level.title.toLowerCase().contains(needle) ||
+          level.level.id.toLowerCase().contains(needle) ||
+          level.level.subtitle.toLowerCase().contains(needle);
+    }).length;
+  }
+}
+
+class _ModuleCard extends StatelessWidget {
+  const _ModuleCard({
+    required this.module,
+    required this.levelCount,
+    required this.publishedCount,
+    required this.matchCount,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final AdminContentModule module;
+  final int levelCount;
+  final int publishedCount;
+
+  /// Null when nothing is being searched for.
+  final int? matchCount;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = ModuleVisuals.colorForModuleId(module.module.id);
+    final theme = Theme.of(context);
+    // Dimmed only while searching, and only when this module holds nothing
+    // that matches — so it stays visible and still selectable.
+    final faded = matchCount == 0;
+
+    return SizedBox(
+      width: 168,
+      child: Opacity(
+        opacity: faded ? 0.5 : 1,
+        child: AdminSoftCard(
+          onTap: onTap,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  AdminIconChip(
+                    icon: ModuleVisuals.iconFor(module.module.category),
+                    color: accent,
+                    size: 34,
+                  ),
+                  const Spacer(),
+                  if (isSelected)
+                    Icon(Icons.check_circle_rounded, size: 20, color: accent),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                module.module.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                matchCount != null
+                    ? '$matchCount of $levelCount match'
+                    : '$levelCount ${levelCount == 1 ? 'level' : 'levels'}',
+                style: theme.textTheme.labelSmall,
+              ),
+              const SizedBox(height: 8),
+              AdminProgressBar(
+                value: levelCount == 0 ? 0 : publishedCount / levelCount,
+                color: accent,
+                minHeight: 6,
+              ),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  _StatusPill(status: module.publishStatus),
+                  const Spacer(),
+                  Text(
+                    '$publishedCount live',
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _EnumDropdown<T extends Enum> extends StatelessWidget {
-  const _EnumDropdown({
-    required this.label,
-    required this.value,
-    required this.values,
-    required this.onChanged,
+/// The two create forms, folded away.
+///
+/// They are thirty-odd fields between them and used far less often than
+/// browsing is, so they no longer sit in the way of the thing this page is
+/// mostly used for.
+class _CreateSection extends StatelessWidget {
+  const _CreateSection({
+    required this.expanded,
+    required this.onExpandedChanged,
+    required this.children,
   });
 
-  final String label;
-  final T value;
-  final List<T> values;
-  final ValueChanged<T> onChanged;
+  final bool expanded;
+  final ValueChanged<bool> onExpandedChanged;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<T>(
-        initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+    return AdminSoftCard(
+      padding: EdgeInsets.zero,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: expanded,
+          onExpansionChanged: onExpandedChanged,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          leading: const AdminIconChip(
+            icon: Icons.add_rounded,
+            color: AppColors.leaf,
+            size: 36,
+          ),
+          title: Text(
+            'Create by hand',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          subtitle: const Text('Or use AI Authoring for a whole stage'),
+          children: children,
         ),
-        items: [
-          for (final item in values)
-            DropdownMenuItem(value: item, child: Text(item.name)),
-        ],
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
-      ),
-    );
-  }
-}
-
-class _IntDropdown extends StatelessWidget {
-  const _IntDropdown({
-    required this.label,
-    required this.value,
-    required this.values,
-    required this.onChanged,
-  });
-
-  final String label;
-  final int value;
-  final List<int> values;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: DropdownButtonFormField<int>(
-        initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        items: [
-          for (final item in values)
-            DropdownMenuItem(value: item, child: Text(item.toString())),
-        ],
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
       ),
     );
   }

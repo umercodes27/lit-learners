@@ -11,7 +11,8 @@ import 'package:little_learners/services/sync/content_sync_service.dart';
 
 void main() {
   group('ContentSyncService', () {
-    test('replaces local content with a remote published bundle', () async {
+    test('adds a remote published bundle on top of the bundled curriculum',
+        () async {
       final dao = InMemoryContentDao();
       final remote = InMemoryContentRemoteDataSource(
         modules: [_adminModule()],
@@ -31,11 +32,51 @@ void main() {
       expect(report.didApplyRemoteContent, isTrue);
       expect(report.modulesPulled, 1);
       expect(report.levelsPulled, 1);
-      expect(modules.map((module) => module.id), ['admin-math']);
+
+      expect(modules.map((module) => module.id), contains('admin-math'));
       expect(level?.contentItems, hasLength(1));
       expect(level?.quizQuestions, hasLength(1));
       expect(level?.videoLessons, hasLength(1));
-      expect(await dao.getLevelById('math-stage3-1'), isNull);
+
+      // The regression this guards. Publishing a single module from the admin
+      // panel used to empty the content tables and write only that module, so
+      // a parent going back to the dashboard found the entire shipped
+      // curriculum gone and one lonely new module in its place.
+      expect(
+        modules.map((module) => module.id),
+        containsAll(seedModules.map((module) => module.id)),
+      );
+      expect(modules, hasLength(seedModules.length + 1));
+      expect(await dao.getLevelById('math-stage3-1'), isNotNull);
+    });
+
+    test('a remote module reusing a bundled id overrides it, not duplicates it',
+        () async {
+      final dao = InMemoryContentDao();
+      const override = LearningModule(
+        id: 'math',
+        title: 'Maths, rewritten by an admin',
+        description: 'Edited remotely.',
+        category: ModuleCategory.math,
+        minStage: 1,
+        maxStage: 4,
+        order: 1,
+      );
+      final service = ContentSyncService(
+        contentDao: dao,
+        contentRemoteDataSource:
+            InMemoryContentRemoteDataSource(modules: [override], levels: []),
+      );
+
+      await dao.seedContent(modules: seedModules, levels: seedLevels);
+      await service.syncNow();
+
+      final modules = await dao.getModules();
+      expect(modules, hasLength(seedModules.length));
+      expect(
+        modules.firstWhere((module) => module.id == 'math').title,
+        'Maths, rewritten by an admin',
+      );
     });
 
     test('keeps local content when remote bundle is empty', () async {

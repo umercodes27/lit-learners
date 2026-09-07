@@ -80,6 +80,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   Navigator.of(context).pushNamed(RouteNames.adminContent),
             ),
             const SizedBox(height: 10),
+            _AdminMenuTile(
+              title: 'AI Authoring',
+              subtitle: 'Draft a stage of levels, then check every one',
+              icon: Icons.auto_awesome_rounded,
+              accent: AppColors.violet,
+              onTap: () =>
+                  Navigator.of(context).pushNamed(RouteNames.adminAiAuthoring),
+            ),
+            const SizedBox(height: 10),
           ],
           if (adminAuth.admin?.canViewParentAccounts ?? false) ...[
             _AdminMenuTile(

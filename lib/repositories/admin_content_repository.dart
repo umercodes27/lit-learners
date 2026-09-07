@@ -12,6 +12,14 @@ abstract class AdminContentRepository {
 
   Future<AdminContentLevel> upsertLevel(AdminContentLevel level);
 
+  /// Writes several levels as one all-or-nothing operation.
+  ///
+  /// A stage is a ladder: unlocking walks levelNumber from 1, so a run that
+  /// saves levels 1-3 and then loses the connection does not leave three
+  /// useful levels — it leaves a gap that locks levels 4 and 5 forever. This
+  /// exists so that cannot happen.
+  Future<List<AdminContentLevel>> upsertLevels(List<AdminContentLevel> levels);
+
   Future<void> deleteModule(String moduleId);
 
   Future<void> deleteLevel(String levelId);
@@ -96,6 +104,16 @@ class InMemoryAdminContentRepository implements AdminContentRepository {
       isPublished: level.isPublished,
     );
     return level.copyWith(updatedAt: now);
+  }
+
+  /// In memory there is nothing to be partial about: these are synchronous
+  /// map writes with no await between them, so the loop is already atomic
+  /// from any caller's point of view.
+  @override
+  Future<List<AdminContentLevel>> upsertLevels(
+    List<AdminContentLevel> levels,
+  ) async {
+    return [for (final level in levels) await upsertLevel(level)];
   }
 
   @override

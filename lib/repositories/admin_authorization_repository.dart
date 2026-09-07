@@ -191,6 +191,11 @@ class AuthorizedAdminContentRepository implements AdminContentRepository {
   }
 
   @override
+  Future<List<AdminContentLevel>> upsertLevels(List<AdminContentLevel> levels) {
+    return _authorized(() => _delegate.upsertLevels(levels));
+  }
+
+  @override
   Future<AdminContentModule> upsertModule(AdminContentModule module) {
     return _authorized(() => _delegate.upsertModule(module));
   }

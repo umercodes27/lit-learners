@@ -28,13 +28,19 @@ class AudioplayersSoundController extends SoundController {
   MusicTrack? _currentTrack;
 
   bool _muted = false;
-  bool _ducked = false;
+  int _duckDepth = 0;
   bool _unlocked;
   double _musicVolume = 0.28;
   double _sfxVolume = 0.75;
 
-  /// How far the bed drops while a video lesson is speaking.
+  /// How far the bed drops while anything is speaking.
   static const _duckFactor = 0.18;
+
+  /// Ducked while anything at all is speaking, so overlapping voices cannot
+  /// unduck each other. A spoken prompt that runs into a reward cue used to
+  /// end with the music back at full volume underneath the cue, because the
+  /// first voice to finish returned it.
+  bool get _ducked => _duckDepth > 0;
 
   @override
   bool get muted => _muted;
@@ -48,7 +54,12 @@ class AudioplayersSoundController extends SoundController {
   @override
   bool get unlocked => _unlocked;
 
-  double get _effectiveMusicVolume {
+  /// What the bed is actually playing at, once mute and ducking are applied.
+  ///
+  /// Public because it is the only externally visible consequence of ducking,
+  /// and the balance between voices ducking and unducking is worth being able
+  /// to assert.
+  double get effectiveMusicVolume {
     if (_muted) return 0;
     return _musicVolume * (_ducked ? _duckFactor : 1.0);
   }
@@ -124,8 +135,8 @@ class AudioplayersSoundController extends SoundController {
     try {
       final player = _musicPlayer ??= AudioPlayer();
       await player.setReleaseMode(ReleaseMode.loop);
-      await player.setVolume(_effectiveMusicVolume);
-      await player.play(AssetSource(track.asset), volume: _effectiveMusicVolume);
+      await player.setVolume(effectiveMusicVolume);
+      await player.play(AssetSource(track.asset), volume: effectiveMusicVolume);
     } on Object {
       _currentTrack = null;
     }
@@ -143,21 +154,23 @@ class AudioplayersSoundController extends SoundController {
 
   @override
   Future<void> duck() async {
-    if (_ducked) return;
-    _ducked = true;
-    await _applyMusicVolume();
+    _duckDepth++;
+    if (_duckDepth == 1) await _applyMusicVolume();
   }
 
   @override
   Future<void> unduck() async {
-    if (!_ducked) return;
-    _ducked = false;
-    await _applyMusicVolume();
+    // Never below zero. An unbalanced unduck — a screen disposing after its
+    // sound already finished — would otherwise owe the next duck a call and
+    // leave the bed loud under the following voice.
+    if (_duckDepth == 0) return;
+    _duckDepth--;
+    if (_duckDepth == 0) await _applyMusicVolume();
   }
 
   Future<void> _applyMusicVolume() async {
     try {
-      await _musicPlayer?.setVolume(_effectiveMusicVolume);
+      await _musicPlayer?.setVolume(effectiveMusicVolume);
     } on Object {
       // Nothing playing.
     }

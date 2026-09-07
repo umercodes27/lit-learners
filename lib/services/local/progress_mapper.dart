@@ -21,6 +21,10 @@ class ProgressMapper {
       lastWatchedAt: _optionalDate(map['lastWatchedAt']),
       updatedAt: DateTime.parse(map['updatedAt']! as String),
       isSynced: (map['isSynced']! as int) == 1,
+      // Read leniently: a row written before the column existed has no value
+      // for it even after the migration backfills the default.
+      attempts: (map['attempts'] as int?) ?? 0,
+      wrongAnswers: (map['wrongAnswers'] as int?) ?? 0,
     );
   }
 
@@ -38,6 +42,8 @@ class ProgressMapper {
       'lastWatchedAt': progress.lastWatchedAt?.toIso8601String(),
       'updatedAt': progress.updatedAt.toIso8601String(),
       'isSynced': progress.isSynced ? 1 : 0,
+      'attempts': progress.attempts,
+      'wrongAnswers': progress.wrongAnswers,
     };
   }
 

@@ -209,10 +209,22 @@ Future<void> confirmAdminLogout(BuildContext context) async {
   }
 
   statsViewModel.reset();
-  await navigator.pushNamedAndRemoveUntil(
-    RouteNames.adminLogin,
-    (route) => false,
-  );
+
+  // Pop back out of the admin section to whatever the admin came from.
+  //
+  // This used to clear the whole stack, which left the app with nothing
+  // underneath: pressing back after logging out then popped the last route
+  // and showed a blank screen the app could not be navigated out of. Admin is
+  // always entered with pushNamed from the login page or the parent
+  // dashboard, so the app the admin arrived from is still down there.
+  navigator.popUntil((route) => route.isFirst || !_isAdminRoute(route));
+}
+
+/// Every admin screen lives under `/admin`, which is what lets logout pop
+/// the whole section off in one go without naming each route.
+bool _isAdminRoute(Route<dynamic> route) {
+  final name = route.settings.name;
+  return name != null && name.startsWith('/admin');
 }
 
 class AdminAccessDenied extends StatelessWidget {
@@ -273,7 +285,9 @@ class AdminAccessDenied extends StatelessWidget {
                         onPressed: () =>
                             Navigator.of(context).pushNamedAndRemoveUntil(
                           RouteNames.adminLogin,
-                          (route) => false,
+                          // Keep the app underneath, or back from the login
+                          // screen lands on an empty stack.
+                          (route) => route.isFirst,
                         ),
                         icon: const Icon(Icons.login_rounded, size: 20),
                         label: const Text('Go to admin login'),

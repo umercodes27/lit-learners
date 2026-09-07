@@ -214,6 +214,10 @@ class _QuizBodyState extends State<_QuizBody> {
           child.id,
           widget.level,
           score: score,
+          // Counted across retries, so a level passed on the third go is on
+          // record as having been hard rather than looking identical to one
+          // passed first time.
+          wrongAnswers: quiz.wrongAnswers,
         );
     if (!context.mounted) return;
 
