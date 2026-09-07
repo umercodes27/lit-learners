@@ -70,7 +70,14 @@ import 'services/sync/sync_orchestrator.dart';
 import 'services/storage/media_storage_data_source.dart';
 import 'viewmodels/active_child_session.dart';
 import 'viewmodels/admin_auth_viewmodel.dart';
+import 'services/ai/ai_content_generator.dart';
+import 'services/ai/llm_client.dart';
+import 'services/ai/llm_credential_store.dart';
+import 'services/ai/openai_compatible_llm_client.dart';
+import 'services/insights/progress_summary_service.dart';
+import 'services/insights/progress_summary_store.dart';
 import 'viewmodels/admin_content_viewmodel.dart';
+import 'viewmodels/ai_content_viewmodel.dart';
 import 'viewmodels/admin_media_viewmodel.dart';
 import 'viewmodels/admin_stats_viewmodel.dart';
 import 'viewmodels/auth_viewmodel.dart';
@@ -297,6 +304,20 @@ SoundController _buildSoundController() {
   return controller;
 }
 
+/// The admin's own API key, and the client that spends it.
+///
+/// Built here like every other dependency so no page constructs one.
+/// The client holds the store rather than a key, so an admin changing
+/// their key takes effect on the next call instead of the next restart.
+final LlmCredentialStore _llmCredentialStore =
+    LocalLlmCredentialStore(dbHelper: _localDbHelper);
+
+final LlmClient _llmClient =
+    OpenAiCompatibleLlmClient(credentialStore: _llmCredentialStore);
+
+final AiContentGenerator _aiContentGenerator =
+    AiContentGenerator(client: _llmClient);
+
 /// Loads the stored sound settings. Called from `main()` before the first
 /// frame.
 Future<void> loadSoundSettings() => _soundController.load();
@@ -368,6 +389,12 @@ class LittleLearnersApp extends StatelessWidget {
             contentSyncService: _contentSyncService,
           ),
         ),
+        ChangeNotifierProvider(
+          create: (_) => AiContentViewModel(
+            generator: _aiContentGenerator,
+            credentialStore: _llmCredentialStore,
+          ),
+        ),
         Provider<LocalNotificationService>.value(
           value: localNotificationService,
         ),
@@ -396,7 +423,18 @@ class LittleLearnersApp extends StatelessWidget {
           create: (_) => ParentalLockViewModel(_parentalLockRepository),
         ),
         ChangeNotifierProvider(
-          create: (_) => ParentReportViewModel(_parentReportRepository),
+          create: (_) => ParentReportViewModel(
+            _parentReportRepository,
+            contentRepository: _contentRepository,
+            // Reuses the admin's stored key. Summaries are cached against a
+            // fingerprint of the child's progress, so opening the report
+            // again costs nothing until the child has actually done
+            // something new.
+            summaryService: ProgressSummaryService(
+              client: _llmClient,
+              store: LocalProgressSummaryStore(dbHelper: _localDbHelper),
+            ),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => LeaderboardViewModel(

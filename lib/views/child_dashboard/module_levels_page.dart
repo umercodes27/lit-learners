@@ -297,7 +297,9 @@ class _ModuleLevelsPageState extends State<ModuleLevelsPage> {
     required dynamic child,
     required TextDirection textDirection,
   }) {
-    final stage = child == null ? 1 : AgeStageHelper.stageForAge(child.age);
+    final stage = child == null
+        ? AgeStageHelper.minStage
+        : AgeStageHelper.stageForAge(child.age);
     final stops = ActivityPackStops.forModule(
       packModule,
       moduleId: widget.moduleId,

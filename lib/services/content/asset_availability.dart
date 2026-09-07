@@ -72,4 +72,14 @@ class AssetAvailability {
     _assets = assets;
     _populated = true;
   }
+
+  /// Puts the registry back to never-loaded.
+  ///
+  /// [debugSeed] marks it populated, and this is a singleton, so without a way
+  /// back one seeded test makes every later test in the file believe the
+  /// manifest was read and that everything it does not name is missing.
+  void debugReset() {
+    _assets = const {};
+    _populated = false;
+  }
 }

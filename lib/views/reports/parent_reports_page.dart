@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/koala_guide_message.dart';
-import '../../models/learning_level.dart';
 import '../../models/parent_report.dart';
+import '../../services/insights/child_insights.dart';
+import '../../services/insights/progress_summary_store.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/parent_report_viewmodel.dart';
-import '../../widgets/koala_guide.dart';
-import '../../widgets/star_rating.dart';
 import '../../widgets/play/play.dart';
+import 'widgets/progress_ring.dart';
+import 'widgets/report_cards.dart';
 
+/// How a child is getting on, one child at a time.
+///
+/// This used to be a single list: every child, then every level each of them
+/// had touched, as rows. With three children and a term's work that is a
+/// hundred rows to scroll looking for a number — and the thing a parent
+/// actually wants, is this going well and what should we do next, was nowhere
+/// on the screen.
+///
+/// Now it shows one child, in rings that are read without counting, with the
+/// findings underneath in plain sentences. Every level is still accounted for
+/// in those numbers; the levels just are not the interface any more.
 class ParentReportsPage extends StatefulWidget {
   const ParentReportsPage({super.key});
 
@@ -19,6 +30,7 @@ class ParentReportsPage extends StatefulWidget {
 
 class _ParentReportsPageState extends State<ParentReportsPage> {
   String? _loadedParentId;
+  String? _selectedChildId;
 
   @override
   void didChangeDependencies() {
@@ -27,6 +39,7 @@ class _ParentReportsPageState extends State<ParentReportsPage> {
     if (parent != null && _loadedParentId != parent.id) {
       _loadedParentId = parent.id;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         context.read<ParentReportViewModel>().loadReport(parent.id);
       });
     }
@@ -41,356 +54,382 @@ class _ParentReportsPageState extends State<ParentReportsPage> {
       return const Scaffold(body: Center(child: Text('Parent not signed in.')));
     }
 
+    final children = reports.report?.childReports ?? const <ChildReport>[];
+    final selected = _selectedFrom(children);
+
     return Scaffold(
       backgroundColor: PlayColors.cream,
-      appBar: AppBar(
-        toolbarHeight: 68,
-        backgroundColor: PlayColors.grape,
-        foregroundColor: Colors.white,
-        titleTextStyle: const TextStyle(
-          fontFamily: 'Fredoka',
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        title: const Text('Parent Reports'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh reports',
-            onPressed: reports.isLoading
-                ? null
-                : () =>
-                    context.read<ParentReportViewModel>().loadReport(parent.id),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: reports.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _ReportBody(report: reports.report, error: reports.errorMessage),
-      ),
-    );
-  }
-}
-
-class _ReportBody extends StatelessWidget {
-  const _ReportBody({
-    required this.report,
-    required this.error,
-  });
-
-  final ParentReport? report;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final report = this.report;
-
-    if (error != null) {
-      return Center(child: Text(error!));
-    }
-
-    if (report == null || report.childReports.isEmpty) {
-      return ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          ContextualKoalaGuide(
-            trigger: KoalaGuideTrigger.parentReport,
-            audience: KoalaGuideAudience.parent,
-            fallbackMessage: 'Create a child profile and complete a level to '
-                'see reports here.',
-          ),
-        ],
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const ContextualKoalaGuide(
-          trigger: KoalaGuideTrigger.parentReport,
-          audience: KoalaGuideAudience.parent,
-          fallbackMessage: 'A quick parent view of profile activity, quiz '
-              'scores, rewards, and video watching.',
-        ),
-        const SizedBox(height: 16),
-        _SummaryGrid(report: report),
-        const SizedBox(height: 16),
-        for (final childReport in report.childReports)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _ChildReportCard(report: childReport),
-          ),
-      ],
-    );
-  }
-}
-
-class _SummaryGrid extends StatelessWidget {
-  const _SummaryGrid({required this.report});
-
-  final ParentReport report;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        _SummaryTile(
-          icon: Icons.child_care,
-          label: 'Learners',
-          value: report.childCount.toString(),
-        ),
-        _SummaryTile(
-          icon: Icons.check_circle,
-          label: 'Completed',
-          value: report.completedLevels.toString(),
-        ),
-        _SummaryTile(
-          icon: Icons.star,
-          label: 'Stars',
-          value: report.totalStars.toString(),
-        ),
-        _SummaryTile(
-          icon: Icons.quiz,
-          label: 'Quiz avg',
-          value: report.averageQuizScore == null
-              ? '-'
-              : '${report.averageQuizScore}%',
-        ),
-        _SummaryTile(
-          icon: Icons.play_circle,
-          label: 'Videos',
-          value: report.watchedVideoLessons.toString(),
-        ),
-      ],
-    );
-  }
-}
-
-class _SummaryTile extends StatelessWidget {
-  const _SummaryTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 112,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Icon(icon),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(label, textAlign: TextAlign.center),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChildReportCard extends StatelessWidget {
-  const _ChildReportCard({required this.report});
-
-  final ChildReport report;
-
-  @override
-  Widget build(BuildContext context) {
-    final profile = report.profile;
-    final latestProgress = report.progressReports.take(3).toList();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      body: PlayGround(
+        color: PlayColors.grape,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                CircleAvatar(child: Text(profile.name.substring(0, 1))),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile.name,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                      Text(
-                        'Age ${profile.age} - '
-                        '${profile.isSynced ? 'synced' : 'pending sync'}',
-                      ),
-                    ],
-                  ),
+            PlayHeader(
+              title: 'Progress',
+              subtitle: children.length > 1 ? 'One child at a time' : null,
+              onBack: Navigator.of(context).canPop()
+                  ? () => Navigator.of(context).pop()
+                  : null,
+              trailing: Squishy(
+                onTap: reports.isLoading
+                    ? null
+                    : () => context
+                        .read<ParentReportViewModel>()
+                        .loadReport(parent.id),
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(Icons.refresh_rounded, color: PlayColors.ink),
                 ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                _InlineMetric(
-                  icon: Icons.check,
-                  label: '${report.completedLevels} levels',
-                ),
-                _InlineMetric(
-                  icon: Icons.star,
-                  label: '${report.starsEarned} stars',
-                ),
-                _InlineMetric(
-                  icon: Icons.emoji_events,
-                  label: '${report.rewardsEarned} rewards',
-                ),
-                _InlineMetric(
-                  icon: Icons.play_arrow,
-                  label: '${report.watchedVideoLessons} videos',
-                ),
-                _InlineMetric(
-                  icon: Icons.quiz,
-                  label: report.averageQuizScore == null
-                      ? 'No quiz score'
-                      : '${report.averageQuizScore}% quiz avg',
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Profile updated ${_formatDate(profile.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            if (report.lastActivityAt != null)
-              Text(
-                'Last activity ${_formatDate(report.lastActivityAt!)}',
-                style: Theme.of(context).textTheme.bodySmall,
               ),
-            const Divider(height: 24),
-            if (latestProgress.isEmpty)
-              const Text('No learning activity yet.')
-            else
-              for (final progressReport in latestProgress)
-                _ProgressRow(report: progressReport),
+            ),
+            if (children.length > 1)
+              _ChildSwitcher(
+                childReports: children,
+                selectedId: selected?.profile.id,
+                onSelect: (id) => setState(() => _selectedChildId = id),
+              ),
+            Expanded(child: _body(context, reports, selected)),
           ],
         ),
       ),
     );
   }
+
+  ChildReport? _selectedFrom(List<ChildReport> children) {
+    if (children.isEmpty) return null;
+    for (final child in children) {
+      if (child.profile.id == _selectedChildId) return child;
+    }
+    return children.first;
+  }
+
+  Widget _body(
+    BuildContext context,
+    ParentReportViewModel reports,
+    ChildReport? selected,
+  ) {
+    if (reports.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: PlayColors.grape),
+      );
+    }
+    if (reports.errorMessage != null) {
+      return _Message(
+        icon: Icons.cloud_off_rounded,
+        title: 'Could not load',
+        message: reports.errorMessage!,
+      );
+    }
+    if (selected == null) {
+      return const _Message(
+        icon: Icons.child_care_rounded,
+        title: 'No children yet',
+        message: 'Add a child profile and their progress will appear here.',
+      );
+    }
+
+    final insights = reports.insightsFor(selected.profile.id);
+    if (insights == null) {
+      return const _Message(
+        icon: Icons.hourglass_empty_rounded,
+        title: 'Working it out',
+        message: 'Tap refresh if this stays here.',
+      );
+    }
+
+    return _ChildProgress(
+      insights: insights,
+      summary: reports.summaryFor(selected.profile.id),
+      isGenerating: reports.isGeneratingFor(selected.profile.id),
+      error: reports.summaryErrorFor(selected.profile.id),
+      canSummarise: reports.canSummarise,
+      onGenerate: () => context
+          .read<ParentReportViewModel>()
+          .generateSummary(selected.profile.id),
+    );
+  }
 }
 
-class _InlineMetric extends StatelessWidget {
-  const _InlineMetric({
-    required this.icon,
-    required this.label,
+/// One child's progress, as a picture rather than a list.
+class _ChildProgress extends StatelessWidget {
+  const _ChildProgress({
+    required this.insights,
+    required this.summary,
+    required this.isGenerating,
+    required this.error,
+    required this.canSummarise,
+    required this.onGenerate,
   });
 
-  final IconData icon;
-  final String label;
+  final ChildInsights insights;
+  final ProgressSummary? summary;
+  final bool isGenerating;
+  final String? error;
+  final bool canSummarise;
+  final VoidCallback onGenerate;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final name = insights.profile.name;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
       children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 4),
-        Text(label),
+        _Headline(insights: insights),
+        const SizedBox(height: 16),
+        const PlaySectionLabel('Subjects', color: PlayColors.ink),
+        const SizedBox(height: 10),
+        PlayPanel(
+          child: Wrap(
+            alignment: WrapAlignment.spaceEvenly,
+            spacing: 6,
+            runSpacing: 18,
+            children: [
+              for (final module in insights.modules)
+                SizedBox(
+                  width: 96,
+                  child: SubjectRing(
+                    title: module.moduleTitle,
+                    completion: module.completion,
+                    color: PlayColors.forModuleId(module.moduleId),
+                    caption: module.isStarted
+                        ? '${module.starsEarned}/${module.starsPossible} stars'
+                        : 'not tried',
+                    dimmed: !module.isStarted,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (canSummarise) ...[
+          const SizedBox(height: 18),
+          AiSummaryCard(
+            childName: name,
+            summary: summary,
+            isGenerating: isGenerating,
+            error: error,
+            onGenerate: onGenerate,
+          ),
+        ],
+        if (insights.findings.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          const PlaySectionLabel('What we noticed', color: PlayColors.ink),
+          const SizedBox(height: 10),
+          for (final finding in insights.findings)
+            InsightCard(insight: finding),
+        ],
       ],
     );
   }
 }
 
-class _ProgressRow extends StatelessWidget {
-  const _ProgressRow({required this.report});
+/// The one glance that answers "is this going well?".
+class _Headline extends StatelessWidget {
+  const _Headline({required this.insights});
 
-  final LevelProgressReport report;
+  final ChildInsights insights;
 
   @override
   Widget build(BuildContext context) {
-    final progress = report.progress;
-    final watchedText = report.watchedLessonTitles.isEmpty
-        ? null
-        : 'Watched ${report.watchedLessonTitles.join(', ')}';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return PlayPanel(
+      padding: const EdgeInsets.all(18),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(_iconFor(report.levelType)),
-          const SizedBox(width: 10),
+          ProgressRing(
+            value: insights.overallCompletion,
+            color: PlayColors.grape,
+            size: 104,
+            thickness: 12,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${(insights.overallCompletion * 100).round()}%',
+                  style: const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    height: 1,
+                    color: PlayColors.ink,
+                  ),
+                ),
+                Text(
+                  'done',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: PlayColors.ink.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  report.levelTitle,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                Text(report.moduleTitle),
-                if (progress.score != null)
-                  Text(
-                    switch (report.levelType) {
-                      // Canvas work carries the mark a grown-up gave it, not
-                      // anything the app worked out on its own.
-                      LevelType.tracing ||
-                      LevelType.drawing =>
-                        'Your mark ${progress.score}%',
-                      _ => 'Quiz score ${progress.score}%',
-                    },
+                  insights.profile.name,
+                  style: const TextStyle(
+                    fontFamily: 'Fredoka',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 22,
+                    color: PlayColors.ink,
                   ),
-                if (watchedText != null) Text(watchedText),
-                Text(
-                  _formatDate(progress.updatedAt),
-                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 10),
+                _Stat(
+                  icon: Icons.star_rounded,
+                  color: PlayColors.sunshine,
+                  label: '${insights.totalStars} of '
+                      '${insights.totalStarsPossible} stars',
+                ),
+                const SizedBox(height: 6),
+                _Stat(
+                  icon: Icons.check_circle_rounded,
+                  color: PlayColors.grass,
+                  label: '${insights.completedLevels} of '
+                      '${insights.availableLevels} lessons',
+                ),
+                const SizedBox(height: 6),
+                _Stat(
+                  icon: Icons.bolt_rounded,
+                  color: PlayColors.tangerine,
+                  label: insights.levelsCompletedThisWeek == 0
+                      ? 'nothing this week yet'
+                      : '${insights.levelsCompletedThisWeek} this week',
                 ),
               ],
             ),
           ),
-          StarRating(count: progress.starsEarned),
         ],
       ),
     );
   }
+}
 
-  IconData _iconFor(LevelType type) {
-    return switch (type) {
-      LevelType.video => Icons.play_circle,
-      LevelType.counting => Icons.exposure_plus_1,
-      LevelType.matching => Icons.category,
-      LevelType.story => Icons.menu_book,
-      LevelType.drawing => Icons.brush,
-      LevelType.tracing => Icons.gesture,
-      LevelType.flashcards => Icons.style,
-    };
+class _Stat extends StatelessWidget {
+  const _Stat({required this.icon, required this.color, required this.label});
+
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 17, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: PlayColors.ink.withValues(alpha: 0.8),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
-String _formatDate(DateTime date) {
-  final month = date.month.toString().padLeft(2, '0');
-  final day = date.day.toString().padLeft(2, '0');
-  final hour = date.hour.toString().padLeft(2, '0');
-  final minute = date.minute.toString().padLeft(2, '0');
-  return '${date.year}-$month-$day $hour:$minute';
+class _ChildSwitcher extends StatelessWidget {
+  const _ChildSwitcher({
+    required this.childReports,
+    required this.selectedId,
+    required this.onSelect,
+  });
+
+  final List<ChildReport> childReports;
+  final String? selectedId;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 58,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        itemCount: childReports.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final child = childReports[index];
+          final isSelected = child.profile.id == selectedId;
+
+          return Squishy(
+            onTap: () => onSelect(child.profile.id),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isSelected ? PlayColors.grape : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white, width: 3),
+              ),
+              child: Text(
+                child.profile.name,
+                style: TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: isSelected ? Colors.white : PlayColors.ink,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Message extends StatelessWidget {
+  const _Message({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 54, color: PlayColors.ink.withValues(alpha: 0.35)),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'Fredoka',
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                color: PlayColors.ink,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                height: 1.4,
+                color: PlayColors.ink.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

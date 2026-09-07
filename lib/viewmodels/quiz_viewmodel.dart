@@ -26,6 +26,13 @@ class QuizViewModel extends ChangeNotifier {
   int? _selectedIndex;
   bool _answered = false;
 
+  /// Every wrong answer this child has given on this level, across retries.
+  ///
+  /// Deliberately not reset by [restart]. A child who failed the quiz twice
+  /// and passed on the third go scores the same as one who passed first time,
+  /// and the difference between them is the whole point of asking.
+  int _wrongTotal = 0;
+
   QuizQuestion get currentQuestion => level.quizQuestions[_questionIndex];
   int get questionIndex => _questionIndex;
   int get totalQuestions => level.quizQuestions.length;
@@ -35,6 +42,9 @@ class QuizViewModel extends ChangeNotifier {
   int get scorePercent => ((_correctCount / totalQuestions) * 100).round();
   bool get passed => scorePercent >= level.passingScore;
 
+  /// Wrong answers so far, counting every attempt at this level.
+  int get wrongAnswers => _wrongTotal;
+
   void selectAnswer(int index) {
     if (_answered) return;
 
@@ -42,6 +52,8 @@ class QuizViewModel extends ChangeNotifier {
     _answered = true;
     if (currentQuestion.isCorrect(index)) {
       _correctCount += 1;
+    } else {
+      _wrongTotal += 1;
     }
     notifyListeners();
   }
@@ -55,6 +67,10 @@ class QuizViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Starts the questions again after a failed round.
+  ///
+  /// [_wrongTotal] survives on purpose: it is a record of how much this level
+  /// has cost the child, and starting over does not undo that.
   void restart() {
     _questionIndex = 0;
     _correctCount = 0;

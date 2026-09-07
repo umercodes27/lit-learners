@@ -102,6 +102,7 @@ class _FakeProgressRepository implements ProgressRepository {
     required String childId,
     required LearningLevel level,
     int? score,
+    int wrongAnswers = 0,
   }) async {
     throw UnimplementedError();
   }

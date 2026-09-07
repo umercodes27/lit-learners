@@ -60,6 +60,7 @@ class AdminContentViewModel extends ChangeNotifier {
     required int maxStage,
     required int order,
     required bool isPublished,
+    bool allowOverwrite = false,
   }) async {
     final moduleId = _slug(id.isEmpty ? title : id);
     final validationError = _validateModule(
@@ -70,6 +71,19 @@ class AdminContentViewModel extends ChangeNotifier {
     );
     if (validationError != null) {
       _setError(validationError);
+      return false;
+    }
+
+    // Saving is an upsert keyed on the id, so without this a second module
+    // called "Math" did not fail — it quietly replaced the first one and took
+    // every level under it. Overwriting stays possible, because with no edit
+    // screen it is the only way to change a module, but it has to be asked
+    // for rather than happening by reusing a name.
+    if (!allowOverwrite && _modules.any((m) => m.module.id == moduleId)) {
+      _setError(
+        'A module with the ID "$moduleId" already exists. Choose a different '
+        'ID, or turn on "Replace existing" to overwrite it.',
+      );
       return false;
     }
 
@@ -114,6 +128,7 @@ class AdminContentViewModel extends ChangeNotifier {
     int quizCorrectIndex = 0,
     String videoTitle = '',
     String videoUrl = '',
+    bool allowOverwrite = false,
   }) async {
     final levelId = _slug(
       id.isEmpty ? '$moduleId-stage$stage-$levelNumber' : id,
@@ -128,6 +143,17 @@ class AdminContentViewModel extends ChangeNotifier {
     );
     if (validationError != null) {
       _setError(validationError);
+      return false;
+    }
+
+    // The default id is built from the module, stage and number, so saving a
+    // second "level 1" of the same stage silently replaced the first. As with
+    // modules, overwriting stays possible but has to be asked for.
+    if (!allowOverwrite && _levels.any((l) => l.level.id == levelId)) {
+      _setError(
+        'A level with the ID "$levelId" already exists. Change the level '
+        'number or ID, or turn on "Replace existing" to overwrite it.',
+      );
       return false;
     }
 
@@ -302,6 +328,67 @@ class AdminContentViewModel extends ChangeNotifier {
       return true;
     } catch (error) {
       _setError(_messageFor(error, fallback: 'Level could not be deleted.'));
+      return false;
+    }
+  }
+
+  /// Saves generated levels as drafts, in one atomic write.
+  ///
+  /// Deliberately not a loop over [createLevel]. A stage is a ladder and
+  /// unlocking walks levelNumber from 1, so a connection that drops after
+  /// level 3 of 5 would not leave three useful levels — it would leave a gap
+  /// that locks levels 4 and 5 permanently. The batch either lands whole or
+  /// not at all.
+  ///
+  /// Validation is also all-or-nothing: every level is checked before any of
+  /// them is written, so a bad fifth level cannot result in four saved ones.
+  ///
+  /// Note what this does NOT do: it never runs [_slug] on the id. The ids are
+  /// already '<moduleId>-stage<n>-<m>', and slugging is ASCII-only, so an
+  /// Urdu title would slug to the empty string and be rejected as missing.
+  Future<bool> createLevelsFromDrafts(List<LearningLevel> levels) async {
+    if (levels.isEmpty) {
+      _setError('Approve at least one level before saving.');
+      return false;
+    }
+
+    for (final level in levels) {
+      final validationError = _validateLevel(
+        id: level.id,
+        moduleId: level.moduleId,
+        stage: level.stage,
+        levelNumber: level.levelNumber,
+        title: level.title,
+        passingScore: level.passingScore,
+      );
+      if (validationError != null) {
+        _setError('${level.id}: $validationError');
+        return false;
+      }
+    }
+
+    final now = DateTime.now();
+    final drafts = [
+      for (final level in levels)
+        AdminContentLevel(
+          level: level,
+          isPublished: false,
+          createdAt: now,
+          updatedAt: now,
+          publishStatus: AdminPublishStatus.draft,
+        ),
+    ];
+
+    try {
+      await _adminContentRepository.upsertLevels(drafts);
+      await _syncPublishedContent();
+      _infoMessage = drafts.length == 1
+          ? 'Saved 1 level as a draft.'
+          : 'Saved ${drafts.length} levels as drafts.';
+      await loadContent();
+      return true;
+    } catch (error) {
+      _setError(_messageFor(error, fallback: 'Levels could not be saved.'));
       return false;
     }
   }
