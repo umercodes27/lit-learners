@@ -410,11 +410,11 @@ void main() {
       expect(vm.hasKey, isFalse);
 
       await vm.saveKey(
-        apiKey: 'sk-abcdefghijklmnop1234',
+        apiKey: 'sk-EXAMPLE-NOT-A-REAL-KEY-1234',
         profile: LlmProviderProfile.deepseek,
       );
       expect(vm.hasKey, isTrue);
-      expect(vm.credentials.maskedKey, isNot(contains('abcdefghijklmnop')));
+      expect(vm.credentials.maskedKey, isNot(contains('EXAMPLE')));
 
       await vm.forgetKey();
       expect(vm.hasKey, isFalse);

@@ -29,8 +29,6 @@ Future<void> main() async {
   // activity pack load meant an admin reviewing content never got a real
   // answer, and neither did the first frame of the first pack.
   await AssetAvailability.instance.populate();
-  // Demo mode only, and a no-op with Firebase on.
-  await seedDemoDataIfNeeded();
   runApp(const LittleLearnersApp());
 }
 

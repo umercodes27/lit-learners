@@ -19,12 +19,12 @@ void main() {
 
     test('the mask shows enough to recognise a key and no more', () {
       const credentials = LlmCredentials(
-        apiKey: 'sk-abcdefghijklmnop9f2a',
+        apiKey: 'sk-EXAMPLE-NOT-A-REAL-KEY-9f2a',
         profile: LlmProviderProfile.deepseek,
       );
 
       expect(credentials.maskedKey, 'sk-…9f2a');
-      expect(credentials.maskedKey, isNot(contains('abcdefghijklmnop')));
+      expect(credentials.maskedKey, isNot(contains('EXAMPLE')));
     });
 
     test('a short key is hidden completely rather than mostly revealed', () {

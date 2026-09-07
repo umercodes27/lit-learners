@@ -86,34 +86,6 @@ class InMemoryAuthRepository implements AuthRepository, ParentDirectory {
     return storedParent.account;
   }
 
-  /// Adds an account without signing anybody in.
-  ///
-  /// [signUp] deliberately signs the new account in, which is right for a
-  /// parent registering and wrong for seeding demo data — it would leave the
-  /// app logged in as whichever invented family happened to be added last.
-  ///
-  /// Idempotent: seeding twice leaves one account, so this is safe to call on
-  /// every launch.
-  void seedAccount({
-    required String id,
-    required String email,
-    required String password,
-    required DateTime createdAt,
-  }) {
-    final normalizedEmail = email.trim().toLowerCase();
-    if (_parentsByEmail.containsKey(normalizedEmail)) return;
-
-    _parentsByEmail[normalizedEmail] = _StoredParent(
-      account: ParentAccount(
-        id: id,
-        email: normalizedEmail,
-        createdAt: createdAt,
-        role: _roleFor(normalizedEmail),
-      ),
-      password: password,
-    );
-  }
-
   @override
   Future<ParentAccount> signUp({
     required String email,
