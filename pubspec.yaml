@@ -90,7 +90,12 @@ flutter:
     - assets/images/koala/
     - assets/images/splash/
     - assets/seed/
-    - assets/videos/
+    # Video lessons, one folder per age. Flutter's asset directories are not
+    # recursive, so naming the parent bundled nothing: the films sit one level
+    # down and every lesson failed to open. Each folder has to be named.
+    - assets/videos/age2/
+    - assets/videos/age3/
+    - assets/videos/age4/
 
   fonts:
     - family: Fredoka
