@@ -259,6 +259,33 @@
               "assets/img/red_circle.png",
               "assets/img/yellow_triangle.png"
             ]
+          },
+          {
+            "sequence": [
+              "assets/img/yellow_triangle.png",
+              "assets/img/red_circle.png",
+              "assets/img/yellow_triangle.png",
+              "assets/img/red_circle.png"
+            ],
+            "correct_answer": "assets/img/yellow_triangle.png",
+            "options": [
+              "assets/img/yellow_triangle.png",
+              "assets/img/blue_square.png"
+            ]
+          },
+          {
+            "sequence": [
+              "assets/img/red_circle.png",
+              "assets/img/red_circle.png",
+              "assets/img/blue_square.png",
+              "assets/img/red_circle.png",
+              "assets/img/red_circle.png"
+            ],
+            "correct_answer": "assets/img/blue_square.png",
+            "options": [
+              "assets/img/blue_square.png",
+              "assets/img/red_circle.png"
+            ]
           }
         ]
       },

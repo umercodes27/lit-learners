@@ -63,7 +63,15 @@ class ModuleQuiz {
   /// offering. Below [minQuestions] the module simply has no quiz rather than
   /// a two-question one where a single slip is a fail.
   static const targetQuestions = 5;
-  static const minQuestions = 3;
+  /// Two is a quiz; nothing is not.
+  ///
+  /// At three, a module whose activities yield only two usable rounds showed
+  /// no trophy at all — the age-3 Urdu module is exactly that, two letter-and-
+  /// picture pairs and two tracing levels that ask nothing. A child who
+  /// finished every level was told, silently, that there was nothing at the
+  /// end of the road. Passing is a proportion, so a two-slide quiz still has
+  /// to be more than half right.
+  static const minQuestions = 2;
 
   final String moduleTitle;
   final List<ModuleQuizQuestion> questions;
