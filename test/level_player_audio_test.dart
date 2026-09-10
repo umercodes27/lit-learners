@@ -7,16 +7,25 @@ import 'package:little_learners/models/progress.dart';
 import 'package:little_learners/repositories/content_repository.dart';
 import 'package:little_learners/repositories/progress_repository.dart';
 import 'package:little_learners/services/audio/koala_audio_player.dart';
+import 'package:little_learners/services/content/asset_availability.dart';
 import 'package:little_learners/viewmodels/active_child_session.dart';
 import 'package:little_learners/viewmodels/learning_viewmodel.dart';
 import 'package:little_learners/views/child_dashboard/level_player_page.dart';
 import 'package:provider/provider.dart';
 
 void main() {
+  tearDown(AssetAvailability.instance.debugReset);
+
   testWidgets('LevelPlayerPage routes content audio cues through player',
       (tester) async {
     final audioPlayer = _FakeKoalaAudioPlayer();
     final level = _levelWithAudioCue();
+
+    // The speaker is only drawn for a cue that has a recording behind it, so
+    // this test has to ship one. What it is checking is where the tap goes,
+    // not whether the button appears.
+    AssetAvailability.instance
+        .debugSeed({'assets/audio/learning/english_letter_a.mp3'});
 
     await tester.pumpWidget(
       MultiProvider(
