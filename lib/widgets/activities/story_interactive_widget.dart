@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/urdu_letters.dart';
 import '../../core/theme/age2_skin.dart';
 import '../../models/activity_data.dart';
 import '../../services/content/asset_availability.dart';
@@ -46,6 +47,13 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
   Timer? _fallbackTimer;
   Timer? _finishTimer;
 
+  /// Runs the story on once the end screen has been seen.
+  Timer? _advanceTimer;
+
+  /// Guards the hand-off, so tapping Done and the timer firing cannot both
+  /// pop the screen.
+  bool _completed = false;
+
   int _frame = 0;
   bool _askingChoice = false;
   bool _finished = false;
@@ -64,6 +72,7 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
     _completeSub?.cancel();
     _fallbackTimer?.cancel();
     _finishTimer?.cancel();
+    _advanceTimer?.cancel();
     _feedback.dispose();
     widget.audio.stopPrompt();
     super.dispose();
@@ -144,6 +153,12 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
     setState(() => _finished = true);
   }
 
+  void _complete() {
+    if (!mounted || _completed) return;
+    _completed = true;
+    widget.onCompleted?.call();
+  }
+
   Future<void> _openChoice() async {
     if (_askingChoice) return;
     await widget.audio.stopPrompt();
@@ -167,7 +182,13 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
       _choiceAnsweredCorrectly = true;
       await _feedback.celebrate();
       _finishTimer = Timer(const Duration(milliseconds: 1500), () {
-        if (mounted) setState(() => _finished = true);
+        if (!mounted) return;
+        setState(() => _finished = true);
+        // Answering correctly is the end of the story, so it carries the child
+        // on by itself rather than parking them on a Done button they have to
+        // find. The end screen still shows first — the reward is worth seeing
+        // — and a child who taps Done during it gets there sooner.
+        _advanceTimer = Timer(const Duration(milliseconds: 2200), _complete);
       });
     } else {
       await _feedback.tryAgain();
@@ -196,7 +217,7 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
         child: ActivityFinishedNotice(
           correct: _choiceAnsweredCorrectly ? 1 : 0,
           total: _choice == null ? 0 : 1,
-          onDone: widget.onCompleted,
+          onDone: _complete,
           headline: 'The end!',
         ),
       );
@@ -338,42 +359,77 @@ class _ChoicePanel extends StatelessWidget {
           style: Age2Text.prompt,
         ),
         const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        // Wrap, not Row: an answer can be a sentence — "Please and thank you"
+        // — and a Row gives its children unbounded width, so a phrase at glyph
+        // size ran straight off both sides of the phone. Here a long answer
+        // takes a line of its own instead.
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 22,
+          runSpacing: 16,
           children: [
-            for (var i = 0; i < choice.options.length; i++) ...[
-              if (i > 0) const SizedBox(width: 22),
-              PlayfulTapTarget(
-                onTap: () => onTap(i),
-                semanticLabel: choice.options[i].label,
-                minSize: 140,
-                padding: const EdgeInsets.all(16),
-                background: tappedIndex == i
-                    ? (choice.options[i].isCorrect
-                        ? AppColors.mint
-                        : AppColors.lemon)
-                    : Colors.white,
-                borderColor: tappedIndex == i
-                    ? (choice.options[i].isCorrect
-                        ? AppColors.leaf
-                        // Amber, not red — see the option card in
-                        // choice_rounds_activity.dart.
-                        : AppColors.honey)
-                    : Age2Skin.of(context).accent.withValues(alpha: 0.35),
-                borderWidth: tappedIndex == i ? 6 : 3,
-                child: choice.options[i].image != null
-                    ? ActivityAssetImage(
-                        path: choice.options[i].image, size: 96)
-                    : Text(
-                        choice.options[i].label ?? '?',
-                        textAlign: TextAlign.center,
-                        style: Age2Text.glyph.copyWith(fontSize: 40),
-                      ),
+            for (var i = 0; i < choice.options.length; i++)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 280),
+                child: PlayfulTapTarget(
+                  onTap: () => onTap(i),
+                  semanticLabel: choice.options[i].label,
+                  minSize: 140,
+                  padding: const EdgeInsets.all(16),
+                  background: tappedIndex == i
+                      ? (choice.options[i].isCorrect
+                          ? AppColors.mint
+                          : AppColors.lemon)
+                      : Colors.white,
+                  borderColor: tappedIndex == i
+                      ? (choice.options[i].isCorrect
+                          ? AppColors.leaf
+                          // Amber, not red — see the option card in
+                          // choice_rounds_activity.dart.
+                          : AppColors.honey)
+                      : Age2Skin.of(context).accent.withValues(alpha: 0.35),
+                  borderWidth: tappedIndex == i ? 6 : 3,
+                  child: choice.options[i].image != null
+                      ? ActivityAssetImage(
+                          path: choice.options[i].image, size: 96)
+                      : _AnswerLabel(label: choice.options[i].label ?? '?'),
+                ),
               ),
-            ],
           ],
         ),
       ],
+    );
+  }
+}
+
+
+/// The text on an answer button, sized to what it actually says.
+///
+/// One glyph and one sentence are both legitimate answers here — the Urdu
+/// rounds tap a letter, the manners story taps a phrase — and drawing a
+/// sentence at glyph size is what pushed the button off the screen. Longer
+/// answers step down in size and are allowed to wrap.
+class _AnswerLabel extends StatelessWidget {
+  const _AnswerLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = switch (label.characters.length) {
+      <= 3 => 40.0,
+      <= 12 => 28.0,
+      _ => 22.0,
+    };
+    final urdu = UrduLetters.isUrduScript(label);
+
+    return Text(
+      label,
+      textAlign: TextAlign.center,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+      style: (urdu ? Age2Text.urduGlyph : Age2Text.glyph)
+          .copyWith(fontSize: urdu ? size + 4 : size, height: 1.25),
     );
   }
 }

@@ -13,7 +13,7 @@ import '../models/video_lesson.dart';
 /// progress and downloaded flags intact.
 ///
 /// **Bump this whenever you add, remove or edit anything in this file.**
-const bundledContentRevision = '2026-09-06-age-video-lessons';
+const bundledContentRevision = '2026-09-10-video-without-quizzes';
 
 const seedModules = <LearningModule>[
   LearningModule(
@@ -1065,14 +1065,6 @@ const _authoredLevels = <LearningLevel>[
         thumbnailLabel: 'Butterfly on a yellow flower',
       ),
     ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-butterfly-q1',
-        prompt: 'What did you watch?',
-        options: ['A butterfly', 'A car', 'A cup'],
-        correctIndex: 0,
-      ),
-    ],
   ),
   LearningLevel(
     id: 'video-stage2-2',
@@ -1092,14 +1084,6 @@ const _authoredLevels = <LearningLevel>[
         durationLabel: '0:16',
         videoUrl: 'assets/videos/age2/duck.mp4',
         thumbnailLabel: 'Two ducks on the water',
-      ),
-    ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-duck-q1',
-        prompt: 'Where were the ducks?',
-        options: ['On the water', 'In a tree', 'On a bus'],
-        correctIndex: 0,
       ),
     ],
   ),
@@ -1123,14 +1107,6 @@ const _authoredLevels = <LearningLevel>[
         thumbnailLabel: 'Tortoises on a rock',
       ),
     ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-tortoise-q1',
-        prompt: 'How did they move?',
-        options: ['Slowly', 'Very fast', 'They flew'],
-        correctIndex: 0,
-      ),
-    ],
   ),
   LearningLevel(
     id: 'video-stage3-1',
@@ -1150,15 +1126,6 @@ const _authoredLevels = <LearningLevel>[
         durationLabel: '0:13',
         videoUrl: 'assets/videos/age3/bee.mp4',
         thumbnailLabel: 'Bee on a dandelion',
-      ),
-    ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-bee-q1',
-        prompt: 'Where did the bee land?',
-        options: ['On a flower', 'On a shoe', 'In a box'],
-        correctIndex: 0,
-        explanation: 'Bees visit flowers to gather food.',
       ),
     ],
   ),
@@ -1182,15 +1149,6 @@ const _authoredLevels = <LearningLevel>[
         thumbnailLabel: 'Spider in its web',
       ),
     ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-spider-q1',
-        prompt: 'What does a spider make?',
-        options: ['A web', 'A cake', 'A hat'],
-        correctIndex: 0,
-        explanation: 'A spider spins a web and waits in it.',
-      ),
-    ],
   ),
   LearningLevel(
     id: 'video-stage3-3',
@@ -1210,14 +1168,6 @@ const _authoredLevels = <LearningLevel>[
         durationLabel: '0:28',
         videoUrl: 'assets/videos/age3/elephant.mp4',
         thumbnailLabel: 'A herd of elephants',
-      ),
-    ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-elephant-q1',
-        prompt: 'Which animal has a long trunk?',
-        options: ['The elephant', 'The bee', 'The spider'],
-        correctIndex: 0,
       ),
     ],
   ),
@@ -1241,15 +1191,6 @@ const _authoredLevels = <LearningLevel>[
         thumbnailLabel: 'A burning candle',
       ),
     ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-candle-q1',
-        prompt: 'What happens to a candle as it burns?',
-        options: ['It gets shorter', 'It gets taller', 'Nothing changes'],
-        correctIndex: 0,
-        explanation: 'The wax melts away, so the candle shrinks.',
-      ),
-    ],
   ),
   LearningLevel(
     id: 'video-stage4-2',
@@ -1271,15 +1212,6 @@ const _authoredLevels = <LearningLevel>[
         thumbnailLabel: 'A seed sprouting in soil',
       ),
     ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-plant-q1',
-        prompt: 'Which part of the plant grows down into the soil?',
-        options: ['The root', 'The leaf', 'The flower'],
-        correctIndex: 0,
-        explanation: 'Roots grow down and hold the plant in the soil.',
-      ),
-    ],
   ),
   LearningLevel(
     id: 'video-stage4-3',
@@ -1299,15 +1231,6 @@ const _authoredLevels = <LearningLevel>[
         durationLabel: '0:29',
         videoUrl: 'assets/videos/age4/ice.mp4',
         thumbnailLabel: 'An ice cube melting',
-      ),
-    ],
-    quizQuestions: [
-      QuizQuestion(
-        id: 'video-ice-q1',
-        prompt: 'What does ice turn into when it melts?',
-        options: ['Water', 'Sand', 'Smoke'],
-        correctIndex: 0,
-        explanation: 'Ice is water that has frozen hard, so it melts back.',
       ),
     ],
   ),

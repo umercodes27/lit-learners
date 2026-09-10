@@ -13,6 +13,45 @@ import 'package:little_learners/widgets/activities/story_interactive_widget.dart
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  /// Drives a story to its question. With no narration the widget runs a
+  /// fallback timeline and asks at the end of it.
+  Future<void> openChoiceOn(
+    WidgetTester tester,
+    StoryInteractiveData data, {
+    VoidCallback? onCompleted,
+  }) async {
+    await tester.pumpWidget(MaterialApp(
+      home: StoryInteractiveWidget(
+        data: data,
+        audio: _SilentAudio(),
+        onCompleted: onCompleted,
+      ),
+    ));
+    await tester.pump();
+    // The fallback timeline is a periodic timer, so it has to be stepped
+    // rather than jumped: one long pump fires it once and the story never
+    // reaches its question.
+    for (var i = 0; i < 90; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+  }
+
+  StoryInteractiveData mannersStory() => StoryInteractiveData(
+        title: 'Manners',
+        isRtl: false,
+        illustrations: const [
+          StoryIllustration(
+            image: 'assets/age4/img/story/manners_1.png',
+            startMs: 0,
+          ),
+        ],
+        choicePoint: StoryChoicePoint.fromJson(const {
+          'prompt': 'What should you say?',
+          'correct_answer': 'please_and_thank_you',
+        }),
+      );
+
+
   test('a slug answer becomes something to tap, spelled as it is said', () {
     final choice = StoryChoicePoint.fromJson(const {
       'prompt': 'What should you say?',
@@ -59,19 +98,77 @@ void main() {
     // The parse leaves it empty...
     expect(data.choicePoint!.options, isEmpty);
 
-    var completed = false;
-    await tester.pumpWidget(MaterialApp(
-      home: StoryInteractiveWidget(
-        data: data,
-        audio: ActivityAudio(),
-        onCompleted: () => completed = true,
-      ),
-    ));
-    await tester.pump();
+    await openChoiceOn(tester, data);
 
-    // ...and the screen must not offer a question the child cannot answer.
+    // ...and the story runs to its end instead of stopping on a question the
+    // child cannot answer.
     expect(find.text('What should you say?'), findsNothing,
         reason: 'an unanswerable prompt should never be shown');
-    expect(completed, isFalse, reason: 'sanity: nothing was tapped');
+    expect(find.text('The end!'), findsOneWidget,
+        reason: 'the story must still be finishable');
   });
+
+  // The button used to be laid out in an unbounded Row at glyph size, so a
+  // sentence-length answer ran off both edges of the phone.
+  testWidgets('a sentence-long answer fits on a phone', (tester) async {
+    tester.view.physicalSize = const Size(360, 690);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await openChoiceOn(tester, mannersStory());
+
+    expect(find.text('Please and thank you'), findsOneWidget);
+    expect(tester.takeException(), isNull,
+        reason: 'the answer button overflowed the screen');
+
+    final button = tester.getSize(find.text('Please and thank you'));
+    expect(button.width, lessThanOrEqualTo(360),
+        reason: 'the label is wider than the phone');
+  });
+
+  // "When the student gives the correct answer the story should move on."
+  testWidgets('answering correctly carries the story on by itself',
+      (tester) async {
+    var completed = 0;
+    await openChoiceOn(tester, mannersStory(), onCompleted: () => completed++);
+
+    await tester.tap(find.text('Please and thank you'));
+    await tester.pump();
+
+    // Celebration, then the end screen, then the hand-off — no tap needed.
+    await tester.pump(const Duration(milliseconds: 1600));
+    expect(find.text('The end!'), findsOneWidget,
+        reason: 'the reward should be seen before moving on');
+
+    await tester.pump(const Duration(milliseconds: 2400));
+    expect(completed, 1, reason: 'the story should have moved on by itself');
+
+    // And the hand-off happens once, however the child gets there.
+    await tester.pump(const Duration(seconds: 2));
+    expect(completed, 1);
+  });
+}
+
+/// Audio that answers instantly.
+///
+/// The real [ActivityAudio] talks to audioplayers, which has no platform side
+/// under `flutter test`: its futures never complete, so a screen that awaits
+/// one stalls forever. A story awaits `stopPrompt` before it opens its
+/// question, so without this the question never appears — and a test asserting
+/// the question is absent would pass for the wrong reason.
+class _SilentAudio extends ActivityAudio {
+  @override
+  Future<void> playPrompt(String? assetPath) async {}
+
+  @override
+  Future<void> playCorrect() async {}
+
+  @override
+  Future<void> playWrong() async {}
+
+  @override
+  Future<void> stopPrompt() async {}
+
+  @override
+  Future<void> dispose() async {}
 }
