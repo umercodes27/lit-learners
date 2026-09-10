@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/localization/urdu_letters.dart';
 import '../../models/activity_option.dart';
 import '../../models/module_quiz.dart';
 import '../../viewmodels/module_quiz_viewmodel.dart';
@@ -250,14 +251,19 @@ class _OptionTile extends StatelessWidget {
   Widget _content() {
     final label = option.label;
     if (label != null && label.isNotEmpty) {
+      // The packs name Urdu letters in Latin — "Bay" — as an identifier. The
+      // activities have always drawn the script instead; the quiz was showing
+      // the identifier, so the same round asked in Urdu and answered in
+      // "Bay".
+      final glyph = UrduLetters.glyphFor(label);
       return Directionality(
         textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
         child: Text(
-          label,
+          glyph ?? label,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontFamily: 'Fredoka',
-            fontSize: 36,
+          style: TextStyle(
+            fontFamily: glyph == null ? 'Fredoka' : 'NotoNastaliqUrdu',
+            fontSize: glyph == null ? 36 : 42,
             fontWeight: FontWeight.w700,
             color: PlayColors.ink,
           ),
