@@ -70,6 +70,10 @@ class _TracingWidgetState extends State<TracingWidget>
   @override
   void initState() {
     super.initState();
+    // Most of these glyphs have no recording — only five numerals and a dozen
+    // Urdu letters were ever cut — so the device's voice is the common case
+    // here, not the fallback. Waking it now keeps the first one prompt.
+    _speech.warmUp(urdu: _isUrdu);
     WidgetsBinding.instance.addPostFrameCallback((_) => _announce());
   }
 
@@ -112,13 +116,32 @@ class _TracingWidgetState extends State<TracingWidget>
   /// this is whether the audio exists, not whether the pack mentioned it.
   Future<void> _announce() async {
     if (!mounted || _finished) return;
-    final clip = _item.audio;
-    if (clip != null && AssetAvailability.instance.has(clip)) {
-      await widget.audio.playPrompt(clip);
+    if (!_hasClip) {
+      // Silence rather than a guess: see [_canSpeak].
+      if (!_canSpeak) return;
+      await _speech.speak(_item.glyph, urdu: _isUrdu);
       return;
     }
-    await _speech.speak(_item.glyph, urdu: _isUrdu);
+    await widget.audio.playPrompt(_item.audio);
   }
+
+  /// Whether this round's recording is actually in the bundle.
+  bool get _hasClip {
+    final clip = _item.audio;
+    return clip != null && AssetAvailability.instance.has(clip);
+  }
+
+  /// Whether the device may read this glyph when there is no recording.
+  ///
+  /// Not for Urdu. A general speech engine reads Urdu letter names wrong —
+  /// that is the whole reason the pack ships clips for them — and a
+  /// mispronounced letter on a tracing screen teaches the child the wrong
+  /// name for the shape they are drawing. Better the letter is traced in
+  /// silence until a recording exists, which it then picks up on its own.
+  bool get _canSpeak => !_isUrdu;
+
+  /// Nothing to press when nothing will play.
+  bool get _hasVoice => _hasClip || _canSpeak;
 
   Future<void> _resolveLayout(Size size) async {
     if (size.isEmpty) return;
@@ -184,7 +207,7 @@ class _TracingWidgetState extends State<TracingWidget>
       isRtl: widget.data.isRtl,
       roundIndex: _index,
       roundCount: widget.data.items.length,
-      onReplayPrompt: _announce,
+      onReplayPrompt: _hasVoice ? _announce : null,
       feedback: _feedback,
       child: Column(
         children: [

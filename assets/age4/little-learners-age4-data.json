@@ -1,6 +1,10 @@
 {
   "age": 4,
   "phase": "Logic, Words & Pre-School Math",
+  "feedback": {
+    "correct_sound": "assets/audio/sfx/applause.mp3",
+    "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
+  },
   "modules": {
     "english": {
       "level_1": {
@@ -70,7 +74,7 @@
         ],
         "feedback": {
           "correct_sound": "assets/audio/sfx/applause.mp3",
-          "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3"
+          "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
         }
       },
       "level_3": {
@@ -103,15 +107,15 @@
         "note": "No images needed — Urdu fonts automatically render the correct contextual (initial/middle/final) letterform when the character is placed in a word context, so this can be font-rendered rather than needing separate shape images.",
         "items": [
           {
-            "letter": "Bay",
+            "letter": "Kaaf",
             "example_word": "کتاب"
           },
           {
-            "letter": "Jeem",
+            "letter": "Meem",
             "example_word": "مسجد"
           },
           {
-            "letter": "Ain",
+            "letter": "Bay",
             "example_word": "بارش"
           }
         ]
@@ -139,14 +143,13 @@
             "word": "دل",
             "letter_tiles": [
               "Daal",
-              "Yay",
               "Laam"
             ]
           }
         ],
         "feedback": {
           "correct_sound": "assets/audio/sfx/applause.mp3",
-          "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3"
+          "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
         }
       },
       "level_3": {

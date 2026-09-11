@@ -1,6 +1,10 @@
 {
   "age": 3,
   "phase": "Drag, Sort & Tracing Intro",
+  "feedback": {
+    "correct_sound": "assets/audio/sfx/applause.mp3",
+    "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
+  },
   "modules": {
     "english": {
       "level_1": {
@@ -150,7 +154,7 @@
         ],
         "feedback": {
           "correct_sound": "assets/audio/sfx/applause.mp3",
-          "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3"
+          "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
         }
       }
     },
@@ -213,6 +217,78 @@
             "audio": "assets/audio/ur/harf_daal.mp3"
           },
           {
+            "letter": "Ddaal"
+          },
+          {
+            "letter": "Zaal"
+          },
+          {
+            "letter": "Ray"
+          },
+          {
+            "letter": "Rray"
+          },
+          {
+            "letter": "Zay"
+          },
+          {
+            "letter": "Zhay"
+          },
+          {
+            "letter": "Seen"
+          },
+          {
+            "letter": "Sheen"
+          },
+          {
+            "letter": "Suad"
+          },
+          {
+            "letter": "Zuad"
+          },
+          {
+            "letter": "Toay"
+          },
+          {
+            "letter": "Zoay"
+          },
+          {
+            "letter": "Ain"
+          },
+          {
+            "letter": "Ghain"
+          },
+          {
+            "letter": "Fay"
+          },
+          {
+            "letter": "Qaaf"
+          },
+          {
+            "letter": "Kaaf"
+          },
+          {
+            "letter": "Gaaf"
+          },
+          {
+            "letter": "Laam"
+          },
+          {
+            "letter": "Meem"
+          },
+          {
+            "letter": "Noon"
+          },
+          {
+            "letter": "Wao"
+          },
+          {
+            "letter": "Chotihay"
+          },
+          {
+            "letter": "Dochashmihay"
+          },
+          {
             "letter": "Yay",
             "audio": "assets/audio/ur/harf_yay.mp3"
           }
@@ -235,7 +311,7 @@
         ],
         "feedback": {
           "correct_sound": "assets/audio/sfx/applause.mp3",
-          "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3"
+          "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
         }
       }
     },
