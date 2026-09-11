@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/age2_skin.dart';
 import '../../models/activity_data.dart';
 import 'activity_asset_image.dart';
+import '../../services/audio/glyph_speech.dart';
 import 'activity_audio.dart';
 import 'activity_feedback_controller.dart';
 import 'activity_stage.dart';
@@ -55,11 +56,16 @@ class _MazeWidgetState extends State<MazeWidget> {
   @override
   void initState() {
     super.initState();
+    _speech.warmUp();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _announce());
     _loadRound();
   }
 
+  late final GlyphSpeech _speech = GlyphSpeech();
+
   @override
   void dispose() {
+    _speech.stop();
     _advanceTimer?.cancel();
     _feedback.dispose();
     super.dispose();
@@ -102,10 +108,19 @@ class _MazeWidgetState extends State<MazeWidget> {
     });
   }
 
-  void _restart() => setState(() {
-        _at = _maze.start;
-        _solved = false;
-      });
+  /// What the maze is asking for, said out loud.
+  ///
+  /// The stage's replay control is a speaker labelled "Listen again", and this
+  /// screen had it wired to [_restart] — so the one button that promises a
+  /// voice silently moved the child back to the start instead. The maze ships
+  /// no recording, so the device reads the instruction that is already on
+  /// screen.
+  static const _instruction = 'Find the way to the star';
+
+  Future<void> _announce() async {
+    if (!mounted || _solved) return;
+    await _speech.speak(_instruction);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,11 +153,11 @@ class _MazeWidgetState extends State<MazeWidget> {
       roundIndex: _index,
       roundCount: widget.data.items.length,
       feedback: _feedback,
-      onReplayPrompt: _restart,
+      onReplayPrompt: _announce,
       child: Column(
         children: [
           const Text(
-            'Find the way to the star',
+            _instruction,
             style: Age2Text.prompt,
             textAlign: TextAlign.center,
           ),

@@ -352,10 +352,9 @@ class PuzzlePiece {
 
 /// Draws a puzzle piece.
 ///
-/// A slice is cut with [Align]'s fractional factors rather than by decoding
-/// and cropping the bytes: the widget layer already has the picture, and
-/// clipping a region of it costs nothing and keeps the piece crisp at any
-/// size.
+/// A slice is cut on screen rather than by decoding and cropping the bytes:
+/// the widget layer already has the picture, and showing a window onto it
+/// costs nothing and keeps the piece crisp at any size.
 class PuzzlePieceView extends StatelessWidget {
   const PuzzlePieceView({required this.piece, super.key});
 
@@ -367,19 +366,43 @@ class PuzzlePieceView extends StatelessWidget {
       return ActivityAssetImage(path: piece.path);
     }
 
-    // -1 is the left/top edge, +1 the right/bottom; evenly spaced between.
-    double axis(int position, int total) =>
-        total <= 1 ? 0 : (position / (total - 1)) * 2 - 1;
-
+    // This used to cut the slice with Align's widthFactor/heightFactor, which
+    // are *ignored under tight constraints* — and both places a piece is drawn
+    // size it tightly: the board slot is a 136-square and the tray tile is 108
+    // wide. So every piece rendered the whole picture, and the age-3 duck
+    // puzzle showed four identical ducks instead of four quarters of one.
+    //
+    // A window works whatever the constraints: the picture is laid out
+    // `columns` across and `rows` down at the window's own size, then shifted
+    // so this piece's cell is the part left in view.
     return ClipRect(
-      child: Align(
-        alignment: Alignment(
-          axis(piece.column, piece.columns),
-          axis(piece.row, piece.rows),
-        ),
-        widthFactor: 1 / piece.columns,
-        heightFactor: 1 / piece.rows,
-        child: ActivityAssetImage(path: piece.fullImage),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cellWidth = constraints.maxWidth;
+          final cellHeight = constraints.maxHeight;
+          // Nothing to cut a window out of; better a whole picture than none.
+          if (!cellWidth.isFinite || !cellHeight.isFinite) {
+            return ActivityAssetImage(path: piece.fullImage);
+          }
+
+          return Stack(
+            children: [
+              Positioned(
+                left: -cellWidth * piece.column,
+                top: -cellHeight * piece.row,
+                width: cellWidth * piece.columns,
+                height: cellHeight * piece.rows,
+                // Cover, so the picture fills the grid it is cut from and
+                // every piece carries some of it. Contain would letterbox and
+                // leave the edge pieces blank.
+                child: ActivityAssetImage(
+                  path: piece.fullImage,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

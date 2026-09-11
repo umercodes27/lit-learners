@@ -6,6 +6,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/age2_skin.dart';
 import '../../models/activity_data.dart';
 import 'activity_asset_image.dart';
+import '../../services/audio/glyph_speech.dart';
+import '../../services/content/asset_availability.dart';
 import 'activity_audio.dart';
 import 'activity_feedback_controller.dart';
 import 'activity_stage.dart';
@@ -21,12 +23,16 @@ class TapToCountWidget extends StatefulWidget {
   const TapToCountWidget({
     required this.data,
     required this.audio,
+    this.speech,
     super.key,
     this.onCompleted,
   });
 
   final TapToCountData data;
   final ActivityAudio audio;
+
+  /// Injectable so a test can listen without a platform channel.
+  final GlyphSpeech? speech;
   final VoidCallback? onCompleted;
 
   @override
@@ -51,10 +57,34 @@ class _TapToCountWidgetState extends State<TapToCountWidget> {
 
   TapToCountItem get _item => widget.data.items[_itemIndex];
 
+  late final GlyphSpeech _speech = widget.speech ?? GlyphSpeech();
+
+  @override
+  void initState() {
+    super.initState();
+    // Everything past five is spoken rather than played.
+    _speech.warmUp();
+  }
+
   /// The item's own `audio_numbers` list first, then the level's shared
   /// `count_audio_folder`.
   String? _numberAsset(int number) =>
       _item.audioForCount(number, folder: widget.data.countAudioFolder);
+
+  /// Counts [number] out loud.
+  ///
+  /// Only 1.mp3 to 5.mp3 were ever recorded, but age 3 counts to ten and age 4
+  /// to twenty — so every number past five named a file that is not in the
+  /// bundle and the count went silent exactly where the child needed it most.
+  /// A recorded clip still wins; the device says the rest.
+  Future<void> _sayNumber(int number) async {
+    final clip = _numberAsset(number);
+    if (clip != null && AssetAvailability.instance.has(clip)) {
+      await widget.audio.playPrompt(clip);
+      return;
+    }
+    await _speech.speak('$number');
+  }
 
   Future<void> _onObjectTapped(int index) async {
     if (_tapped.contains(index) || _finished) return;
@@ -62,7 +92,7 @@ class _TapToCountWidgetState extends State<TapToCountWidget> {
     final next = _tapped.length + 1;
     setState(() => _tapped = {..._tapped, index});
 
-    await widget.audio.playPrompt(_numberAsset(next));
+    await _sayNumber(next);
 
     if (next < _item.targetCount) return;
 

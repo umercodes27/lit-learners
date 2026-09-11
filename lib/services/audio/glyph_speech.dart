@@ -33,8 +33,21 @@ class GlyphSpeech {
 
   Future<void> _prepare({required bool urdu}) async {
     if (_broken) return;
+
+    // Setting the language is tried on its own, because a device that has no
+    // voice for one language must not lose speech in the other. Plenty of
+    // phones ship en-US and no ur-PK, and the Urdu levels are usually where a
+    // child goes first — this used to mark the whole engine broken for the
+    // rest of the session, so every English prompt after it went silent too.
+    // Failing here just means the engine keeps whichever voice it has.
     try {
       await _tts.setLanguage(urdu ? _urduVoiceLocale : _latinVoiceLocale);
+    } on Object catch (error) {
+      debugPrint('GlyphSpeech: no ${urdu ? _urduVoiceLocale : _latinVoiceLocale}'
+          ' voice ($error)');
+    }
+
+    try {
       // Slower than default: a two-year-old is matching a sound to a shape.
       await _tts.setSpeechRate(0.4);
       await _tts.setPitch(1.1);
@@ -44,9 +57,6 @@ class GlyphSpeech {
       // timeout below rather than a promise that it works.
       await _tts.awaitSpeakCompletion(true);
       _ready = true;
-    } on Exception catch (error) {
-      _broken = true;
-      debugPrint('GlyphSpeech: engine unavailable ($error)');
     } on Object catch (error) {
       // Some platform channels throw plain errors rather than exceptions.
       _broken = true;
@@ -61,6 +71,14 @@ class GlyphSpeech {
   /// `awaitSpeakCompletion` — the bed comes back anyway rather than staying
   /// quiet for the rest of the session.
   static const _longestUtterance = Duration(seconds: 5);
+
+  /// Gets the engine ready before anything needs it.
+  ///
+  /// The first `speak` on a cold engine can take a second or more while the
+  /// platform loads a voice — long enough that a child tracing a 9 taps the
+  /// speaker, hears nothing, and taps again. Doing it when the level opens
+  /// spends that wait while they are still looking at the screen.
+  Future<void> warmUp({bool urdu = false}) => _prepare(urdu: urdu);
 
   /// Speaks [text]. [urdu] picks the voice, not the script.
   Future<void> speak(String text, {bool urdu = false}) async {

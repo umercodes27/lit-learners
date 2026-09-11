@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/age2_skin.dart';
+import '../../services/audio/app_sounds.dart';
+import '../../services/audio/sound_controller.dart';
+import '../play/confetti_burst.dart';
 import 'activity_feedback_controller.dart';
 import 'age2_mascot.dart';
 import 'age2_progress.dart';
@@ -177,7 +180,7 @@ class ActivityEmptyNotice extends StatelessWidget {
 /// [total] still arrive from the components, but they are used to fill a star
 /// row rather than to print a score: at this age "3 / 5" is a number a parent
 /// reads as a grade, and there is nothing to grade.
-class ActivityFinishedNotice extends StatelessWidget {
+class ActivityFinishedNotice extends StatefulWidget {
   const ActivityFinishedNotice({
     required this.correct,
     required this.total,
@@ -192,42 +195,69 @@ class ActivityFinishedNotice extends StatelessWidget {
   final String headline;
 
   @override
+  State<ActivityFinishedNotice> createState() => _ActivityFinishedNoticeState();
+}
+
+class _ActivityFinishedNoticeState extends State<ActivityFinishedNotice> {
+  @override
+  void initState() {
+    super.initState();
+    // Finishing a level was silent and still: the mascot appeared, the stars
+    // filled, and nothing said "well done". Every activity in the app ends on
+    // this screen — a story, a tracing sheet, a sorting game — so this is the
+    // one place to say it, and it is said the same way everywhere.
+    AppSound.play(Sfx.moduleComplete);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final palette = Age2Skin.of(context);
+    final total = widget.total;
+    final headline = widget.headline;
+    final onDone = widget.onDone;
 
-    return Center(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Age2Mascot(size: 118),
-            const SizedBox(height: 22),
-            Text(headline, style: Age2Text.titleFor(headline)),
-            const SizedBox(height: 18),
-            // Everyone who reaches the end fills every star.
-            Age2ProgressStars(
-              reached: total > 0 ? total - 1 : 0,
-              total: total > 0 ? total : 3,
+    return Stack(
+      children: [
+        Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Age2Mascot(size: 118),
+                const SizedBox(height: 22),
+                Text(headline, style: Age2Text.titleFor(headline)),
+                const SizedBox(height: 18),
+                // Everyone who reaches the end fills every star.
+                Age2ProgressStars(
+                  reached: total > 0 ? total - 1 : 0,
+                  total: total > 0 ? total : 3,
+                ),
+                const SizedBox(height: 34),
+                PlayfulTapTarget(
+                  onTap: onDone ?? () => Navigator.of(context).maybePop(),
+                  semanticLabel: 'Finish',
+                  background: Colors.white,
+                  borderColor: palette.accent,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_rounded, size: 38, color: palette.accent),
+                      const SizedBox(width: 12),
+                      const Text('Done', style: Age2Text.cardTitle),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 34),
-            PlayfulTapTarget(
-              onTap: onDone ?? () => Navigator.of(context).maybePop(),
-              semanticLabel: 'Finish',
-              background: Colors.white,
-              borderColor: palette.accent,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_rounded, size: 38, color: palette.accent),
-                  const SizedBox(width: 12),
-                  const Text('Done', style: Age2Text.cardTitle),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        // Over the top of it, and never in the way of the Done button.
+        const Positioned.fill(
+          child: IgnorePointer(child: ConfettiBurst()),
+        ),
+      ],
     );
   }
 }
