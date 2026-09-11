@@ -83,8 +83,11 @@ class ModuleQuizBuilder {
           for (final item in d.items)
             _QuizSeed(
               prompt: item.promptText,
-              fallbackPrompt: _Ask.whichOne,
+              fallbackPrompt: item.options.any((option) => option.count > 1)
+                  ? _Ask.whichMore
+                  : _Ask.whichOne,
               options: item.options,
+              audioPrompt: item.audioPrompt,
             ),
         ],
       IdentifyAndTapData d => [
@@ -94,6 +97,7 @@ class ModuleQuizBuilder {
               fallbackPrompt: _Ask.tapRight,
               promptImage: item.promptImage,
               options: item.options,
+              audioPrompt: item.audioPrompt,
             ),
         ],
       OddOneOutData d => [
@@ -102,6 +106,7 @@ class ModuleQuizBuilder {
               prompt: item.promptText,
               fallbackPrompt: _Ask.oddOne,
               options: item.options,
+              audioPrompt: item.audioPrompt,
             ),
         ],
       ShadowMatchData d => [
@@ -111,6 +116,7 @@ class ModuleQuizBuilder {
               fallbackPrompt: _Ask.whichShadow,
               promptImage: item.objectImage,
               options: item.options,
+              audioPrompt: item.audioPrompt,
             ),
         ],
       PatternCompleteData d => [
@@ -277,6 +283,7 @@ class _QuizSeed {
     required this.options,
     this.promptImage,
     this.promptRepeat = 1,
+    this.audioPrompt,
   });
 
   /// The pack's own wording, when it has one. Many rounds ask the question
@@ -289,6 +296,10 @@ class _QuizSeed {
   final String? promptImage;
   final int promptRepeat;
   final List<ActivityOption> options;
+
+  /// The round's own recording, reused so the quiz asks in the same voice the
+  /// level did.
+  final String? audioPrompt;
 
   /// Null when the round has nothing to test: fewer than two choices, or no
   /// option marked correct.
@@ -311,13 +322,14 @@ class _QuizSeed {
     return ModuleQuizQuestion(
       id: id,
       prompt: text == null || text.isEmpty
-          ? fallbackPrompt.forDirection(isRtl: isRtl)
+          ? fallbackPrompt.forAnswer(options, correctIndex, isRtl: isRtl)
           : text,
       promptImage: promptImage,
       promptRepeat: promptRepeat,
       options: options,
       correctIndex: correctIndex,
       isRtl: isRtl,
+      audioPrompt: audioPrompt,
     );
   }
 }
@@ -332,20 +344,100 @@ class _QuizSeed {
 /// Only the stock wordings live here. A round that carries its own prompt из
 /// the pack keeps it, whatever language that is.
 class _Ask {
-  const _Ask(this.english, this.urdu);
+  const _Ask(this.english, this.urdu, {this.direct = false});
 
   final String english;
   final String urdu;
 
+  /// Whether this question reads better with the answer named in it.
+  ///
+  /// "Which one is right?" over a C and a D tells a two-year-old nothing about
+  /// what to look for; "Where is C?" is the question the level was already
+  /// asking out loud, in `where_is_C.mp3`. The same goes for a row of shapes.
+  ///
+  /// Off for anything where naming the answer *is* the answer: a counting
+  /// slide must never ask "Where is 3?", and "which one does not belong" and
+  /// "which shadow matches" are about the relationship, not the name.
+  final bool direct;
+
   String forDirection({required bool isRtl}) => isRtl ? urdu : english;
 
-  static const whichOne = _Ask('Which one is right?', 'درست کون سا ہے؟');
-  static const tapRight = _Ask('Tap the right one.', 'درست پر ٹیپ کریں۔');
+  /// The question, made specific when it can be and when it should be.
+  String forAnswer(
+    List<ActivityOption> options,
+    int correctIndex, {
+    required bool isRtl,
+  }) {
+    if (!direct) return forDirection(isRtl: isRtl);
+    final name = _nameOf(options[correctIndex]);
+    if (name == null) return forDirection(isRtl: isRtl);
+
+    // Naming the answer only helps if the name picks one option out. The
+    // more-versus-less round draws the same apple on both plates and differs
+    // only in how many, so "Where is the apple?" would have two right answers.
+    for (var i = 0; i < options.length; i++) {
+      if (i != correctIndex && _nameOf(options[i]) == name) {
+        return forDirection(isRtl: isRtl);
+      }
+    }
+
+    return isRtl ? '$name کہاں ہے؟' : 'Where is $name?';
+  }
+
+  /// What to call the right answer, or null when it cannot be named.
+  ///
+  /// A label is used as written, except that an Urdu letter name becomes its
+  /// glyph — the packs write "Bay" as an identifier and the child is learning
+  /// ب. A picture is named from its own filename, which is how the artwork is
+  /// already described: `blue_square.png` is a blue square.
+  static String? _nameOf(ActivityOption answer) {
+    final label = answer.label?.trim();
+    if (label != null && label.isNotEmpty) {
+      return UrduLetters.glyphFor(label) ?? label;
+    }
+
+    final image = answer.image;
+    if (image == null || image.isEmpty) return null;
+
+    var file = image.split('/').last;
+    final dot = file.lastIndexOf('.');
+    if (dot > 0) file = file.substring(0, dot);
+
+    final words = file
+        .split(RegExp(r'[_\-]'))
+        .where((word) => word.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return null;
+
+    // Artwork is named subject-first — ball_red, ball_big — but it is spoken
+    // the other way round, so a trailing adjective moves to the front.
+    const adjectives = {
+      'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink',
+      'black', 'white', 'brown', 'big', 'small', 'large', 'little',
+    };
+    if (words.length > 1 && adjectives.contains(words.last.toLowerCase())) {
+      words.insert(0, words.removeLast());
+    }
+
+    final name = words.join(' ').toLowerCase();
+    // "Where is A?", but "Where is the blue square?"
+    return name.length <= 2 ? name.toUpperCase() : 'the $name';
+  }
+
+  static const whichOne =
+      _Ask('Which one is right?', 'درست کون سا ہے؟', direct: true);
+  static const tapRight =
+      _Ask('Tap the right one.', 'درست پر ٹیپ کریں۔', direct: true);
   static const oddOne =
       _Ask('Which one does not belong?', 'کون سا الگ ہے؟');
   static const whichShadow =
       _Ask('Which shadow matches?', 'کون سا سایہ ملتا ہے؟');
-  static const whatNext = _Ask('What comes next?', 'آگے کیا آئے گا؟');
+  // Age 2 and 3 reviewers both flagged this as too abstract: a row of
+  // shapes and "what comes next?" asks a toddler to infer a rule. Named,
+  // it becomes "Where is the blue square?" — the same tap, a question they
+  // can act on.
+  static const whatNext =
+      _Ask('What comes next?', 'آگے کیا آئے گا؟', direct: true);
   static const howMany = _Ask('How many do you see?', 'کتنے ہیں؟');
   static const whichPicture =
       _Ask('Which picture matches?', 'کون سی تصویر ملتی ہے؟');
@@ -353,6 +445,7 @@ class _Ask {
   static const howManyAltogether =
       _Ask('How many altogether?', 'سب ملا کر کتنے؟');
   static const howManyLeft = _Ask('How many are left?', 'کتنے باقی بچے؟');
+  static const whichMore = _Ask('Which one has more?', 'زیادہ کس میں ہیں؟');
 
   /// The letter is drawn in its own script either way, so only the sentence
   /// around it changes.

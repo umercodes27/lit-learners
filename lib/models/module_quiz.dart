@@ -15,6 +15,7 @@ class ModuleQuizQuestion {
     this.promptImage,
     this.promptRepeat = 1,
     this.isRtl = false,
+    this.audioPrompt,
   });
 
   final String id;
@@ -36,6 +37,15 @@ class ModuleQuizQuestion {
 
   /// Urdu questions read right-to-left, like the module they came from.
   final bool isRtl;
+
+  /// The clip that asks the question out loud, when the round it came from
+  /// named one.
+  ///
+  /// The packs already record these — the age-2 letter rounds name
+  /// `where_is_C.mp3` — but the quiz used to drop them on the way in and ask
+  /// silently, which is no use to a child who cannot read the question. A
+  /// question with no clip is spoken by the device instead.
+  final String? audioPrompt;
 
   bool isCorrect(int index) => index == correctIndex;
 }

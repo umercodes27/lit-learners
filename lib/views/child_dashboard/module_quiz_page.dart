@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 import '../../core/localization/urdu_letters.dart';
 import '../../models/activity_option.dart';
 import '../../models/module_quiz.dart';
+import '../../services/audio/glyph_speech.dart';
+import '../../services/content/asset_availability.dart';
 import '../../viewmodels/module_quiz_viewmodel.dart';
 import '../../widgets/activities/activity_asset_image.dart';
+import '../../widgets/activities/activity_audio.dart';
 import '../../widgets/play/play.dart';
 
 /// The quiz that closes a module: a handful of slides drawn from the
@@ -35,23 +38,69 @@ class ModuleQuizPage extends StatelessWidget {
   }
 }
 
-class _ModuleQuizView extends StatelessWidget {
+/// Reads the question out loud, and holds the voice for the whole quiz.
+///
+/// A quiz slide used to be silent: the question was drawn as text over a pair
+/// of pictures, which is no use to a child who cannot read yet — and these are
+/// two- and three-year-olds. The packs already record most of these questions
+/// (`where_is_C.mp3`), so a slide plays the round's own clip where there is
+/// one and has the device read the question where there is not.
+class _ModuleQuizView extends StatefulWidget {
   const _ModuleQuizView({required this.accent});
 
   final Color accent;
 
   @override
+  State<_ModuleQuizView> createState() => _ModuleQuizViewState();
+}
+
+class _ModuleQuizViewState extends State<_ModuleQuizView> {
+  final ActivityAudio _audio = ActivityAudio();
+  final GlyphSpeech _speech = GlyphSpeech();
+
+  /// The question already asked, so returning to a slide does not ask twice.
+  String? _asked;
+
+  @override
+  void dispose() {
+    _speech.stop();
+    _audio.dispose();
+    super.dispose();
+  }
+
+  /// A recorded clip when the bundle has one, otherwise the device's voice.
+  /// Naming a clip is not the same as shipping one.
+  Future<void> ask(ModuleQuizQuestion question) async {
+    final clip = question.audioPrompt;
+    if (clip != null && AssetAvailability.instance.has(clip)) {
+      await _audio.playPrompt(clip);
+      return;
+    }
+    await _speech.speak(question.prompt, urdu: question.isRtl);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = context.watch<ModuleQuizViewModel>();
 
+    if (!vm.isFinished) {
+      final question = vm.currentQuestion;
+      if (question.id != _asked) {
+        _asked = question.id;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) ask(question);
+        });
+      }
+    }
+
     return Scaffold(
       body: PlayGround(
-        color: accent,
+        color: widget.accent,
         safeArea: false,
         child: SafeArea(
           child: vm.isFinished
-              ? _QuizResult(accent: accent)
-              : _QuizSlide(accent: accent),
+              ? _QuizResult(accent: widget.accent)
+              : _QuizSlide(accent: widget.accent, onReplay: ask),
         ),
       ),
     );
@@ -59,9 +108,13 @@ class _ModuleQuizView extends StatelessWidget {
 }
 
 class _QuizSlide extends StatelessWidget {
-  const _QuizSlide({required this.accent});
+  const _QuizSlide({required this.accent, required this.onReplay});
 
   final Color accent;
+
+  /// Asks the question again. Small children ask for it again constantly, and
+  /// a question that plays only once is a question they missed.
+  final Future<void> Function(ModuleQuizQuestion) onReplay;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +158,25 @@ class _QuizSlide extends StatelessWidget {
                               height: 1.2,
                               fontWeight: FontWeight.w700,
                               color: PlayColors.ink,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Squishy(
+                          onTap: () => onReplay(question),
+                          semanticLabel: 'Hear the question again',
+                          child: Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: accent, width: 3),
+                            ),
+                            child: Icon(
+                              Icons.volume_up_rounded,
+                              size: 30,
+                              color: accent,
                             ),
                           ),
                         ),
@@ -268,6 +340,20 @@ class _OptionTile extends StatelessWidget {
             color: PlayColors.ink,
           ),
         ),
+      );
+    }
+    // The more-versus-less round puts the same picture on both plates and
+    // differs only in how many. Drawing one of each made the two answers
+    // identical, so the slide could not be answered at all.
+    if (option.count > 1) {
+      return Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          for (var i = 0; i < option.count; i++)
+            ActivityAssetImage(path: option.image, size: 26),
+        ],
       );
     }
     return ActivityAssetImage(path: option.image, size: 84);
