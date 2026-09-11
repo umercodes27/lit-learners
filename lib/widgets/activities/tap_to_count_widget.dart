@@ -8,6 +8,8 @@ import '../../models/activity_data.dart';
 import '../../services/audio/glyph_speech.dart';
 import '../../services/content/asset_availability.dart';
 import 'activity_asset_image.dart';
+import '../../services/audio/glyph_speech.dart';
+import '../../services/content/asset_availability.dart';
 import 'activity_audio.dart';
 import 'activity_feedback_controller.dart';
 import 'activity_stage.dart';
@@ -50,6 +52,14 @@ class _TapToCountWidgetState extends State<TapToCountWidget> {
   late final ActivityFeedbackController _feedback =
       ActivityFeedbackController(audio: widget.audio);
   late final GlyphSpeech _speech = widget.speech ?? GlyphSpeech();
+
+  @override
+  void initState() {
+    super.initState();
+    // Everything past five is spoken rather than played, and a cold engine
+    // takes about a second to say its first word.
+    _speech.warmUp();
+  }
 
   int _itemIndex = 0;
   Set<int> _tapped = {};

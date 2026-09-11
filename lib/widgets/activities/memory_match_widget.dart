@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/age2_skin.dart';
 import '../../models/activity_data.dart';
 import 'activity_asset_image.dart';
+import '../../services/audio/app_sounds.dart';
+import '../../services/audio/sound_controller.dart';
 import 'activity_audio.dart';
 import 'activity_feedback_controller.dart';
 import 'activity_stage.dart';
@@ -87,6 +89,11 @@ class _MemoryMatchWidgetState extends State<MemoryMatchWidget> {
     if (_locked) return;
     final card = _cards[index];
     if (card.matched || index == _firstUp) return;
+
+    // Turning a card is the one tap in the app that made no sound: the cards
+    // are a bare GestureDetector so that the flip animation is not fighting a
+    // squish, and every other tappable gets this from Squishy.
+    AppSound.play(Sfx.tap);
 
     if (_firstUp == null) {
       setState(() => _firstUp = index);

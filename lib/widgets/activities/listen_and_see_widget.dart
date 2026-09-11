@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/age2_skin.dart';
 import '../../models/activity_data.dart';
 import 'activity_asset_image.dart';
+import '../../services/content/asset_availability.dart';
 import 'activity_audio.dart';
 import 'activity_feedback_controller.dart';
 import 'activity_stage.dart';
@@ -90,7 +91,11 @@ class _ListenAndSeeWidgetState extends State<ListenAndSeeWidget> {
       roundIndex: _index,
       roundCount: widget.data.items.length,
       feedback: _feedback,
-      onReplayPrompt: item.audio == null ? null : _play,
+      // A speaker that plays nothing is worse than no speaker: the
+      // check is whether the clip is in the bundle, not whether the
+      // pack mentioned one.
+      onReplayPrompt:
+          AssetAvailability.instance.has(item.audio) ? _play : null,
       child: Column(
         children: [
           Expanded(
