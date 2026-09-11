@@ -54,12 +54,39 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       if (mounted) setState(() {});
     });
     _controller.setLooping(false);
-    // Redraws the play control and the scrub bar as the film runs.
     _controller.addListener(_onTick);
   }
 
+  /// What the screen actually shows about the film, so a rebuild only happens
+  /// when one of these changes.
+  (bool, bool, bool, int) get _visibleState => (
+        _controller.value.isInitialized,
+        _controller.value.isPlaying,
+        _controller.value.hasError,
+        _controller.value.position.inSeconds,
+      );
+
+  (bool, bool, bool, int)? _lastVisibleState;
+
+  /// Rebuilds on what changed, not on every notification.
+  ///
+  /// VideoPlayerController notifies many times a second while a film runs, and
+  /// this used to call setState on every one of them — rebuilding the whole
+  /// page each time, painted ground and all, thirty-odd times a second on a
+  /// phone. It went unnoticed because the films were not in the bundle until
+  /// recently, so playback never actually started and the listener never
+  /// really fired.
+  ///
+  /// The scrub bar is not why this exists: VideoProgressIndicator listens to
+  /// the controller itself and repaints without any help. What the page needs
+  /// is the play icon, the readiness of the frame, an error, and the seconds
+  /// on the clock.
   void _onTick() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final now = _visibleState;
+    if (now == _lastVisibleState) return;
+    _lastVisibleState = now;
+    setState(() {});
   }
 
   @override
