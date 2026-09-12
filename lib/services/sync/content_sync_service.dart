@@ -63,23 +63,25 @@ class ContentSyncService {
       levels[level.id] = level;
     }
 
+    // A level reaches a child only when its module does - either one that
+    // ships in the app or one an admin has published. This is the one place
+    // that knows both, which is why the remote sources no longer filter: they
+    // could only check the second, and so discarded every published edit to a
+    // built-in level whose module had never been written to Firestore.
+    final moduleIds = modules.keys.toSet();
+
     return (
       modules: modules.values.toList(),
-      levels: levels.values.toList(),
+      levels: [
+        for (final level in levels.values)
+          if (moduleIds.contains(level.moduleId)) level,
+      ],
     );
   }
 
   Future<ContentSyncReport> syncNow() async {
     try {
       final bundle = await _contentRemoteDataSource.getPublishedContent();
-      if (bundle.isEmpty) {
-        return const ContentSyncReport(
-          modulesPulled: 0,
-          levelsPulled: 0,
-          didApplyRemoteContent: false,
-          failedItems: 0,
-        );
-      }
 
       // Merged over the bundled curriculum, never substituted for it.
       //
@@ -88,6 +90,13 @@ class ContentSyncService {
       // all eight bundled ones and every level under them: `replaceContent`
       // empties the content tables first, and the remote side only ever
       // holds what an admin has explicitly published.
+      //
+      // Written even when nothing is published. An empty remote side used to
+      // return early without touching the database, so undoing the last
+      // admin edit — restoring a built-in level, or deleting the only custom
+      // module — never reached a device: it kept showing the edited copy.
+      // The bundle merged with nothing is the bundle, which is the right
+      // answer for that case too.
       final merged = _mergedOverBundle(bundle);
       await _contentDao.replaceContent(
         modules: merged.modules,
@@ -96,7 +105,7 @@ class ContentSyncService {
       return ContentSyncReport(
         modulesPulled: bundle.modules.length,
         levelsPulled: bundle.levels.length,
-        didApplyRemoteContent: true,
+        didApplyRemoteContent: !bundle.isEmpty,
         failedItems: 0,
       );
     } catch (error) {

@@ -80,6 +80,7 @@ class ContentMapper {
       displayText: map['displayText']! as String,
       visualLabel: map['visualLabel']! as String,
       audioCueKey: map['audioCueKey'] as String?,
+      imageUrl: map['imageUrl'] as String?,
     );
   }
 
@@ -98,6 +99,7 @@ class ContentMapper {
       'displayText': item.displayText,
       'visualLabel': item.visualLabel,
       'audioCueKey': item.audioCueKey,
+      'imageUrl': item.imageUrl,
     };
   }
 
@@ -110,6 +112,7 @@ class ContentMapper {
       correctIndex: map['correctIndex']! as int,
       visualLabel: map['visualLabel'] as String?,
       explanation: map['explanation'] as String?,
+      imageUrl: map['imageUrl'] as String?,
     );
   }
 
@@ -127,6 +130,7 @@ class ContentMapper {
       'correctIndex': question.correctIndex,
       'visualLabel': question.visualLabel,
       'explanation': question.explanation,
+      'imageUrl': question.imageUrl,
     };
   }
 

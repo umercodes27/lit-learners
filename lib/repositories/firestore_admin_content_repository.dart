@@ -253,6 +253,7 @@ class FirestoreAdminContentRepository implements AdminContentRepository {
       'displayText': item.displayText,
       'visualLabel': item.visualLabel,
       'audioCueKey': item.audioCueKey,
+      'imageUrl': item.imageUrl,
     };
   }
 
@@ -264,6 +265,7 @@ class FirestoreAdminContentRepository implements AdminContentRepository {
       'correctIndex': question.correctIndex,
       'visualLabel': question.visualLabel,
       'explanation': question.explanation,
+      'imageUrl': question.imageUrl,
     };
   }
 
@@ -286,6 +288,7 @@ class FirestoreAdminContentRepository implements AdminContentRepository {
         displayText: (data['displayText'] as String?) ?? '',
         visualLabel: (data['visualLabel'] as String?) ?? '',
         audioCueKey: data['audioCueKey'] as String?,
+        imageUrl: data['imageUrl'] as String?,
       );
     }).toList();
   }
@@ -299,6 +302,7 @@ class FirestoreAdminContentRepository implements AdminContentRepository {
         correctIndex: (data['correctIndex'] as num?)?.toInt() ?? 0,
         visualLabel: data['visualLabel'] as String?,
         explanation: data['explanation'] as String?,
+        imageUrl: data['imageUrl'] as String?,
       );
     }).toList();
   }

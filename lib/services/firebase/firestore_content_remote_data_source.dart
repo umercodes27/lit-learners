@@ -28,11 +28,15 @@ class FirestoreContentRemoteDataSource implements ContentRemoteDataSource {
         .where((doc) => _isPublished(doc.data()))
         .map(_moduleFromDoc)
         .toList();
-    final publishedModuleIds = modules.map((module) => module.id).toSet();
+    // Every published level, whether or not its module has a document here.
+    // An admin who edits a built-in English level publishes that level
+    // without ever writing an `english` module - the module ships in the
+    // app. Dropping levels whose module is absent threw every such edit away.
+    // Which levels belong to a module that exists is decided where the
+    // bundled curriculum is known: [ContentSyncService].
     final levels = levelSnapshot.docs
         .where((doc) => _isPublished(doc.data()))
         .map(_levelFromDoc)
-        .where((level) => publishedModuleIds.contains(level.moduleId))
         .toList()
       ..sort((a, b) {
         final moduleCompare = a.moduleId.compareTo(b.moduleId);
@@ -101,6 +105,7 @@ class FirestoreContentRemoteDataSource implements ContentRemoteDataSource {
         displayText: (data['displayText'] as String?) ?? '',
         visualLabel: (data['visualLabel'] as String?) ?? '',
         audioCueKey: data['audioCueKey'] as String?,
+        imageUrl: data['imageUrl'] as String?,
       );
     }).toList();
   }
@@ -114,6 +119,7 @@ class FirestoreContentRemoteDataSource implements ContentRemoteDataSource {
         correctIndex: (data['correctIndex'] as num?)?.toInt() ?? 0,
         visualLabel: data['visualLabel'] as String?,
         explanation: data['explanation'] as String?,
+        imageUrl: data['imageUrl'] as String?,
       );
     }).toList();
   }

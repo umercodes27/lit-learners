@@ -80,6 +80,7 @@ class AiContentGenerator {
     Set<String> existingLevelIds = const {},
     Set<String> existingQuizIds = const {},
     Set<String> existingTitles = const {},
+    Set<String> knownModuleIds = const {},
   }) async {
     var messages = promptBuilder.build(request);
     var attempts = 0;
@@ -151,6 +152,7 @@ class AiContentGenerator {
         existingLevelIds: existingLevelIds,
         existingQuizIds: existingQuizIds,
         existingTitles: existingTitles,
+        knownModuleIds: knownModuleIds,
       );
 
       drafts = _toDrafts(repaired, validation.issues);
@@ -208,6 +210,7 @@ class AiContentGenerator {
     Set<String> existingLevelIds = const {},
     Set<String> existingQuizIds = const {},
     Set<String> existingTitles = const {},
+    Set<String> knownModuleIds = const {},
   }) {
     final validation = validator.validateStage(
       [for (final draft in drafts) draft.level],
@@ -216,6 +219,7 @@ class AiContentGenerator {
       existingLevelIds: existingLevelIds,
       existingQuizIds: existingQuizIds,
       existingTitles: existingTitles,
+      knownModuleIds: knownModuleIds,
     );
 
     return AiGenerationResult(
@@ -240,7 +244,11 @@ class AiContentGenerator {
     AiGenerationRequest request,
   ) {
     final levelNumber = request.firstLevelNumber + index;
-    final id = '${request.moduleId}-stage${request.stage}-$levelNumber';
+    // A rewrite keeps the id of the level it replaces. Built-in ids do not all
+    // follow the '<module>-stage<n>-<m>' pattern, so the pattern cannot be
+    // relied on to land on the same one.
+    final id = request.revising?.id ??
+        '${request.moduleId}-stage${request.stage}-$levelNumber';
 
     return LearningLevel(
       id: id,
@@ -253,8 +261,9 @@ class AiContentGenerator {
       subtitle: payload.subtitle,
       type: request.type,
       passingScore: payload.passingScore,
-      // Generated content is not in the APK, so it is never bundled.
-      isBundled: false,
+      // Generated content is not in the APK, so it is never bundled — unless
+      // it is a rewrite of a level that is, which keeps its offline flag.
+      isBundled: request.revising?.isBundled ?? false,
       portionLabel: _portionLabel(request.type, payload.contentItems),
       contentItems: payload.contentItems,
       quizQuestions: [

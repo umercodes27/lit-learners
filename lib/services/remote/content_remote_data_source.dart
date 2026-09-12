@@ -41,11 +41,10 @@ class InMemoryContentRemoteDataSource implements ContentRemoteDataSource {
         .where((module) => _publishedModuleIds.contains(module.id))
         .toList()
       ..sort((a, b) => a.order.compareTo(b.order));
-    final moduleIds = modules.map((module) => module.id).toSet();
+    // Published levels regardless of their module, matching the Firestore
+    // source. See [ContentSyncService] for where orphans are dropped.
     final levels = _levelsById.values
-        .where((level) =>
-            _publishedLevelIds.contains(level.id) &&
-            moduleIds.contains(level.moduleId))
+        .where((level) => _publishedLevelIds.contains(level.id))
         .toList()
       ..sort(_sortLevels);
 

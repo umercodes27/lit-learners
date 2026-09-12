@@ -6,6 +6,7 @@ class QuizQuestion {
     required this.correctIndex,
     this.visualLabel,
     this.explanation,
+    this.imageUrl,
   });
 
   final String id;
@@ -14,6 +15,11 @@ class QuizQuestion {
   final int correctIndex;
   final String? visualLabel;
   final String? explanation;
+
+  /// A picture shown above the answers. See [ContentItem.imageUrl].
+  final String? imageUrl;
+
+  bool get hasImage => imageUrl != null && imageUrl!.trim().isNotEmpty;
 
   bool isCorrect(int answerIndex) => answerIndex == correctIndex;
 }

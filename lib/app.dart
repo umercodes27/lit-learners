@@ -67,6 +67,7 @@ import 'services/sync/leaderboard_sync_service.dart';
 import 'services/sync/progress_sync_service.dart';
 import 'services/sync/sync_service.dart';
 import 'services/sync/sync_orchestrator.dart';
+import 'services/storage/cloudinary_media_storage_data_source.dart';
 import 'services/storage/media_storage_data_source.dart';
 import 'viewmodels/active_child_session.dart';
 import 'viewmodels/admin_auth_viewmodel.dart';
@@ -138,9 +139,21 @@ final _progressRemoteDataSource = _firebaseEnabled
 // [AdminFirebaseApp]: the admin is signed in there and nowhere else, so a
 // query on the default instance is denied by the rules however correct they
 // are, and however successful the admin login was.
-final MediaStorageDataSource _mediaStorageDataSource = _firebaseEnabled
-    ? FirebaseMediaStorageDataSource(storage: AdminFirebaseApp.storage)
-    : InMemoryMediaStorageDataSource();
+/// Where admin media bytes go.
+///
+/// Cloudinary when it is configured, because Firebase Storage will not accept
+/// an upload until the project has a billing account. It works with Firebase
+/// on or off: the media *records* still go wherever the rest of the admin data
+/// goes. Without either, uploads stay in memory for tests and demos, and their
+/// `memory://` addresses cannot be shown on a real device.
+final MediaStorageDataSource _mediaStorageDataSource = AppConfig.usesCloudinary
+    ? CloudinaryMediaStorageDataSource(
+        cloudName: AppConfig.cloudinaryCloudName,
+        uploadPreset: AppConfig.cloudinaryUploadPreset,
+      )
+    : _firebaseEnabled
+        ? FirebaseMediaStorageDataSource(storage: AdminFirebaseApp.storage)
+        : InMemoryMediaStorageDataSource();
 final AdminContentRepository _baseAdminContentRepository = _firebaseEnabled
     ? FirestoreAdminContentRepository(firestore: AdminFirebaseApp.firestore)
     : InMemoryAdminContentRepository(

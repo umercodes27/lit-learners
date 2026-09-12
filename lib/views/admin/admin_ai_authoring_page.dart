@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../models/learning_level.dart';
 import '../../viewmodels/admin_content_viewmodel.dart';
 import '../../viewmodels/ai_content_viewmodel.dart';
 import 'widgets/admin_scaffold.dart';
@@ -39,6 +40,45 @@ class _AdminAiAuthoringPageState extends State<AdminAiAuthoringPage> {
     });
   }
 
+  /// A rewrite replaces something that may already be live, so where it goes
+  /// is asked rather than assumed.
+  Future<void> _saveRevision(
+    BuildContext context,
+    AiContentViewModel ai,
+    AdminContentViewModel admin,
+  ) async {
+    final publish = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_note_rounded),
+              title: const Text('Save as a draft'),
+              subtitle: const Text(
+                'Children keep the current version until you publish it.',
+              ),
+              onTap: () => Navigator.of(sheetContext).pop(false),
+            ),
+            ListTile(
+              leading: const Icon(Icons.publish_rounded),
+              title: const Text('Save and publish'),
+              subtitle: const Text('Replaces what children see right away.'),
+              onTap: () => Navigator.of(sheetContext).pop(true),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (publish == null) return;
+
+    final saved = await ai.saveRevision(
+      (level) => admin.saveRevisedLevel(level, publish: publish),
+    );
+    if (saved && context.mounted) Navigator.of(context).maybePop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final ai = context.watch<AiContentViewModel>();
@@ -54,7 +94,9 @@ class _AdminAiAuthoringPageState extends State<AdminAiAuthoringPage> {
           ? null
           : FloatingActionButton.extended(
               onPressed: ai.canSave
-                  ? () => ai.saveApproved(admin.createLevelsFromDrafts)
+                  ? () => ai.revising == null
+                      ? ai.saveApproved(admin.createLevelsFromDrafts)
+                      : _saveRevision(context, ai, admin)
                   : null,
               backgroundColor:
                   ai.canSave ? AppColors.violet : AppColors.line,
@@ -68,7 +110,11 @@ class _AdminAiAuthoringPageState extends State<AdminAiAuthoringPage> {
                   : const Icon(Icons.save_rounded, color: Colors.white),
               label: Text(
                 ai.approvedCount == 0
-                    ? 'Approve some levels'
+                    ? (ai.revising == null
+                        ? 'Approve some levels'
+                        : 'Approve the rewrite')
+                    : ai.revising != null
+                    ? 'Save rewrite'
                     : 'Save ${ai.approvedCount} '
                         '${ai.approvedCount == 1 ? 'level' : 'levels'}',
                 style: const TextStyle(
@@ -85,6 +131,10 @@ class _AdminAiAuthoringPageState extends State<AdminAiAuthoringPage> {
             onForget: ai.forgetKey,
           ),
           const SizedBox(height: 12),
+          if (ai.revising != null) ...[
+            _RevisionBanner(level: ai.revising!, onCancel: ai.cancelRevision),
+            const SizedBox(height: 12),
+          ],
           AiRequestCard(
             viewModel: ai,
             modules: modules,
@@ -169,6 +219,38 @@ class _AdminAiAuthoringPageState extends State<AdminAiAuthoringPage> {
                   'child until you publish it.',
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RevisionBanner extends StatelessWidget {
+  const _RevisionBanner({required this.level, required this.onCancel});
+
+  final LearningLevel level;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return AdminSoftCard(
+      child: Row(
+        children: [
+          const AdminIconChip(
+            icon: Icons.auto_fix_high_rounded,
+            color: AppColors.violet,
+            size: 38,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Rewriting "${level.title}" — ${level.moduleId}, stage '
+              '${level.stage}, level ${level.levelNumber}. It keeps its place '
+              'in the ladder.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          TextButton(onPressed: onCancel, child: const Text('Cancel')),
         ],
       ),
     );

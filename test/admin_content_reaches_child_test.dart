@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:little_learners/core/utils/age_stage_helper.dart';
+import 'package:little_learners/models/content_item.dart';
 import 'package:little_learners/models/learning_level.dart';
 import 'package:little_learners/models/learning_module.dart';
 import 'package:little_learners/repositories/admin_content_repository.dart';
@@ -64,10 +65,14 @@ Future<void> createLevel(
     type: LevelType.flashcards,
     passingScore: 60,
     isPublished: isPublished,
-    contentTitle: 'Circle',
-    contentPrompt: 'Find the circle.',
-    contentDisplayText: 'Circle',
-    contentVisualLabel: 'A circle',
+    contentItems: const [
+      ContentItem(
+        title: 'Circle',
+        prompt: 'Find the circle.',
+        displayText: 'Circle',
+        visualLabel: 'A circle',
+      ),
+    ],
   );
 }
 
@@ -148,6 +153,98 @@ void main() {
 
       final modules = await w.content.getModulesForStage(3);
       expect(modules.map((m) => m.id), isNot(contains('shapes')));
+    });
+  });
+
+  // The reports that started this: the admin wanted to change what ships,
+  // not add beside it, and a module that reused a built-in ID replaced it.
+  group('editing what ships with the app', () {
+    const levelId = 'math-stage3-1';
+
+    Future<bool> retitle(
+      ({AdminContentViewModel admin, ContentRepository content}) w,
+      String title, {
+      required bool publish,
+    }) async {
+      await w.admin.loadContent();
+      final original = w.admin.levelById(levelId)!;
+      return w.admin.updateLevel(
+        original,
+        stage: original.level.stage,
+        levelNumber: original.level.levelNumber,
+        title: title,
+        subtitle: original.level.subtitle,
+        type: original.level.type,
+        passingScore: original.level.passingScore,
+        isPublished: publish,
+        contentItems: original.level.contentItems,
+        quizQuestions: original.level.quizQuestions,
+      );
+    }
+
+    test('a published edit of a built-in level reaches the child', () async {
+      final w = world();
+      final saved = await retitle(w, 'Count the ducks', publish: true);
+
+      expect(saved, isTrue, reason: w.admin.errorMessage);
+      expect((await w.content.getLevelById(levelId))?.title, 'Count the ducks',
+          reason: 'no math module was ever written to the database, and the '
+              'level must not be dropped for that');
+      expect(w.admin.levelOrigin(levelId), ContentOrigin.builtInEdited);
+    });
+
+    test('a draft edit waits until it is published', () async {
+      final w = world();
+      final before = (await w.content.getLevelById(levelId))!.title;
+
+      await retitle(w, 'Count the ducks', publish: false);
+
+      expect((await w.content.getLevelById(levelId))?.title, before);
+    });
+
+    test('restore brings the original back', () async {
+      final w = world();
+      final before = (await w.content.getLevelById(levelId))!.title;
+      await retitle(w, 'Count the ducks', publish: true);
+
+      expect(await w.admin.restoreBuiltInLevel(levelId), isTrue);
+
+      expect((await w.content.getLevelById(levelId))?.title, before);
+      expect(w.admin.levelOrigin(levelId), ContentOrigin.builtIn);
+    });
+
+    test('a new module reusing a built-in ID is refused, so English stays',
+        () async {
+      final w = world();
+      final created = await w.admin.createModule(
+        id: 'English',
+        title: 'Phonics',
+        description: 'Phonics',
+        category: ModuleCategory.english,
+        minStage: AgeStageHelper.minStage,
+        maxStage: 4,
+        order: 3,
+        isPublished: true,
+      );
+
+      expect(created, isFalse);
+      expect(w.admin.errorMessage, contains('built-in'));
+      final english = (await w.content.getModulesForStage(3))
+          .firstWhere((module) => module.id == 'english');
+      expect(english.title, isNot('Phonics'));
+    });
+
+    test('Phonics with its own ID sits beside English', () async {
+      final w = world();
+      await createModule(w.admin, id: 'phonics');
+      await createLevel(w.admin, moduleId: 'phonics');
+
+      final ids = (await w.content.getModulesForStage(3)).map((m) => m.id);
+      expect(ids, containsAll(<String>['english', 'phonics']));
+      expect(
+        await w.content.getLevelsForModule(moduleId: 'phonics', stage: 3),
+        hasLength(1),
+      );
     });
   });
 }
