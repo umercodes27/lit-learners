@@ -43,6 +43,7 @@ enum DraftRule {
   levelNumberNotConsecutive,
   levelIdCollision,
   moduleIdNotACategory,
+  imageUrlNotHttp,
   portionLabelMalformed,
   scriptMismatch,
   duplicateLevelTitle,
@@ -185,11 +186,45 @@ class ContentDraftValidator {
 
     for (var i = 0; i < level.contentItems.length; i++) {
       issues.addAll(_contentFields(level.contentItems[i], '$path.contentItems[$i]'));
+      issues.addAll(_image(
+        level.contentItems[i].imageUrl,
+        '$path.contentItems[$i].imageUrl',
+      ));
     }
     for (var i = 0; i < level.quizQuestions.length; i++) {
       issues.addAll(_quiz(level.quizQuestions[i], '$path.quizQuestions[$i]'));
+      issues.addAll(_image(
+        level.quizQuestions[i].imageUrl,
+        '$path.quizQuestions[$i].imageUrl',
+      ));
     }
     return issues;
+  }
+
+  /// A picture is optional, but one that is there has to be an address a
+  /// phone can fetch. A local path or `memory://` from a test storage backend
+  /// renders as nothing on every child's device.
+  List<DraftIssue> _image(String? url, String path) {
+    final value = url?.trim() ?? '';
+    if (value.isEmpty) return const [];
+
+    final uri = Uri.tryParse(value);
+    final fetchable = uri != null &&
+        uri.hasAuthority &&
+        (uri.scheme == 'https' || uri.scheme == 'http');
+    if (fetchable) return const [];
+
+    return [
+      DraftIssue(
+        rule: DraftRule.imageUrlNotHttp,
+        severity: DraftSeverity.blocking,
+        path: path,
+        message: '"$value" is not a web address, so the picture would not '
+            "show on a child's phone.",
+        modelHint: 'Leave imageUrl out entirely. Pictures are added by the '
+            'admin, never generated.',
+      ),
+    ];
   }
 
   List<DraftIssue> _contentFields(ContentItem item, String path) {
@@ -456,6 +491,7 @@ class ContentDraftValidator {
     Set<String> existingLevelIds = const {},
     Set<String> existingQuizIds = const {},
     Set<String> existingTitles = const {},
+    Set<String> knownModuleIds = const {},
   }) {
     final issues = <DraftIssue>[];
 
@@ -507,9 +543,15 @@ class ContentDraftValidator {
         ));
       }
 
-      if (!ModuleCategory.values.any((c) => c.name == level.moduleId)) {
+      if (!knownModuleIds.contains(level.moduleId) &&
+          !ModuleCategory.values.any((c) => c.name == level.moduleId)) {
         // Module ids double as the key for a module's colour and icon, so an
         // unknown one does not fail — it silently falls back to English.
+        //
+        // A module an admin created (say "phonics") is not unknown, though:
+        // it exists, and taking a fallback colour is the expected cost of a
+        // custom module rather than a sign the id was invented. Only an id
+        // that matches nothing at all is blocked.
         issues.add(DraftIssue(
           rule: DraftRule.moduleIdNotACategory,
           severity: DraftSeverity.blocking,

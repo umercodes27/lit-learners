@@ -51,11 +51,14 @@ class _AiRequestCardState extends State<AiRequestCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AdminSectionHeading(
-            title: 'Generate a stage',
-            subtitle: 'Levels arrive as drafts for you to check',
+          AdminSectionHeading(
+            title: vm.revising == null ? 'Generate a stage' : 'Rewrite a level',
+            subtitle: vm.revising == null
+                ? 'Levels arrive as drafts for you to check'
+                : 'The new version arrives as a draft for you to check',
           ),
           const SizedBox(height: 12),
+          if (vm.revising == null) ...[
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: DropdownButtonFormField<String>(
@@ -114,16 +117,22 @@ class _AiRequestCardState extends State<AiRequestCard> {
             values: LevelType.values,
             onChanged: vm.setType,
           ),
+          ],
           AdminTextField(
             controller: _guidance,
-            label: 'Anything else? (optional)',
-            helperText: 'For example: use animals rather than fruit.',
+            label: vm.revising == null
+                ? 'Anything else? (optional)'
+                : 'What should change?',
+            helperText: vm.revising == null
+                ? 'For example: use animals rather than fruit.'
+                : 'For example: easier words, more cards, or animals instead '
+                    'of fruit.',
             maxLines: 2,
           ),
           // Shown before anything is generated, because the numbering is the
           // one thing that cannot be fixed afterwards: a gap locks the rest
           // of the module permanently.
-          if (vm.moduleId != null)
+          if (vm.moduleId != null && vm.revising == null)
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 12),
               child: Row(
@@ -147,7 +156,7 @@ class _AiRequestCardState extends State<AiRequestCard> {
           AppPrimaryButton(
             label: vm.isGenerating
                 ? 'Generating${vm.attempts > 1 ? ' (try ${vm.attempts})' : ''}…'
-                : 'Generate',
+                : (vm.revising == null ? 'Generate' : 'Rewrite'),
             icon: Icons.auto_awesome_rounded,
             onPressed: ready
                 ? () {

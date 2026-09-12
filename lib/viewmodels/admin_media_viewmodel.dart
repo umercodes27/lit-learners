@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/media_asset.dart';
 import '../repositories/admin_authorization_repository.dart';
 import '../repositories/media_asset_repository.dart';
+import '../services/storage/cloudinary_media_storage_data_source.dart';
 
 /// Backs the media library screen (UC-19 step 4).
 class AdminMediaViewModel extends ChangeNotifier {
@@ -17,6 +18,11 @@ class AdminMediaViewModel extends ChangeNotifier {
   String? _infoMessage;
 
   List<MediaAsset> get assets => _assets;
+
+  /// The asset the most recent successful [upload] created, so a screen that
+  /// uploaded a picture in order to use it can pick it straight up.
+  MediaAsset? _lastUploaded;
+  MediaAsset? get lastUploaded => _lastUploaded;
   bool get isLoading => _isLoading;
   bool get isUploading => _isUploading;
   String? get errorMessage => _errorMessage;
@@ -61,7 +67,7 @@ class AdminMediaViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _mediaAssetRepository.createAsset(
+      _lastUploaded = await _mediaAssetRepository.createAsset(
         parentId: adminId,
         moduleId: moduleId.trim(),
         type: type,
@@ -109,6 +115,7 @@ class AdminMediaViewModel extends ChangeNotifier {
     return switch (error) {
       AdminPermissionException(:final message) => message,
       MediaAssetException(:final message) => message,
+      MediaStorageException(:final message) => message,
       _ => 'Something went wrong: $error',
     };
   }

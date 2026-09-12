@@ -13,6 +13,7 @@ import '../../models/quiz_question.dart';
 import '../../viewmodels/active_child_session.dart';
 import '../../viewmodels/learning_viewmodel.dart';
 import '../../viewmodels/quiz_viewmodel.dart';
+import '../../widgets/content_image.dart';
 import '../../widgets/koala_guide.dart';
 import '../../services/audio/app_sounds.dart';
 import '../../services/audio/sound_controller.dart';
@@ -446,6 +447,10 @@ class _QuestionCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (question.hasImage) ...[
+              const SizedBox(height: 16),
+              ContentImage(url: question.imageUrl!),
+            ],
             if (question.visualLabel != null) ...[
               const SizedBox(height: 16),
               Container(

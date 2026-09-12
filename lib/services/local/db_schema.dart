@@ -2,7 +2,7 @@ class LocalDbSchema {
   const LocalDbSchema._();
 
   static const databaseName = 'little_learners.db';
-  static const version = 7;
+  static const version = 8;
 
   static const appMeta = 'app_meta';
   static const childProfiles = 'child_profiles';
@@ -79,7 +79,8 @@ CREATE TABLE $contentItems (
   prompt TEXT NOT NULL,
   displayText TEXT NOT NULL,
   visualLabel TEXT NOT NULL,
-  audioCueKey TEXT
+  audioCueKey TEXT,
+  imageUrl TEXT
 )
 ''';
 
@@ -92,7 +93,8 @@ CREATE TABLE $quizQuestions (
   optionsJson TEXT NOT NULL,
   correctIndex INTEGER NOT NULL,
   visualLabel TEXT,
-  explanation TEXT
+  explanation TEXT,
+  imageUrl TEXT
 )
 ''';
 
@@ -209,5 +211,12 @@ CREATE TABLE $appMeta (
     'ALTER TABLE $levelProgress ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE $levelProgress ADD COLUMN wrongAnswers INTEGER NOT NULL '
         'DEFAULT 0',
+  ];
+
+  /// Cards and quiz questions gained a picture an admin can attach. Nullable,
+  /// so every row written before this upgrade simply has none.
+  static const version8Statements = [
+    'ALTER TABLE $contentItems ADD COLUMN imageUrl TEXT',
+    'ALTER TABLE $quizQuestions ADD COLUMN imageUrl TEXT',
   ];
 }

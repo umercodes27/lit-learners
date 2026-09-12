@@ -79,6 +79,74 @@ class AiContentViewModel extends ChangeNotifier {
 
   int get approvedCount => approvedDrafts.length;
 
+  /// The level being rewritten, or null when generating new levels.
+  LearningLevel? _revising;
+  LearningLevel? get revising => _revising;
+
+  /// Every module id the admin panel knows, so a draft for a custom module
+  /// is not flagged as belonging to a module that does not exist.
+  Set<String> _knownModuleIds = const {};
+
+  /// Switches the screen to rewriting one existing level — built-in or not.
+  ///
+  /// Module, stage, type and number all come from the level and are not
+  /// offered for change: the rewrite takes the original's place in the
+  /// ladder, so moving it would open a gap.
+  void startRevision(LearningLevel level) {
+    _revising = level;
+    _moduleId = level.moduleId;
+    _stage = level.stage;
+    _type = level.type;
+    _levelCount = 1;
+    _firstLevelNumber = level.levelNumber;
+    _drafts = [];
+    _batchIssues = [];
+    _request = null;
+    _errorMessage = null;
+    _infoMessage = null;
+    notifyListeners();
+  }
+
+  /// Back to generating new levels.
+  void cancelRevision() {
+    if (_revising == null) return;
+    _revising = null;
+    _levelCount = 3;
+    _drafts = [];
+    _batchIssues = [];
+    _request = null;
+    notifyListeners();
+  }
+
+  /// Saves the one approved rewrite over the level it came from.
+  Future<bool> saveRevision(
+    Future<bool> Function(LearningLevel level) save,
+  ) async {
+    final approved = approvedDrafts;
+    if (_revising == null || approved.length != 1) {
+      _setError('Approve the rewritten level before saving.');
+      return false;
+    }
+
+    _isSaving = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final saved = await save(approved.single.level);
+
+    _isSaving = false;
+    if (saved) {
+      _drafts = [];
+      _revising = null;
+      _levelCount = 3;
+      _infoMessage = 'Rewrite saved.';
+    } else {
+      _errorMessage = 'Nothing was saved. The rewrite is still here.';
+    }
+    notifyListeners();
+    return saved;
+  }
+
 
   Future<void> loadCredentials() async {
     _credentials = await _credentialStore.read();
@@ -164,7 +232,8 @@ class AiContentViewModel extends ChangeNotifier {
   /// Recomputes where this stage continues from, so the form can say what it
   /// is about to create before anyone spends money finding out.
   void refreshPreview(List<LearningLevel> existingLevels) {
-    _firstLevelNumber = _nextLevelNumber(existingLevels);
+    _firstLevelNumber =
+        _revising?.levelNumber ?? _nextLevelNumber(existingLevels);
     notifyListeners();
   }
 
@@ -209,8 +278,17 @@ class AiContentViewModel extends ChangeNotifier {
     _batchIssues = [];
     notifyListeners();
 
-    final inStage = _levelsInStage(existingLevels);
-    _firstLevelNumber = _nextLevelNumber(existingLevels);
+    final revising = _revising;
+    // Measured against the rest of the app. The level being rewritten is left
+    // out, or its own id, title and question ids would read as collisions
+    // with itself.
+    final others = [
+      for (final level in existingLevels)
+        if (level.id != revising?.id) level,
+    ];
+    final inStage = _levelsInStage(others);
+    _firstLevelNumber = revising?.levelNumber ?? _nextLevelNumber(others);
+    _knownModuleIds = {for (final m in modules) m.id};
 
     final request = AiGenerationRequest(
       moduleId: moduleId,
@@ -221,6 +299,7 @@ class AiContentViewModel extends ChangeNotifier {
       type: _type,
       firstLevelNumber: _firstLevelNumber,
       guidance: _guidance,
+      revising: revising,
       existingTitles: [for (final level in inStage) level.title],
       existingPortions: [
         for (final level in inStage)
@@ -234,12 +313,13 @@ class AiContentViewModel extends ChangeNotifier {
       request,
       // Checked against every level in the app, not just this stage: ids and
       // quiz ids are database keys and must be unique everywhere.
-      existingLevelIds: {for (final level in existingLevels) level.id},
+      existingLevelIds: {for (final level in others) level.id},
       existingQuizIds: {
-        for (final level in existingLevels)
+        for (final level in others)
           for (final question in level.quizQuestions) question.id,
       },
       existingTitles: {for (final level in inStage) level.title},
+      knownModuleIds: _knownModuleIds,
     );
 
     _isGenerating = false;
@@ -283,7 +363,11 @@ class AiContentViewModel extends ChangeNotifier {
     final edited = [..._drafts];
     edited[index] = edited[index].copyWith(level: level);
 
-    final result = _generator.revalidate(edited, request: request);
+    final result = _generator.revalidate(
+      edited,
+      request: request,
+      knownModuleIds: _knownModuleIds,
+    );
     _drafts = result.drafts;
     _batchIssues = result.batchIssues;
     notifyListeners();

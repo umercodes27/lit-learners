@@ -29,4 +29,22 @@ class AppConfig {
   static const googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
   );
+
+  /// Cloudinary account name, for admin media uploads.
+  ///
+  /// Neither this nor [cloudinaryUploadPreset] is a secret: uploads use an
+  /// *unsigned* preset, which Cloudinary designed to be called from a client,
+  /// and the API secret is never in the app. They are passed in rather than
+  /// written here so each team member can point at their own account.
+  static const cloudinaryCloudName = String.fromEnvironment(
+    'CLOUDINARY_CLOUD_NAME',
+  );
+
+  /// Name of an **unsigned** upload preset in that Cloudinary account.
+  static const cloudinaryUploadPreset = String.fromEnvironment(
+    'CLOUDINARY_UPLOAD_PRESET',
+  );
+
+  static bool get usesCloudinary =>
+      cloudinaryCloudName.isNotEmpty && cloudinaryUploadPreset.isNotEmpty;
 }

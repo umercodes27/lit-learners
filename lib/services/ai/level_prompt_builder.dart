@@ -164,6 +164,9 @@ passingScore should be between 55 and 70.''',
   }
 
   String userMessage(AiGenerationRequest request) {
+    final revising = request.revising;
+    if (revising != null) return _revisionMessage(request, revising);
+
     final lines = <String>[
       'Module: ${request.moduleId} ("${request.moduleTitle}")',
       'Stage: ${request.stage} of 4, for children around '
@@ -201,6 +204,34 @@ passingScore should be between 55 and 70.''',
         : 'Extra instructions from the admin: $guidance');
 
     return lines.join('\n');
+  }
+
+  /// Asks for one level back in place of an existing one.
+  ///
+  /// The current version goes in as JSON in exactly the shape the reply has
+  /// to take, so the model edits what is there rather than starting from
+  /// nothing — and keeps whatever the admin did not ask to change.
+  String _revisionMessage(AiGenerationRequest request, LearningLevel level) {
+    final guidance = request.guidance.trim();
+    return [
+      'Module: ${request.moduleId} ("${request.moduleTitle}")',
+      'Stage: ${request.stage} of 4, for children around '
+          '${request.stage} years old.',
+      'Rewrite ONE existing level. Return exactly 1 level in the "levels" '
+          'array. It stays level ${level.levelNumber} of this stage and the '
+          'same kind of level.',
+      'This is the current version:',
+      codec.encodeEnvelope([level]),
+      guidance.isEmpty
+          ? 'The admin gave no specific instructions: make it clearer and '
+              'better suited to this age, on the same topic.'
+          : 'What the admin wants changed: $guidance',
+      'Keep everything the admin did not ask to change.',
+      request.moduleId == 'urdu'
+          ? 'Write every title, subtitle, prompt and answer option in Urdu '
+              'script. The app lays this module out right to left.'
+          : 'Write everything in simple English.',
+    ].join('\n');
   }
 
   /// Sent when the reply could not be read at all.

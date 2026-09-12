@@ -12,6 +12,7 @@ import '../../models/parent_mark.dart';
 import '../../viewmodels/active_child_session.dart';
 import '../../viewmodels/learning_viewmodel.dart';
 import '../../viewmodels/level_activity_viewmodel.dart';
+import '../../widgets/content_image.dart';
 import '../../widgets/koala_guide.dart';
 import '../../widgets/play/play.dart';
 import 'canvas_level_view.dart';
@@ -199,6 +200,10 @@ class _LevelBody extends StatelessWidget {
                     ContentAudioButton(audioCueKey: item.audioCueKey),
                   ],
                 ),
+                if (item.hasImage) ...[
+                  const SizedBox(height: 16),
+                  ContentImage(url: item.imageUrl!),
+                ],
                 const SizedBox(height: 16),
                 Directionality(
                   textDirection: textDirection,

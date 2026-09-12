@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../data/seed_content.dart';
 import '../models/admin_stats.dart';
 import 'admin_stats_repository.dart';
 
@@ -35,25 +36,36 @@ class FirestoreAdminStatsRepository implements AdminStatsRepository {
     final progressDocs =
         await _firestore.collectionGroup(levelProgressCollection).get();
 
-    // Quiz questions live as an array on each level document, so the total has
-    // to be summed client-side rather than aggregated.
-    var quizCount = 0;
-    final moduleTitles = <String, String>{};
+    // The database holds only what admins wrote: new content, and edited
+    // copies of built-in content. Counting it alone reported "1 module, 1
+    // level" for an app that ships eight modules, so the totals are the
+    // built-in curriculum with the database laid over it, id by id — the same
+    // merge a child's device performs.
+    final moduleTitles = <String, String>{
+      for (final module in seedModules) module.id: module.title,
+    };
     for (final doc in moduleDocs.docs) {
       final data = doc.data();
       moduleTitles[doc.id] = (data['title'] as String?) ?? doc.id;
     }
+
+    // Quiz questions live as an array on each level document, so the total has
+    // to be summed client-side rather than aggregated.
+    final quizzesByLevel = <String, int>{
+      for (final level in seedLevels) level.id: level.quizQuestions.length,
+    };
     for (final doc in levelDocs.docs) {
       final questions = doc.data()['quizQuestions'];
-      if (questions is Iterable) quizCount += questions.length;
+      quizzesByLevel[doc.id] = questions is Iterable ? questions.length : 0;
     }
+    final quizCount = quizzesByLevel.values.fold<int>(0, (a, b) => a + b);
 
     return AdminStats(
       totalParentAccounts: parentCount,
       totalChildProfiles: childCount,
       totalQuizzes: quizCount,
-      totalModules: moduleDocs.size,
-      totalLevels: levelDocs.size,
+      totalModules: moduleTitles.length,
+      totalLevels: quizzesByLevel.length,
       completedLevelCount: progressDocs.docs
           .where((doc) => doc.data()['completed'] == true)
           .length,

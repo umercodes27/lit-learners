@@ -16,6 +16,7 @@ class AiGenerationRequest {
     this.guidance = '',
     this.existingTitles = const [],
     this.existingPortions = const [],
+    this.revising,
   });
 
   final String moduleId;
@@ -40,6 +41,11 @@ class AiGenerationRequest {
   /// instead of writing "Letters A – F" for the third time.
   final List<String> existingTitles;
   final List<String> existingPortions;
+
+  /// Set when the model is rewriting one level that already exists rather
+  /// than adding new ones. The result keeps that level's id, so saving it
+  /// replaces the original instead of landing beside it.
+  final LearningLevel? revising;
 
   int get lastLevelNumber => firstLevelNumber + levelCount - 1;
 }

@@ -8,6 +8,7 @@ import '../../../models/content_item.dart';
 import '../../../models/learning_level.dart';
 import '../../../models/quiz_question.dart';
 import 'admin_form_fields.dart';
+import 'admin_image_field.dart';
 import 'admin_theme.dart';
 
 /// One generated level, with everything the admin needs to decide about it.
@@ -220,6 +221,8 @@ class _DraftEditorState extends State<_DraftEditor> {
   late final List<List<TextEditingController>> _cards;
   late final List<TextEditingController> _questions;
   late List<int> _correctIndexes;
+  late final List<String?> _cardImages;
+  late final List<String?> _questionImages;
 
   @override
   void initState() {
@@ -243,6 +246,12 @@ class _DraftEditorState extends State<_DraftEditor> {
     ];
     _correctIndexes = [
       for (final question in level.quizQuestions) question.correctIndex,
+    ];
+    // Pictures are never generated — an invented address is a broken image —
+    // so these start empty and are the admin's to add.
+    _cardImages = [for (final item in level.contentItems) item.imageUrl];
+    _questionImages = [
+      for (final question in level.quizQuestions) question.imageUrl,
     ];
   }
 
@@ -277,6 +286,7 @@ class _DraftEditorState extends State<_DraftEditor> {
               displayText: _cards[i][2].text,
               visualLabel: _cards[i][3].text,
               audioCueKey: level.contentItems[i].audioCueKey,
+              imageUrl: _cardImages[i],
             ),
         ],
         quizQuestions: [
@@ -288,6 +298,7 @@ class _DraftEditorState extends State<_DraftEditor> {
               correctIndex: _correctIndexes[i],
               visualLabel: level.quizQuestions[i].visualLabel,
               explanation: level.quizQuestions[i].explanation,
+              imageUrl: _questionImages[i],
             ),
         ],
       ),
@@ -344,6 +355,14 @@ class _DraftEditorState extends State<_DraftEditor> {
                       : null,
             ),
             field(_cards[i][3], 'Picture description'),
+            AdminImageField(
+              url: _cardImages[i],
+              moduleId: widget.level.moduleId,
+              onChanged: (url) {
+                setState(() => _cardImages[i] = url);
+                _emit();
+              },
+            ),
           ],
           for (var i = 0; i < _questions.length; i++) ...[
             const SizedBox(height: 4),
@@ -354,6 +373,15 @@ class _DraftEditorState extends State<_DraftEditor> {
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
             field(_questions[i], 'Question'),
+            AdminImageField(
+              label: 'Question picture',
+              url: _questionImages[i],
+              moduleId: widget.level.moduleId,
+              onChanged: (url) {
+                setState(() => _questionImages[i] = url);
+                _emit();
+              },
+            ),
             // A radio over the real options rather than a number box, so an
             // index pointing at nothing is not something the UI can express.
             RadioGroup<int>(
