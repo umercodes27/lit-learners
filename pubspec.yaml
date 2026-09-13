@@ -74,7 +74,9 @@ flutter:
     # rather than reached across, so one pack is never a dependency of
     # another.
     - assets/age4/
+    - assets/age4/audio/en/
     - assets/age4/audio/num/
+    - assets/age4/audio/ur/
     - assets/age4/audio/sfx/
     - assets/age4/audio/stories/
     - assets/age4/img/

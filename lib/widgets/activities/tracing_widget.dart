@@ -136,7 +136,12 @@ class _TracingWidgetState extends State<TracingWidget>
       });
 
   Future<void> _next() async {
-    await _feedback.celebrate();
+    // The applause belongs to the letter the child just traced, not to the
+    // button. Celebrating an untouched page rewards tapping past the work —
+    // and on the last page it applauded the handover as well.
+    if (_strokes.isNotEmpty) {
+      await _feedback.celebrate();
+    }
     if (!mounted) return;
     if (_index >= widget.data.items.length - 1) {
       setState(() => _finished = true);
@@ -240,17 +245,28 @@ class _TracingWidgetState extends State<TracingWidget>
                 semanticLabel: 'Next letter',
                 borderColor: palette.accent,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _index >= widget.data.items.length - 1 ? 'Finish' : 'Next',
-                      style: Age2Text.cardTitle,
-                    ),
-                    const SizedBox(width: 10),
-                    Icon(Icons.arrow_forward_rounded,
-                        size: 32, color: palette.accent),
-                  ],
+                // The stage runs the whole subtree right-to-left for Urdu,
+                // which reversed this pair and mirrored the arrow: an English
+                // "Next" with a left-pointing arrow in front of it. The label
+                // is English and the progression reads forward, so the button
+                // keeps its own direction while the Urdu content around it
+                // stays right-to-left.
+                child: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _index >= widget.data.items.length - 1
+                            ? 'Finish'
+                            : 'Next',
+                        style: Age2Text.cardTitle,
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(Icons.arrow_forward_rounded,
+                          size: 32, color: palette.accent),
+                    ],
+                  ),
                 ),
               ),
             ],

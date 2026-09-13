@@ -362,19 +362,6 @@
           "prompt": "What should you do?",
           "correct_answer": "share_toy"
         }
-      },
-      "daily_routine_stories": {
-        "component": "story-interactive",
-        "title": "My Day",
-        "sequence_mode": true,
-        "audio_narration": "assets/audio/stories/my_day.mp3",
-        "illustration_sequence": [
-          "assets/img/story/wake_up.png",
-          "assets/img/story/breakfast.png",
-          "assets/img/story/play.png",
-          "assets/img/story/brush_teeth.png",
-          "assets/img/story/sleep.png"
-        ]
       }
     }
   }
