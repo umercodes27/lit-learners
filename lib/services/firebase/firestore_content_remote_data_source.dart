@@ -18,16 +18,32 @@ class FirestoreContentRemoteDataSource implements ContentRemoteDataSource {
 
   @override
   Future<ContentBundle> getPublishedContent() async {
+    // Asks only for published documents, and has to. `firestore.rules` lets a
+    // parent read a module or level only when `isPublished == true`, and
+    // Firestore does not filter a query down to what the rules allow — it
+    // refuses the whole query if it *could* return a document the reader may
+    // not see. The unfiltered `.get()` this replaced worked only while every
+    // document happened to be published; the first draft an admin saved
+    // (and AI authoring always saves drafts) made every parent's content
+    // sync fail with permission-denied, so nothing new ever reached them.
+    //
+    // Sorted here rather than with `orderBy('sortOrder')`, which alongside a
+    // filter on another field would need a composite index to be created by
+    // hand in the console first.
     final moduleSnapshot = await _firestore
         .collection(modulesCollection)
-        .orderBy('sortOrder')
+        .where('isPublished', isEqualTo: true)
         .get();
-    final levelSnapshot = await _firestore.collection(levelsCollection).get();
+    final levelSnapshot = await _firestore
+        .collection(levelsCollection)
+        .where('isPublished', isEqualTo: true)
+        .get();
 
     final modules = moduleSnapshot.docs
         .where((doc) => _isPublished(doc.data()))
         .map(_moduleFromDoc)
-        .toList();
+        .toList()
+      ..sort((a, b) => a.order.compareTo(b.order));
     // Every published level, whether or not its module has a document here.
     // An admin who edits a built-in English level publishes that level
     // without ever writing an `english` module - the module ships in the
