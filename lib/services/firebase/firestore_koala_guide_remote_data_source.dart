@@ -14,7 +14,13 @@ class FirestoreKoalaGuideRemoteDataSource
 
   @override
   Future<List<KoalaGuideMessage>> getPublishedMessages() async {
-    final snapshot = await _firestore.collection(messagesCollection).get();
+    // Filtered in the query, not only below: the rules allow a parent to read
+    // published messages only, and refuse an unfiltered query outright once
+    // any draft message exists. See [FirestoreContentRemoteDataSource].
+    final snapshot = await _firestore
+        .collection(messagesCollection)
+        .where('isPublished', isEqualTo: true)
+        .get();
     return snapshot.docs
         .where((doc) => _isPublished(doc.data()))
         .map(_messageFromDoc)
