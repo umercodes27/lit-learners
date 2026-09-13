@@ -82,7 +82,10 @@ class ActivityPackLoader {
       } else {
         final repairs = <String, String>{};
         final pack = ActivityPack.fromJson(
-          _rebaseAssetPaths(decoded, path, repairs)! as Map<String, dynamic>,
+          _withFeedbackDefaults(
+            _rebaseAssetPaths(decoded, path, repairs)! as Map<String, dynamic>,
+            path,
+          ),
         );
         final missing =
             AssetAvailability.instance.missingFrom(pack.referencedAssets);
@@ -106,6 +109,56 @@ class ActivityPackLoader {
   }
 
   void clearCache() => _cached = null;
+
+  /// The applause every activity shares, defaulted for the whole pack.
+  ///
+  /// Applause was opt-in per level through a `feedback` block, and only six of
+  /// the forty levels ever declared one — so thirty-four celebrated a right
+  /// answer with confetti and silence. Applause is not level-specific content;
+  /// it is what the product does when a child gets something right, so it
+  /// belongs to the pack. Defaulting it here reaches every level through the
+  /// existing `level.data.correctSound ?? pack.correctSound` fallback, and
+  /// reaches levels added later without anyone remembering this.
+  ///
+  /// Only the reward is defaulted. A wrong answer stays as the pack authored
+  /// it — silence unless a level asks for the gentle cue — so getting it wrong
+  /// never gains a sound of its own that nobody asked for.
+  ///
+  /// A level that carries its own `feedback` still wins, and so does a pack
+  /// that declares one: both are merged over this default rather than
+  /// replaced.
+  ///
+  /// The default is only filled in when the pack actually ships the file. A
+  /// pack without applause is then left exactly as authored, rather than
+  /// gaining a reference to a sound that does not exist — which would put a
+  /// phantom path into every missing-asset report.
+  ///
+  /// This runs after [_rebaseAssetPaths], so the path is the resolved,
+  /// pack-local one (`assets/age3/audio/sfx/applause.mp3`).
+  static const _defaultCorrectSound = 'audio/sfx/applause.mp3';
+
+  Map<String, dynamic> _withFeedbackDefaults(
+    Map<String, dynamic> pack,
+    String packPath,
+  ) {
+    final packDir = packPath.substring(0, packPath.lastIndexOf('/') + 1);
+    if (packDir.isEmpty) return pack;
+
+    final authored = pack['feedback'];
+    final feedback = <String, dynamic>{
+      if (authored is Map<String, dynamic>) ...authored,
+    };
+
+    if (feedback['correct_sound'] == null) {
+      final applause = '$packDir$_defaultCorrectSound';
+      if (AssetAvailability.instance.has(applause)) {
+        feedback['correct_sound'] = applause;
+      }
+    }
+    if (feedback.isEmpty) return pack;
+
+    return <String, dynamic>{...pack, 'feedback': feedback};
+  }
 
   /// Rewrites `assets/…` paths that are missing into the pack's own folder.
   ///

@@ -18,6 +18,15 @@ enum Sfx {
 
   quizCorrect('audio/sfx/quiz-correct.wav'),
 
+  /// A right answer, in a quiz.
+  ///
+  /// The same clap the activity packs play for a right answer, so finishing a
+  /// module sounds like the levels that led to it rather than like a
+  /// different product. Cut to two seconds by `tool/prepare_audio.py`: the
+  /// pack's own copy runs nearly nine, which a quiz that moves on after two
+  /// would still be playing three questions later.
+  applause('audio/sfx/applause.mp3'),
+
   /// Deliberately gentle. At one to four years old a wrong answer is not a
   /// failure, and a buzzer teaches a child to stop trying.
   quizWrong('audio/sfx/quiz-wrong.mp3'),

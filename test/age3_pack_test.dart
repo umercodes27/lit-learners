@@ -139,9 +139,11 @@ void main() {
     expect(item.audioPrompt, contains('which_has_more'));
   });
 
-  test('both stories carry a narration and an illustration run', () async {
+  test('every story carries a narration and an illustration run', () async {
     final pack = (await loadAge3()).pack!;
-    for (final key in ['moral_stories', 'daily_routine_stories']) {
+    // "My Day" (daily_routine_stories) was removed from the pack; moral_stories
+    // is what age 3 tells now.
+    for (final key in ['moral_stories']) {
       final data =
           pack.levelByKey('storytelling', key)!.data as StoryInteractiveData;
       expect(data.audioNarration, isNotNull, reason: key);
@@ -200,7 +202,7 @@ void main() {
     }
   });
 
-  test('only English letters fall back to speech', () async {
+  test('every English letter has a clip to play', () async {
     final pack = (await loadAge3()).pack!;
     await AssetAvailability.instance.populate();
 
@@ -213,9 +215,19 @@ void main() {
         }
       }
     }
-    // A, C, E, M and S were recorded; the other 21 are spoken by design.
-    expect(spoken.length, 21);
-    expect(spoken, isNot(contains('A')));
-    expect(spoken, contains('B'));
+
+    // Five letters were recorded and the other twenty-one used to fall through
+    // to the device voice. That was a concession to studio time rather than a
+    // preference — [GlyphSpeech] says plainly that a clip wins where one
+    // exists — and it left the alphabet silent wherever speech is unavailable,
+    // which includes the browser the app is tested in.
+    //
+    // tool/generate_placeholder_voices.py fills the gap. Those twenty-one are
+    // synthesised placeholders, not recordings: delete them and this test
+    // fails, which is the point. The speech fallback still covers a letter
+    // whose clip goes missing.
+    expect(spoken, isEmpty,
+        reason: 'these letters are traced in silence where speech is '
+            'unavailable: ${spoken.join(', ')}');
   });
 }

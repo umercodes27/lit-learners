@@ -13,9 +13,11 @@ import '../../models/quiz_question.dart';
 import '../../viewmodels/active_child_session.dart';
 import '../../viewmodels/learning_viewmodel.dart';
 import '../../viewmodels/quiz_viewmodel.dart';
+import '../../widgets/activities/age2_mascot.dart';
 import '../../widgets/content_image.dart';
 import '../../widgets/koala_guide.dart';
 import '../../services/audio/app_sounds.dart';
+import '../../services/audio/quiz_voice.dart';
 import '../../services/audio/sound_controller.dart';
 import '../../widgets/play/play.dart';
 
@@ -23,9 +25,13 @@ class QuizPage extends StatefulWidget {
   const QuizPage({
     required this.args,
     super.key,
+    this.voice,
   });
 
   final QuizArgs args;
+
+  /// Injected by the widget tests so they never reach a real speech engine.
+  final QuizVoice? voice;
 
   @override
   State<QuizPage> createState() => _QuizPageState();
@@ -65,6 +71,7 @@ class _QuizPageState extends State<QuizPage> {
           child: _QuizBody(
             level: level,
             parentMark: widget.args.parentMark,
+            voice: widget.voice,
           ),
         );
       },
@@ -87,7 +94,10 @@ class _QuizBody extends StatefulWidget {
   const _QuizBody({
     required this.level,
     this.parentMark,
+    this.voice,
   });
+
+  final QuizVoice? voice;
 
   final LearningLevel level;
   final int? parentMark;
@@ -99,11 +109,48 @@ class _QuizBody extends StatefulWidget {
 class _QuizBodyState extends State<_QuizBody> {
   Timer? _advanceTimer;
   int? _celebratingIndex;
+  late final QuizVoice _voice = widget.voice ?? QuizVoice();
+
+  /// What the quiz says back when an answer is wrong.
+  ///
+  /// The card that lights up is [PlayColors.grass], so naming the colour is
+  /// something a child can act on even when the words are new to them.
+  static const _wrongVerdict = 'The green one is right.';
+
+  /// Long enough for the cue to land before the words start.
+  static const _verdictDelay = Duration(milliseconds: 350);
+
+  /// Long enough to hear what just happened before the next question arrives.
+  ///
+  /// Both were shorter — 1150ms and 1900ms — when a right answer was a chirp
+  /// and nothing was spoken. The applause runs 2.2s, and the wrong-answer line
+  /// nearly two on top of its delay; cutting either off mid-way was the whole
+  /// reason these moved.
+  static const _advanceAfterRight = Duration(milliseconds: 2200);
+  static const _advanceAfterWrong = Duration(milliseconds: 3000);
+
+  bool get _isRtl =>
+      LearningTextDirection.forLevel(widget.level) == TextDirection.rtl;
 
   @override
   void dispose() {
     _advanceTimer?.cancel();
+    _voice.dispose();
     super.dispose();
+  }
+
+  /// Says the question the child is looking at.
+  ///
+  /// Called from `build` rather than `initState` because the question changes
+  /// under the same widget as the quiz advances; [QuizVoice] keeps it to once
+  /// per question, so the rebuild that follows every tap is silent.
+  void _speakQuestion(QuizViewModel quiz) {
+    final prompt = quiz.currentQuestion.prompt;
+    _voice.askQuestion(
+      questionId: '${widget.level.id}:${quiz.currentQuestion.id}',
+      text: prompt,
+      urdu: QuizVoice.urduFor(prompt, levelIsRtl: _isRtl),
+    );
   }
 
   Color get _accent => PlayColors.forModuleId(widget.level.moduleId);
@@ -112,15 +159,32 @@ class _QuizBodyState extends State<_QuizBody> {
     if (quiz.answered) return;
 
     final correct = quiz.currentQuestion.isCorrect(index);
-    AppSound.play(correct ? Sfx.quizCorrect : Sfx.quizWrong);
+    // A right answer is clapped for, the same as it is in the levels — and the
+    // confetti below fires with it. A wrong one keeps the gentle cue.
+    AppSound.play(correct ? Sfx.applause : Sfx.quizWrong);
     quiz.selectAnswer(index);
     setState(() => _celebratingIndex = correct ? index : null);
 
+    // Only a wrong answer is spoken. Clapping already says "that was right"
+    // to a child who cannot read, and saying it over the applause would be
+    // two rewards talking across each other; the wrong-answer line is the one
+    // that carries something a child cannot see for themselves.
+    if (!correct) {
+      Future<void>.delayed(_verdictDelay, () {
+        if (!mounted) return;
+        _voice.sayVerdict(_wrongVerdict, urdu: _isRtl);
+      });
+    }
+
     // Answering moves the quiz on by itself. A wrong answer gets longer,
     // because the correct card is lighting up and that is the teaching moment.
+    //
+    // Both are longer than they were: the verdict is now spoken, and the old
+    // timings cut it off mid-word. The spoken line has to finish before the
+    // next question starts talking over it.
     _advanceTimer?.cancel();
     _advanceTimer = Timer(
-      Duration(milliseconds: correct ? 1150 : 1900),
+      correct ? _advanceAfterRight : _advanceAfterWrong,
       () {
         if (!mounted) return;
         setState(() => _celebratingIndex = null);
@@ -139,6 +203,8 @@ class _QuizBodyState extends State<_QuizBody> {
     final question = quiz.currentQuestion;
     final textDirection = LearningTextDirection.forLevel(widget.level);
     final accent = _accent;
+
+    _speakQuestion(quiz);
 
     return Scaffold(
       body: PlayGround(
@@ -172,6 +238,25 @@ class _QuizBodyState extends State<_QuizBody> {
                     question: question,
                     accent: accent,
                     textDirection: textDirection,
+                  ),
+                  const SizedBox(height: 12),
+                  // The same offer the activities make, in the same words: a
+                  // child who cannot read has only the voice to go on, so
+                  // hearing it again is one obvious tap away.
+                  Center(
+                    child: PlayButton(
+                      label: 'Listen again',
+                      icon: Icons.volume_up_rounded,
+                      color: Colors.white,
+                      expand: false,
+                      onPressed: () => _voice.repeatQuestion(
+                        text: question.prompt,
+                        urdu: QuizVoice.urduFor(
+                          question.prompt,
+                          levelIsRtl: _isRtl,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _AnswerGrid(
@@ -338,30 +423,15 @@ class _QuizHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
+        // Stars, the way the module quiz and every activity show progress. A
+        // row of pills was the one progress bar left in a product that
+        // otherwise counts in stars — and a four-year-old reads "three stars",
+        // not a filling line.
         Expanded(
-          child: Row(
-            children: List.generate(quiz.totalQuestions, (index) {
-              final done = index < quiz.questionIndex;
-              final current = index == quiz.questionIndex;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: AnimatedContainer(
-                    duration: PlayMotion.pressDown,
-                    height: current ? 16 : 12,
-                    decoration: BoxDecoration(
-                      color: done || current
-                          ? PlayColors.sunshine
-                          : Colors.white.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(999),
-                      border: current
-                          ? Border.all(color: Colors.white, width: 2)
-                          : null,
-                    ),
-                  ),
-                ),
-              );
-            }),
+          child: PoppingStars(
+            count: quiz.questionIndex,
+            total: quiz.totalQuestions,
+            size: 26,
           ),
         ),
         if (parentMark != null) ...[
@@ -430,22 +500,36 @@ class _QuestionCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
         child: Column(
           children: [
-            Directionality(
-              textDirection: textDirection,
-              child: Text(
-                question.prompt,
-                textAlign: TextAlign.center,
-                style: LearningTextDirection.styleFor(
-                  const TextStyle(
-                    fontFamily: 'Fredoka',
-                    fontSize: 30,
-                    height: 1.25,
-                    fontWeight: FontWeight.w600,
-                    color: PlayColors.ink,
+            // Asked by the koala, the way the module quiz and every activity
+            // ask it. This screen had the guide bubble but never the character
+            // itself beside the question.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Age2Mascot(size: 48),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Directionality(
+                    textDirection: textDirection,
+                    child: Text(
+                      question.prompt,
+                      textAlign: textDirection == TextDirection.rtl
+                          ? TextAlign.right
+                          : TextAlign.left,
+                      style: LearningTextDirection.styleFor(
+                        const TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 28,
+                          height: 1.25,
+                          fontWeight: FontWeight.w600,
+                          color: PlayColors.ink,
+                        ),
+                        textDirection,
+                      ),
+                    ),
                   ),
-                  textDirection,
                 ),
-              ),
+              ],
             ),
             if (question.hasImage) ...[
               const SizedBox(height: 16),
