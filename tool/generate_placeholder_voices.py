@@ -61,6 +61,37 @@ AGE3_LETTERS = {
     for c in 'BDFGHIJKLNOPQRTUVWXYZ'
 }
 
+# The Urdu tracing level is titled "ج سے ی" and went Jeem, Che, Hay, Khay,
+# Daal, then straight to Yay — twenty-four letters of the alphabet missing,
+# and the jump from د to ی visible to anyone who knows the order. Filling the
+# level in needs a clip per letter; these say the letter's name, which is what
+# a teacher says aloud.
+AGE3_URDU_LETTERS = {
+    'ur/harf_ddaal.mp3': ('ڈال', 'ur'),
+    'ur/harf_zaal.mp3': ('ذال', 'ur'),
+    'ur/harf_ray.mp3': ('رے', 'ur'),
+    'ur/harf_rray.mp3': ('ڑے', 'ur'),
+    'ur/harf_zay.mp3': ('زے', 'ur'),
+    'ur/harf_zhay.mp3': ('ژے', 'ur'),
+    'ur/harf_seen.mp3': ('سین', 'ur'),
+    'ur/harf_sheen.mp3': ('شین', 'ur'),
+    'ur/harf_suad.mp3': ('صاد', 'ur'),
+    'ur/harf_zuad.mp3': ('ضاد', 'ur'),
+    'ur/harf_toay.mp3': ('طوے', 'ur'),
+    'ur/harf_zoay.mp3': ('ظوے', 'ur'),
+    'ur/harf_ain.mp3': ('عین', 'ur'),
+    'ur/harf_ghain.mp3': ('غین', 'ur'),
+    'ur/harf_fay.mp3': ('فے', 'ur'),
+    'ur/harf_qaaf.mp3': ('قاف', 'ur'),
+    'ur/harf_kaaf.mp3': ('کاف', 'ur'),
+    'ur/harf_gaaf.mp3': ('گاف', 'ur'),
+    'ur/harf_laam.mp3': ('لام', 'ur'),
+    'ur/harf_meem.mp3': ('میم', 'ur'),
+    'ur/harf_noon.mp3': ('نون', 'ur'),
+    'ur/harf_wao.mp3': ('واؤ', 'ur'),
+    'ur/harf_chotihay.mp3': ('چھوٹی ہے', 'ur'),
+}
+
 
 def fetch(text, language):
     query = urllib.parse.urlencode({
@@ -90,6 +121,10 @@ def main():
         **{
             path: (text, lang, AGE3)
             for path, (text, lang) in AGE3_LETTERS.items()
+        },
+        **{
+            path: (text, lang, AGE3)
+            for path, (text, lang) in AGE3_URDU_LETTERS.items()
         },
     }
     written = 0

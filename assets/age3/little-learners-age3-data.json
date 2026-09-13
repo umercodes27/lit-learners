@@ -213,6 +213,98 @@
             "audio": "assets/audio/ur/harf_daal.mp3"
           },
           {
+            "letter": "Ddaal",
+            "audio": "assets/audio/ur/harf_ddaal.mp3"
+          },
+          {
+            "letter": "Zaal",
+            "audio": "assets/audio/ur/harf_zaal.mp3"
+          },
+          {
+            "letter": "Ray",
+            "audio": "assets/audio/ur/harf_ray.mp3"
+          },
+          {
+            "letter": "Rray",
+            "audio": "assets/audio/ur/harf_rray.mp3"
+          },
+          {
+            "letter": "Zay",
+            "audio": "assets/audio/ur/harf_zay.mp3"
+          },
+          {
+            "letter": "Zhay",
+            "audio": "assets/audio/ur/harf_zhay.mp3"
+          },
+          {
+            "letter": "Seen",
+            "audio": "assets/audio/ur/harf_seen.mp3"
+          },
+          {
+            "letter": "Sheen",
+            "audio": "assets/audio/ur/harf_sheen.mp3"
+          },
+          {
+            "letter": "Suad",
+            "audio": "assets/audio/ur/harf_suad.mp3"
+          },
+          {
+            "letter": "Zuad",
+            "audio": "assets/audio/ur/harf_zuad.mp3"
+          },
+          {
+            "letter": "Toay",
+            "audio": "assets/audio/ur/harf_toay.mp3"
+          },
+          {
+            "letter": "Zoay",
+            "audio": "assets/audio/ur/harf_zoay.mp3"
+          },
+          {
+            "letter": "Ain",
+            "audio": "assets/audio/ur/harf_ain.mp3"
+          },
+          {
+            "letter": "Ghain",
+            "audio": "assets/audio/ur/harf_ghain.mp3"
+          },
+          {
+            "letter": "Fay",
+            "audio": "assets/audio/ur/harf_fay.mp3"
+          },
+          {
+            "letter": "Qaaf",
+            "audio": "assets/audio/ur/harf_qaaf.mp3"
+          },
+          {
+            "letter": "Kaaf",
+            "audio": "assets/audio/ur/harf_kaaf.mp3"
+          },
+          {
+            "letter": "Gaaf",
+            "audio": "assets/audio/ur/harf_gaaf.mp3"
+          },
+          {
+            "letter": "Laam",
+            "audio": "assets/audio/ur/harf_laam.mp3"
+          },
+          {
+            "letter": "Meem",
+            "audio": "assets/audio/ur/harf_meem.mp3"
+          },
+          {
+            "letter": "Noon",
+            "audio": "assets/audio/ur/harf_noon.mp3"
+          },
+          {
+            "letter": "Wao",
+            "audio": "assets/audio/ur/harf_wao.mp3"
+          },
+          {
+            "letter": "Chotihay",
+            "audio": "assets/audio/ur/harf_chotihay.mp3"
+          },
+          {
             "letter": "Yay",
             "audio": "assets/audio/ur/harf_yay.mp3"
           }
