@@ -51,6 +51,12 @@ MP3_JOBS = {
     'Home-Subject-Loops.mp3': ('home.mp3', None),
     # 158s at 256kbps is 4.9MB for one screen. Forty seconds loops fine.
     'victory.mp3': ('celebration.mp3', 40.0),
+    # The packs ship 8.8s of applause, which is right for a level a child
+    # leaves when they like and wrong for a quiz that moves on after two
+    # seconds: the clapping would still be going three questions later, under
+    # the next spoken prompt. This is the same clap, cut to the length a quiz
+    # can actually give it.
+    'applause.mp3': ('applause.mp3', 2.2),
 }
 
 BITRATES = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128,

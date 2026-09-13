@@ -520,4 +520,105 @@ void main() {
       expect(result.error, contains('pack.json'));
     });
   });
+
+  group('ActivityPackLoader feedback defaults', () {
+    /// A pack that says nothing about feedback, the way thirty-four of the
+    /// forty shipped levels do.
+    const silent = '''
+    {
+      "age": 2,
+      "modules": {
+        "english": {
+          "level_1": {
+            "component": "identify_and_tap",
+            "title": "Quiet",
+            "items": [
+              { "options": [ { "label": "A", "correct": true } ] }
+            ]
+          }
+        }
+      }
+    }
+    ''';
+
+    test('a pack that ships applause gets it without declaring it', () async {
+      final bundle = _FakeBundle({'assets/age2/pack.json': silent});
+      AssetAvailability.instance.debugSeed({
+        'assets/age2/audio/sfx/applause.mp3',
+        'assets/age2/audio/sfx/try_again_gentle.mp3',
+      });
+
+      final result = await ActivityPackLoader(bundle: bundle)
+          .load(path: 'assets/age2/pack.json');
+
+      // Every level reads this through `level.data.correctSound ?? pack…`,
+      // so defaulting it here is what makes a right answer audible.
+      expect(
+        result.pack?.correctSound,
+        'assets/age2/audio/sfx/applause.mp3',
+      );
+      // Only the reward is defaulted: a wrong answer keeps whatever the pack
+      // said, which here is nothing, even though the bundle has the cue.
+      expect(result.pack?.wrongSound, isNull);
+      expect(result.missingAssets, isEmpty);
+    });
+
+    test('a pack without the sounds is left as authored', () async {
+      final bundle = _FakeBundle({'assets/age2/pack.json': silent});
+      // No sfx in this bundle at all.
+      AssetAvailability.instance.debugSeed({'assets/age2/img/cat.png'});
+
+      final result = await ActivityPackLoader(bundle: bundle)
+          .load(path: 'assets/age2/pack.json');
+
+      // A default that does not exist would show up in every missing-asset
+      // report, so it is never filled in.
+      expect(result.pack?.correctSound, isNull);
+      expect(result.missingAssets, isEmpty);
+    });
+
+    test('what the pack declares wins over the default', () async {
+      const authored = '''
+      {
+        "age": 2,
+        "feedback": {
+          "correct_sound": "assets/audio/sfx/own-cheer.mp3",
+          "wrong_sound": "assets/audio/sfx/own-oops.mp3"
+        },
+        "modules": {
+          "english": {
+            "level_1": {
+              "component": "identify_and_tap",
+              "title": "Loud",
+              "items": [
+                { "options": [ { "label": "A", "correct": true } ] }
+              ]
+            }
+          }
+        }
+      }
+      ''';
+
+      final bundle = _FakeBundle({'assets/age2/pack.json': authored});
+      AssetAvailability.instance.debugSeed({
+        'assets/age2/audio/sfx/own-cheer.mp3',
+        'assets/age2/audio/sfx/own-oops.mp3',
+        'assets/age2/audio/sfx/applause.mp3',
+      });
+
+      final result = await ActivityPackLoader(bundle: bundle)
+          .load(path: 'assets/age2/pack.json');
+
+      // The applause default never overwrites a pack that chose its own.
+      expect(
+        result.pack?.correctSound,
+        'assets/age2/audio/sfx/own-cheer.mp3',
+      );
+      // And a pack that does want a wrong-answer cue still gets it.
+      expect(
+        result.pack?.wrongSound,
+        'assets/age2/audio/sfx/own-oops.mp3',
+      );
+    });
+  });
 }

@@ -113,32 +113,45 @@ class ModuleQuizBuilder {
               options: item.options,
             ),
         ],
+      // The pattern has to come with the question. Asking "what comes next?"
+      // beside two shapes and nothing else is not a question a child can
+      // answer, or get wrong for a reason.
       PatternCompleteData d => [
           for (final item in d.items)
             _QuizSeed(
               prompt: null,
               fallbackPrompt: _Ask.whatNext,
+              promptSequence: item.sequence,
               options: item.options,
             ),
         ],
-      // A sum is already a multiple-choice question — it has an answer and
-      // three numbers to pick from — so it makes the most direct quiz slide in
-      // the file.
+      // A sum needs the things it is about. "How many altogether?" over three
+      // bare numbers is a guess: the two groups the child is supposed to count
+      // were never drawn, so both age-4 sums were unanswerable slides.
+      //
+      // Addition survives that fix — both groups together *are* the answer to
+      // count. Subtraction does not: showing three stars under "how many are
+      // left?" is showing the wrong number, and a quiz slide has no way to
+      // take one away in front of the child. It stays in the level, where the
+      // component animates it, and stops becoming a question here.
       VisualMathData d => [
           for (final item in d.items)
-            _QuizSeed(
-              prompt: null,
-              fallbackPrompt: item.operation == VisualMathOperation.add
-                  ? _Ask.howManyAltogether
-                  : _Ask.howManyLeft,
-              options: [
-                for (final option in item.options)
-                  ActivityOption(
-                    label: '$option',
-                    isCorrect: option == item.answer,
-                  ),
-              ],
-            ),
+            if (item.operation == VisualMathOperation.add)
+              _QuizSeed(
+                prompt: null,
+                fallbackPrompt: _Ask.howManyAltogether,
+                promptSequence: [
+                  for (var i = 0; i < item.first.count; i++) item.first.image,
+                  for (var i = 0; i < item.second.count; i++) item.second.image,
+                ],
+                options: [
+                  for (final option in item.options)
+                    ActivityOption(
+                      label: '$option',
+                      isCorrect: option == item.answer,
+                    ),
+                ],
+              ),
         ],
       // The question a story already stopped to ask. Without this the
       // storytelling module had no quiz in any pack, so its trophy was never
@@ -277,6 +290,7 @@ class _QuizSeed {
     required this.options,
     this.promptImage,
     this.promptRepeat = 1,
+    this.promptSequence = const [],
   });
 
   /// The pack's own wording, when it has one. Many rounds ask the question
@@ -288,6 +302,7 @@ class _QuizSeed {
   final String? prompt;
   final String? promptImage;
   final int promptRepeat;
+  final List<String> promptSequence;
   final List<ActivityOption> options;
 
   /// Null when the round has nothing to test: fewer than two choices, or no
@@ -315,6 +330,7 @@ class _QuizSeed {
           : text,
       promptImage: promptImage,
       promptRepeat: promptRepeat,
+      promptSequence: promptSequence,
       options: options,
       correctIndex: correctIndex,
       isRtl: isRtl,
@@ -352,7 +368,6 @@ class _Ask {
   static const whereGoes = _Ask('Where does this go?', 'یہ کہاں جائے گا؟');
   static const howManyAltogether =
       _Ask('How many altogether?', 'سب ملا کر کتنے؟');
-  static const howManyLeft = _Ask('How many are left?', 'کتنے باقی بچے؟');
 
   /// The letter is drawn in its own script either way, so only the sentence
   /// around it changes.

@@ -104,15 +104,15 @@
         "items": [
           {
             "letter": "Bay",
-            "example_word": "کتاب"
+            "example_word": "بکری"
           },
           {
             "letter": "Jeem",
-            "example_word": "مسجد"
+            "example_word": "جہاز"
           },
           {
             "letter": "Ain",
-            "example_word": "بارش"
+            "example_word": "عید"
           }
         ]
       },
@@ -138,10 +138,9 @@
           {
             "word": "دل",
             "letter_tiles": [
-              "Daal",
-              "Yay",
-              "Laam"
-            ]
+            "Daal",
+            "Laam"
+          ]
           }
         ],
         "feedback": {

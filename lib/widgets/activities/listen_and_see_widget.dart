@@ -128,20 +128,25 @@ class _ListenAndSeeWidgetState extends State<ListenAndSeeWidget> {
             semanticLabel: 'Next word',
             borderColor: Age2Skin.of(context).accent,
             padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _index >= widget.data.items.length - 1 ? 'Finish' : 'Next',
-                  style: Age2Text.cardTitle,
-                ),
-                const SizedBox(width: 10),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 34,
-                  color: Age2Skin.of(context).accent,
-                ),
-              ],
+            // Same as the tracing button: the Urdu stage is right-to-left,
+            // which would put a mirrored arrow in front of the English label.
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _index >= widget.data.items.length - 1 ? 'Finish' : 'Next',
+                    style: Age2Text.cardTitle,
+                  ),
+                  const SizedBox(width: 10),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 34,
+                    color: Age2Skin.of(context).accent,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8),

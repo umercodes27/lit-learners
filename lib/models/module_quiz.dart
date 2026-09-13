@@ -14,6 +14,7 @@ class ModuleQuizQuestion {
     required this.correctIndex,
     this.promptImage,
     this.promptRepeat = 1,
+    this.promptSequence = const [],
     this.isRtl = false,
   });
 
@@ -30,6 +31,14 @@ class ModuleQuizQuestion {
   /// How many copies of [promptImage] to draw. Counting questions ask "how
   /// many do you see?", which needs the picture repeated rather than described.
   final int promptRepeat;
+
+  /// The row of pictures the question is about, in order.
+  ///
+  /// A pattern question asks "what comes next?", which is unanswerable without
+  /// the pattern: the quiz showed the two choices and nothing else, so three
+  /// slides in the age-4 logic quiz were a guess between two shapes. That
+  /// needs a sequence rather than [promptImage], which is one picture.
+  final List<String> promptSequence;
 
   final List<ActivityOption> options;
   final int correctIndex;
