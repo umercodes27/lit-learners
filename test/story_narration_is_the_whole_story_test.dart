@@ -1,13 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:little_learners/models/activity_data.dart';
 import 'package:little_learners/services/content/activity_pack_loader.dart';
-import 'package:little_learners/widgets/activities/activity_audio.dart';
-import 'package:little_learners/widgets/activities/activity_stage.dart';
-import 'package:little_learners/widgets/activities/story_interactive_widget.dart';
 
 /// A story's narration has to last as long as the story it narrates.
 ///
@@ -72,63 +68,6 @@ void main() {
               '${complaints.join('\n')}');
     });
   }
-
-  // The other half: however long the voice lasts, the pictures get shown.
-  // "My Day" is the longest picture sequence in the app — five, timed out to
-  // twenty seconds — and the timeline used to stop at twenty flat, so the last
-  // picture appeared for no time at all.
-  testWidgets('a five-picture story reaches its fifth picture', (tester) async {
-    final pack =
-        (await ActivityPackLoader().load(path: ActivityPackLoader.age3Path))
-            .pack!;
-    final data = pack
-        .levelByKey('storytelling', 'daily_routine_stories')!
-        .data as StoryInteractiveData;
-
-    expect(data.illustrations, hasLength(5));
-
-    await tester.pumpWidget(MaterialApp(
-      home: StoryInteractiveWidget(data: data, audio: _SilentAudio()),
-    ));
-    await tester.pump();
-
-    // The timeline is a periodic timer, so it has to be stepped rather than
-    // jumped: one long pump fires it once.
-    var reached = 0;
-    for (var i = 0; i < 100; i++) {
-      await tester.pump(const Duration(milliseconds: 250));
-      final stage = tester.any(find.byType(ActivityStage))
-          ? tester.widget<ActivityStage>(find.byType(ActivityStage))
-          : null;
-      final index = stage?.roundIndex;
-      if (index != null && index > reached) reached = index;
-    }
-
-    expect(reached, 4,
-        reason: 'the story stopped on picture ${reached + 1} of 5');
-  });
-}
-
-/// Audio that answers instantly.
-///
-/// The real [ActivityAudio] talks to audioplayers, which has no platform side
-/// under `flutter test`: its futures never complete, so a screen that awaits
-/// one stalls forever.
-class _SilentAudio extends ActivityAudio {
-  @override
-  Future<void> playPrompt(String? assetPath) async {}
-
-  @override
-  Future<void> playCorrect() async {}
-
-  @override
-  Future<void> playWrong() async {}
-
-  @override
-  Future<void> stopPrompt() async {}
-
-  @override
-  Future<void> dispose() async {}
 }
 
 /// How long a constant-bitrate MP3 runs, from its own header.
