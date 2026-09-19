@@ -285,7 +285,10 @@ void main() {
               '[{"shape":"circle","color":"red","basket_options":["red","blue"],"image":"assets/c.png"}]')
           as IdentifyAndTapData;
       final item = data.items.single;
-      expect(item.promptText, 'circle');
+      // The pack names only the shape. On its own "circle" is not a question,
+      // and it was being shown to the child as though it were; the choices are
+      // colours, so the colour is what the round asks about.
+      expect(item.promptText, 'What colour is the circle?');
       expect(item.options.map((o) => o.label), ['red', 'blue']);
       expect(item.options.firstWhere((o) => o.isCorrect).label, 'red');
     });

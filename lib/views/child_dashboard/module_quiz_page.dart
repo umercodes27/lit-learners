@@ -497,6 +497,20 @@ class _OptionTile extends StatelessWidget {
         ),
       );
     }
+    // The more-versus-less round puts the same picture on both plates and
+    // differs only in how many. Drawing one of each made the two answers
+    // identical pictures, so the slide could not be answered at all.
+    if (option.count > 1) {
+      return Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          for (var i = 0; i < option.count; i++)
+            ActivityAssetImage(path: option.image, size: 26),
+        ],
+      );
+    }
     return ActivityAssetImage(path: option.image, size: 84);
   }
 }

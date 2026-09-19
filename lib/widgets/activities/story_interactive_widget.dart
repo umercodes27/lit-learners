@@ -111,25 +111,39 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
     await widget.audio.playPrompt(narration);
   }
 
-  /// Advances on a plain timer when there is no narration to follow.
-  void _startFallbackTimeline() {
+  /// Advances on a plain timer when there is no narration to follow, or when
+  /// the narration stopped before the story did.
+  void _startFallbackTimeline({Duration from = Duration.zero}) {
     const step = Duration(milliseconds: 250);
-    var elapsed = Duration.zero;
+    final choice = _choice;
+    // Long enough to reach the question if there is one, and otherwise to
+    // leave the last picture up long enough to be looked at.
+    final runUntil = choice != null && choice.atMs > 0
+        ? choice.atMs + 500
+        : [_lastPictureDue + 3000, 20000].reduce((a, b) => a > b ? a : b);
+
+    var elapsed = from;
     _fallbackTimer = Timer.periodic(step, (timer) {
       elapsed += step;
       _onPosition(elapsed);
-      final choice = _choice;
-      final end = choice?.atMs ?? 0;
-      if (elapsed.inMilliseconds > (end == 0 ? 20000 : end + 500)) {
+      if (elapsed.inMilliseconds > runUntil) {
         timer.cancel();
         _onNarrationDone();
       }
     });
   }
 
+  /// When the last picture is due to be on screen.
+  int get _lastPictureDue => _frames.isEmpty ? 0 : _frames.last.startMs;
+
+  /// How far the narration actually got, so the story can carry on from there
+  /// if the voice stops early.
+  Duration _heard = Duration.zero;
+
   void _onPosition(Duration position) {
     if (!mounted || _askingChoice || _finished) return;
 
+    _heard = position;
     final ms = position.inMilliseconds;
 
     var frame = 0;
@@ -146,6 +160,25 @@ class _StoryInteractiveWidgetState extends State<StoryInteractiveWidget> {
 
   void _onNarrationDone() {
     if (!mounted || _askingChoice || _finished) return;
+
+    // A narration shorter than the story it narrates must not cut the story
+    // short. Age 3's "My Day" shipped a 1.1-second clip — the title read
+    // aloud rather than the story — against five pictures timed out to twenty
+    // seconds, so the level ended on the first picture and the child never
+    // saw the other four. A truncated file is still a valid file, so nothing
+    // downstream could tell; the screen simply believed the story was over.
+    //
+    // Whatever the voice does, the pictures are seen: the rest of the story
+    // plays on silently, exactly as it would if the narration were missing
+    // altogether. The fallback timer is what tells us we are already doing
+    // that, so this can only happen once.
+    if (_fallbackTimer == null && _heard.inMilliseconds < _lastPictureDue) {
+      _positionSub?.cancel();
+      _completeSub?.cancel();
+      _startFallbackTimeline(from: _heard);
+      return;
+    }
+
     if (_choice != null) {
       _openChoice();
       return;

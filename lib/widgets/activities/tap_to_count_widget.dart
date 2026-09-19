@@ -51,6 +51,14 @@ class _TapToCountWidgetState extends State<TapToCountWidget> {
       ActivityFeedbackController(audio: widget.audio);
   late final GlyphSpeech _speech = widget.speech ?? GlyphSpeech();
 
+  @override
+  void initState() {
+    super.initState();
+    // Everything past five is spoken rather than played, and a cold engine
+    // takes about a second to say its first word.
+    _speech.warmUp();
+  }
+
   int _itemIndex = 0;
   Set<int> _tapped = {};
   bool _finished = false;
