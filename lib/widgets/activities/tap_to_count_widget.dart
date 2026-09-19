@@ -8,8 +8,6 @@ import '../../models/activity_data.dart';
 import '../../services/audio/glyph_speech.dart';
 import '../../services/content/asset_availability.dart';
 import 'activity_asset_image.dart';
-import '../../services/audio/glyph_speech.dart';
-import '../../services/content/asset_availability.dart';
 import 'activity_audio.dart';
 import 'activity_feedback_controller.dart';
 import 'activity_stage.dart';

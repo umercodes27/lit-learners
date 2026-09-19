@@ -137,6 +137,16 @@ class ActivityPackLoader {
   /// pack-local one (`assets/age3/audio/sfx/applause.mp3`).
   static const _defaultCorrectSound = 'audio/sfx/applause.mp3';
 
+  /// The retry cue, which no pack has ever had.
+  ///
+  /// Six levels name `audio/sfx/try_again_gentle.mp3` and that file has never
+  /// existed in the repo, so a wrong answer was silent everywhere — the
+  /// levels that asked for a cue included. Unlike the applause this one is
+  /// shared rather than pack-local, so it is taken from the app's own sfx
+  /// folder; it is the same gentle cue the rest of the app uses, never a
+  /// buzzer.
+  static const _defaultWrongSound = 'assets/audio/sfx/quiz-wrong.mp3';
+
   Map<String, dynamic> _withFeedbackDefaults(
     Map<String, dynamic> pack,
     String packPath,
@@ -155,6 +165,18 @@ class ActivityPackLoader {
         feedback['correct_sound'] = applause;
       }
     }
+
+    // A named cue that is not in the bundle is worse than no cue: it silently
+    // wins over the default it should have fallen through to.
+    final named = feedback['wrong_sound'];
+    if (named is! String || !AssetAvailability.instance.has(named)) {
+      feedback.remove('wrong_sound');
+    }
+    if (feedback['wrong_sound'] == null &&
+        AssetAvailability.instance.has(_defaultWrongSound)) {
+      feedback['wrong_sound'] = _defaultWrongSound;
+    }
+
     if (feedback.isEmpty) return pack;
 
     return <String, dynamic>{...pack, 'feedback': feedback};

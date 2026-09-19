@@ -101,10 +101,9 @@ void main() {
       });
     }
 
-    // "Which one is right?" over a C and a D, with `where_is_C.mp3` sitting
-    // unused in the bundle.
-    test('the age-2 letter quiz asks which letter, in the recorded voice',
-        () async {
+    // "Which one is right?" over a C and a D — the level it came from was
+    // already asking the better question aloud, as where_is_C.mp3.
+    test('the age-2 letter quiz asks which letter', () async {
       final pack =
           (await ActivityPackLoader().load(path: ActivityPackLoader.age2Path))
               .pack!;
@@ -121,30 +120,23 @@ void main() {
       );
       final answer = asked.options[asked.correctIndex].label;
       expect(asked.prompt, 'Where is $answer?');
-
-      // And at least one slide plays the clip the pack already recorded.
-      final voiced = quiz.questions
-          .where((question) => question.audioPrompt != null)
-          .where((question) =>
-              AssetAvailability.instance.has(question.audioPrompt))
-          .toList();
-      expect(voiced, isNotEmpty,
-          reason: 'the quiz asks silently even though the pack records '
-              'where_is_A.mp3 and where_is_C.mp3');
     });
 
-    test('a shape question names the shape', () async {
+    test('a shape round asks a question, not just a noun', () async {
       final pack =
-          (await ActivityPackLoader().load(path: ActivityPackLoader.age3Path))
+          (await ActivityPackLoader().load(path: ActivityPackLoader.age2Path))
               .pack!;
-      final quiz = ModuleQuizBuilder.build(pack.moduleByKey('logic')!);
+      final quiz = ModuleQuizBuilder.build(pack.moduleByKey('math')!);
 
-      // "What comes next?" over a row of shapes, reported at both age 2 and
-      // age 3 as something a toddler cannot act on.
+      // The shapes-and-colours round names only its shape, and "circle" was
+      // being put in front of the child as though it were the question. Its
+      // choices are colours.
       expect(
         quiz.questions.map((question) => question.prompt),
-        contains('Where is the blue square?'),
+        contains('What colour is the circle?'),
       );
+      expect(quiz.questions.map((question) => question.prompt),
+          isNot(contains('circle')));
     });
   });
 

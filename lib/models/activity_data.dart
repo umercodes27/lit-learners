@@ -460,8 +460,19 @@ class IdentifyAndTapItem {
       options: options,
       audioPrompt: audioPrompt,
       promptImage: promptImage,
-      promptText: promptText ?? json['shape'] as String?,
+      promptText: promptText ?? _shapeQuestion(json),
     );
+  }
+
+  /// The shapes-and-colours round names only its shape — "circle" — which on
+  /// its own is not a question, and was shown to the child as if it were. Its
+  /// choices are colour names, so the colour is what to ask about.
+  static String? _shapeQuestion(Map<String, dynamic> json) {
+    final shape = json['shape'] as String?;
+    if (shape == null) return null;
+    return json['basket_options'] is List
+        ? 'What colour is the $shape?'
+        : shape;
   }
 
   final List<ActivityOption> options;

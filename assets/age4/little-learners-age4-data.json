@@ -70,7 +70,7 @@
         ],
         "feedback": {
           "correct_sound": "assets/audio/sfx/applause.mp3",
-          "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3"
+          "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
         }
       },
       "level_3": {
@@ -145,7 +145,7 @@
         ],
         "feedback": {
           "correct_sound": "assets/audio/sfx/applause.mp3",
-          "wrong_sound": "assets/audio/sfx/try_again_gentle.mp3"
+          "wrong_sound": "assets/audio/sfx/quiz-wrong.mp3"
         }
       },
       "level_3": {
